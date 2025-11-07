@@ -221,7 +221,7 @@ import requests
 
 # Cloudflare API credentials
 ACCOUNT_ID = 'your-account-id'
-NAMESPACE_ID = 'e7c9b116911d484a9c7a2f9819e00e5a'  # From wrangler.toml
+NAMESPACE_ID = 'your-namespace-id'  # From wrangler.toml
 API_TOKEN = 'your-cloudflare-api-token'
 
 BASE_URL = f'https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/storage/kv/namespaces/{NAMESPACE_ID}'
@@ -364,7 +364,7 @@ bucket_name = "weather-landscapes"      # Actual bucket name
 # KV Namespace Binding  
 [[kv_namespaces]]
 binding = "CONFIG"                      # Access as env.CONFIG
-id = "e7c9b116911d484a9c7a2f9819e00e5a"  # Namespace ID
+id = "your-namespace-id"  # Namespace ID
 
 # Environment Variables
 [vars]
@@ -516,7 +516,7 @@ print('✅ Upload successful!')
 # test_kv_write.py
 import requests
 
-NAMESPACE_ID = 'e7c9b116911d484a9c7a2f9819e00e5a'
+NAMESPACE_ID = 'YOUR_NAMESPACE_ID'
 API_TOKEN = 'YOUR_API_TOKEN'
 
 url = f'https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/storage/kv/namespaces/{NAMESPACE_ID}/values/test-key'
@@ -537,7 +537,7 @@ print(f'Response: {response.json()}')
 
 ### Issue: "Namespace not found" in KV
 
-**Solution:** Verify the namespace ID `e7c9b116911d484a9c7a2f9819e00e5a` is correct in your API calls.
+**Solution:** Verify the namespace ID `[YOUR_NAMESPACE_ID` is correct in your API calls.
 
 ### Issue: Image not appearing on worker URL
 
