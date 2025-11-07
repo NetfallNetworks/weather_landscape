@@ -6,12 +6,10 @@ Generates weather visualizations and serves them from R2 storage
 from js import Response, Headers
 from workers import WorkerEntrypoint
 import json
-import io
 from datetime import datetime
 
-# Import the weather landscape generator
-from weather_landscape import WeatherLandscape
-from configs import WLConfig_RGB_White
+# Note: WeatherLandscape imports are deferred to runtime
+# to allow Pillow to load from cf-requirements.txt first
 
 
 class WorkerConfig:
@@ -24,6 +22,9 @@ class WorkerConfig:
 
     def to_weather_config(self):
         """Convert to WeatherLandscape config format"""
+        # Import at runtime to allow Pillow to load first
+        from configs import WLConfig_RGB_White
+
         config = WLConfig_RGB_White()
         config.OWM_KEY = self.OWM_KEY
         config.OWM_LAT = self.OWM_LAT
@@ -38,6 +39,10 @@ async def generate_weather_image(env):
     Returns: (image_bytes, metadata_dict)
     """
     try:
+        # Import at runtime to allow Pillow to load first
+        from weather_landscape import WeatherLandscape
+        import io
+
         # Load configuration from environment
         config = WorkerConfig(env)
 
