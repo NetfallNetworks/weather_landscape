@@ -1,5 +1,4 @@
 import os
-from PIL import Image
 
 from p_weather.openweathermap import OpenWeatherMap
 from p_weather.draw_weather import DrawWeather
@@ -12,11 +11,13 @@ class WeatherLandscape:
 
 
     def __init__(self,configuration:WLBaseSettings):
-        self.cfg = WLBaseSettings.Fill( configuration, secrets )    
+        self.cfg = WLBaseSettings.Fill( configuration, secrets )
         assert self.cfg.OWM_KEY != "000000000000000000",  "Set OWM_KEY variable to your OpenWeather API key in secrets.py"
 
 
-    def MakeImage(self)->Image:
+    def MakeImage(self):
+        # Import PIL at runtime for Cloudflare Workers compatibility
+        from PIL import Image
 
         owm = OpenWeatherMap(self.cfg)
         owm.FromAuto()
