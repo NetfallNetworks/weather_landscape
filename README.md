@@ -148,11 +148,6 @@ wrangler login
 wrangler r2 bucket create weather-landscapes
 wrangler kv namespace create CONFIG
 
-# Copy modules to src/ directory
-cp weather_landscape.py src/
-cp configs.py src/
-cp -r p_weather src/
-
 # Deploy!
 wrangler deploy
 

@@ -4,6 +4,9 @@ Simple test script to verify local image generation works
 """
 
 import sys
+
+# Import from src/ directory
+sys.path.insert(0, 'src')
 from weather_landscape import WeatherLandscape
 from configs import WLConfig_RGB_White
 

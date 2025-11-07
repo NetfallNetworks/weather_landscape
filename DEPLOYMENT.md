@@ -39,18 +39,7 @@ wrangler kv namespace create CONFIG
 # Replace YOUR_KV_NAMESPACE_ID with your actual ID
 ```
 
-### Step 4: Prepare Worker Source
-
-The worker needs access to the weather landscape modules. Copy them to the src directory:
-
-```bash
-# Copy necessary modules to src/ for worker deployment
-cp weather_landscape.py src/
-cp configs.py src/
-cp -r p_weather src/
-```
-
-### Step 5: Deploy the Worker
+### Step 4: Deploy the Worker
 
 ```bash
 # Deploy to Cloudflare
@@ -61,7 +50,7 @@ wrangler deploy
 #   https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev
 ```
 
-### Step 6: Set Secrets
+### Step 5: Set Secrets
 
 **IMPORTANT:** Secrets must be set AFTER the worker is deployed:
 

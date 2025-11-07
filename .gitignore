@@ -14,11 +14,6 @@ secrets.py
 .dev.vars
 node_modules/
 
-# Worker source copies (copied from root to src/ for deployment)
-src/weather_landscape.py
-src/configs.py
-src/p_weather/
-
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

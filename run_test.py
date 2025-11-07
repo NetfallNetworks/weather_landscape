@@ -1,6 +1,8 @@
 import os
+import sys
 
-
+# Import from src/ directory
+sys.path.insert(0, 'src')
 from weather_landscape import WeatherLandscape
 from configs import *
 

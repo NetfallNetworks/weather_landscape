@@ -1,5 +1,6 @@
 
 import os
+import sys
 import time
 import datetime
 from PIL import Image
@@ -10,6 +11,8 @@ import secrets
 
 import socket
 
+# Import from src/ directory
+sys.path.insert(0, 'src')
 from weather_landscape import WeatherLandscape
 from configs import *
 
