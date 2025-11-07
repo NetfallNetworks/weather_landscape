@@ -8,8 +8,16 @@ from workers import WorkerEntrypoint
 import json
 from datetime import datetime
 
-# Note: WeatherLandscape imports are deferred to runtime
-# to allow Pillow to load from cf-requirements.txt first
+# Flag to track if packages are loaded
+_packages_loaded = False
+
+async def ensure_packages_loaded():
+    """Load required packages via micropip on first use"""
+    global _packages_loaded
+    if not _packages_loaded:
+        import micropip
+        await micropip.install('pillow')
+        _packages_loaded = True
 
 
 class WorkerConfig:
@@ -39,7 +47,10 @@ async def generate_weather_image(env):
     Returns: (image_bytes, metadata_dict)
     """
     try:
-        # Import at runtime to allow Pillow to load first
+        # Ensure Pillow is loaded
+        await ensure_packages_loaded()
+
+        # Import at runtime after Pillow is loaded
         from weather_landscape import WeatherLandscape
         import io
 
