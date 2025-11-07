@@ -2,6 +2,7 @@ import os
 from PIL import Image, ImageOps
 import random
 import math
+from typing import List
 
 
 
@@ -279,7 +280,7 @@ class Sprites(Canvas):
                     self.pix[x,y] = self.Black if dotcolor==None else dotcolor
 
 
-    def DrawSoil(self,tline:list[int],xoffset =0, dotcolor=None):
+    def DrawSoil(self,tline:List[int],xoffset =0, dotcolor=None):
         width = len(tline)
         for x in range(width):
             self.Dot(x+xoffset,tline[x],self.Black if dotcolor==None else dotcolor)

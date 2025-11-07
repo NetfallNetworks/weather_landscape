@@ -2,6 +2,7 @@ import os
 from PIL import Image, ImageOps
 import random
 import math
+from typing import List
 
 from p_weather.configuration import WLBaseSettings
 from p_weather.sprites import Sprites,Canvas
@@ -46,7 +47,7 @@ class SpritesRGB(Sprites):
 
 
 
-    def DrawSoil(self,tline:list[int],xoffset =0):
+    def DrawSoil(self,tline:List[int],xoffset =0):
         super().DrawSoil(tline,xoffset,self.cfg.COLOR_SOIL)
         
         
