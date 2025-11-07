@@ -8,7 +8,8 @@ class WLConfig_BW(WLBaseSettings):
     TEMPLATE_FILENAME = "src/p_weather/template_wb.bmp"
     SPRITES_DIR="src/p_weather/sprite"
     POSTPROCESS_INVERT = False
-    POSTPROCESS_EINKFLIP = False    
+    POSTPROCESS_EINKFLIP = False
+    TEMPUNITS_MODE = WLBaseSettings.TEMP_UNITS_FAHRENHEIT    
     
 class WLConfig_EINK(WLConfig_BW):
     TITLE = "BW EINK"
@@ -37,6 +38,7 @@ class WLConfig_RGB_White(WLBaseSettings):
     POSTPROCESS_INVERT = False
     POSTPROCESS_EINKFLIP = False
     SPRITES_MODE = WLBaseSettings.SPRITES_MODE_RGB
+    TEMPUNITS_MODE = WLBaseSettings.TEMP_UNITS_FAHRENHEIT
 
 
     COLOR_SOIL = (148, 82, 1)
