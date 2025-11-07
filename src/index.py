@@ -8,22 +8,6 @@ from workers import WorkerEntrypoint
 import json
 from datetime import datetime
 
-# Try to load Pillow via pyodide
-try:
-    import pyodide
-    print("Attempting to load Pillow via pyodide...")
-    pyodide.loadPackage('pillow')
-    print("✓ Pillow loaded via pyodide")
-except Exception as e:
-    print(f"Pyodide load attempt: {e}")
-
-# Test if PIL is now available
-try:
-    from PIL import Image as _
-    print("✓ PIL import successful")
-except ImportError as e:
-    print(f"✗ PIL still not available: {e}")
-
 
 class WorkerConfig:
     """Configuration loaded from KV and environment"""
