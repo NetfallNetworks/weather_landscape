@@ -10,8 +10,6 @@ import io
 from datetime import datetime
 
 # Import the weather landscape generator
-import sys
-sys.path.insert(0, '..')
 from weather_landscape import WeatherLandscape
 from configs import WLConfig_RGB_White
 

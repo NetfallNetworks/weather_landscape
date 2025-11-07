@@ -39,19 +39,15 @@ wrangler kv namespace create CONFIG
 # Replace YOUR_KV_NAMESPACE_ID with your actual ID
 ```
 
-### Step 4: Set Secrets
+### Step 4: Prepare Worker Source
+
+The worker needs access to the weather landscape modules. Copy them to the src directory:
 
 ```bash
-# Set your OpenWeather API key as a secret
-wrangler secret put OWM_API_KEY --name weather-landscape-worker
-# When prompted, paste your API key
-
-# Optionally, set custom coordinates
-wrangler secret put DEFAULT_LAT --name weather-landscape-worker
-# Enter your latitude (e.g., 30.2672)
-
-wrangler secret put DEFAULT_LON --name weather-landscape-worker
-# Enter your longitude (e.g., -97.7431)
+# Copy necessary modules to src/ for worker deployment
+cp weather_landscape.py src/
+cp configs.py src/
+cp -r p_weather src/
 ```
 
 ### Step 5: Deploy the Worker
@@ -63,6 +59,23 @@ wrangler deploy
 # You'll see output like:
 # Published weather-landscape-worker (X.XX sec)
 #   https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev
+```
+
+### Step 6: Set Secrets
+
+**IMPORTANT:** Secrets must be set AFTER the worker is deployed:
+
+```bash
+# Set your OpenWeather API key as a secret
+wrangler secret put OWM_API_KEY --name weather-landscape-worker
+# When prompted, paste your API key
+
+# Optionally, set custom coordinates (or use defaults in wrangler.toml)
+wrangler secret put DEFAULT_LAT --name weather-landscape-worker
+# Enter your latitude (e.g., 30.2672)
+
+wrangler secret put DEFAULT_LON --name weather-landscape-worker
+# Enter your longitude (e.g., -97.7431)
 ```
 
 ## 🔧 Configuration

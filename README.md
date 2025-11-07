@@ -148,11 +148,16 @@ wrangler login
 wrangler r2 bucket create weather-landscapes
 wrangler kv namespace create CONFIG
 
-# Set your OpenWeather API key
-wrangler secret put OWM_API_KEY --name weather-landscape-worker
+# Copy modules to src/ directory
+cp weather_landscape.py src/
+cp configs.py src/
+cp -r p_weather src/
 
 # Deploy!
 wrangler deploy
+
+# Set secrets AFTER deployment
+wrangler secret put OWM_API_KEY --name weather-landscape-worker
 ```
 
 Your weather landscape will be available at:
