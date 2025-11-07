@@ -1,0 +1,30 @@
+name = "weather-landscape-worker"
+main = "src/index.py"
+compatibility_date = "2025-01-10"
+compatibility_flags = ["python_workers"]
+
+# Cron Trigger - runs every 15 minutes to regenerate weather images
+[triggers]
+crons = ["*/15 * * * *"]
+
+# R2 Bucket Binding - stores generated weather landscape images
+[[r2_buckets]]
+binding = "WEATHER_IMAGES"
+bucket_name = "weather-landscapes"
+
+# KV Namespace Binding - stores configuration and metadata
+[[kv_namespaces]]
+binding = "CONFIG"
+id = "YOUR_NAMESPACE_ID"  # Replace with actual namespace ID after creation
+
+# Environment Variables (non-sensitive)
+[vars]
+DEFAULT_LAT = 52.196136
+DEFAULT_LON = 21.007963
+IMAGE_WIDTH = 296
+IMAGE_HEIGHT = 128
+UPDATE_INTERVAL_MINUTES = 15
+
+# Note: Sensitive variables should be set using wrangler secrets:
+# wrangler secret put OWM_API_KEY
+# These will be available in env but not visible in wrangler.toml

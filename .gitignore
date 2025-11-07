@@ -3,8 +3,16 @@ tmp
 art
 .venv
 
+# OpenWeather cache files
+openweathermap_*.json
+
 # secrets
 secrets.py
+
+# Wrangler / Cloudflare Workers
+.wrangler/
+.dev.vars
+node_modules/
 
 
 # Byte-compiled / optimized / DLL files

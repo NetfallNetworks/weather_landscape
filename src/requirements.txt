@@ -1,0 +1,5 @@
+# Cloudflare Worker Requirements
+# Note: As of Jan 2025, Python Workers are in beta and package deployment
+# may not work in production. These packages work in local development.
+
+pillow==10.4.0

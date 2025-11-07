@@ -124,6 +124,45 @@ python run_server.py
 Access the server page from a browser to see the number of generated images.
 
 
+## Cloudflare Deployment ☁️
+
+Deploy your weather landscape as a globally distributed Cloudflare Worker with automatic image generation and edge caching!
+
+**Features:**
+- 🕐 Automatic image generation every 15 minutes (configurable)
+- 🌍 Global edge distribution via Cloudflare's network
+- 💾 Image storage in R2 (S3-compatible object storage)
+- 🔑 Secure configuration via KV store and Secrets
+- 💰 Free tier friendly (well within limits)
+
+### Quick Deploy
+
+```bash
+# Install Wrangler CLI
+npm install -g wrangler
+
+# Login to Cloudflare
+wrangler login
+
+# Create R2 bucket and KV namespace
+wrangler r2 bucket create weather-landscapes
+wrangler kv:namespace create CONFIG
+
+# Set your OpenWeather API key
+wrangler secret put OWM_API_KEY
+
+# Deploy!
+wrangler deploy
+```
+
+Your weather landscape will be available at:
+`https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/current.png`
+
+**📚 Full deployment guide:** See [DEPLOYMENT.md](DEPLOYMENT.md)
+
+**🏗️ Architecture guide:** See [CLOUDFLARE-STORAGE-GUIDE.md](CLOUDFLARE-STORAGE-GUIDE.md)
+
+**⚠️ Note:** Python Workers are currently in beta. Package deployment (Pillow) works in local development but may not deploy to production. See deployment guide for details and workarounds.
 
 
 ## E-Ink module
