@@ -3,7 +3,8 @@ Cloudflare Worker for Weather Landscape Image Generation
 Generates weather visualizations and serves them from R2 storage
 """
 
-from js import Response, Headers, Object
+from js import Response, Headers
+from workers import WorkerEntrypoint
 import json
 import io
 from datetime import datetime
@@ -87,7 +88,6 @@ async def upload_to_r2(env, image_bytes, metadata):
         }
 
         # Upload to R2
-        # Note: In Python Workers, R2 binding should work similarly to JS
         await env.WEATHER_IMAGES.put(
             key,
             image_bytes,
@@ -114,196 +114,201 @@ async def upload_to_r2(env, image_bytes, metadata):
         raise
 
 
-async def scheduled(event, env, ctx):
+class Default(WorkerEntrypoint):
     """
-    Scheduled handler - runs on cron trigger (every 15 minutes)
-    Generates new weather landscape image and uploads to R2
+    Main Worker Entrypoint for Weather Landscape
+    Handles both scheduled (cron) and fetch (HTTP) requests
     """
-    print(f"🕐 Scheduled run started at {datetime.utcnow().isoformat()}")
 
-    try:
-        # Generate the weather image
-        print("Generating weather landscape image...")
-        image_bytes, metadata = await generate_weather_image(env)
+    async def scheduled(self, event, env, ctx):
+        """
+        Scheduled handler - runs on cron trigger (every 15 minutes)
+        Generates new weather landscape image and uploads to R2
+        """
+        print(f"🕐 Scheduled run started at {datetime.utcnow().isoformat()}")
 
-        # Upload to R2
-        print("Uploading to R2...")
-        await upload_to_r2(env, image_bytes, metadata)
-
-        # Update status in KV
-        status = {
-            'lastSuccess': datetime.utcnow().isoformat() + 'Z',
-            'lastError': None,
-            'errorCount': 0
-        }
-        await env.CONFIG.put('status', json.dumps(status))
-
-        print("✅ Scheduled run completed successfully")
-
-    except Exception as e:
-        error_msg = str(e)
-        print(f"❌ Scheduled run failed: {error_msg}")
-
-        # Update error status in KV
         try:
+            # Generate the weather image
+            print("Generating weather landscape image...")
+            image_bytes, metadata = await generate_weather_image(env)
+
+            # Upload to R2
+            print("Uploading to R2...")
+            await upload_to_r2(env, image_bytes, metadata)
+
+            # Update status in KV
             status = {
-                'lastSuccess': None,
-                'lastError': error_msg,
-                'errorTimestamp': datetime.utcnow().isoformat() + 'Z'
+                'lastSuccess': datetime.utcnow().isoformat() + 'Z',
+                'lastError': None,
+                'errorCount': 0
             }
             await env.CONFIG.put('status', json.dumps(status))
-        except:
-            pass
 
+            print("✅ Scheduled run completed successfully")
 
-async def fetch(request, env, ctx):
-    """
-    HTTP request handler - serves images from R2
+        except Exception as e:
+            error_msg = str(e)
+            print(f"❌ Scheduled run failed: {error_msg}")
 
-    Routes:
-    - GET / - Returns HTML page with current image
-    - GET /current.png - Returns the current weather image from R2
-    - GET /status - Returns generation status and metadata
-    - POST /generate - Manually trigger image generation (for testing)
-    """
-    url = request.url
-    path = url.split('/')[-1] if '/' in url else ''
+            # Update error status in KV
+            try:
+                status = {
+                    'lastSuccess': None,
+                    'lastError': error_msg,
+                    'errorTimestamp': datetime.utcnow().isoformat() + 'Z'
+                }
+                await env.CONFIG.put('status', json.dumps(status))
+            except:
+                pass
 
-    # Route: Serve current image
-    if path == 'current.png' or path == '':
-        try:
-            # Fetch image from R2
-            r2_object = await env.WEATHER_IMAGES.get('current.png')
+    async def fetch(self, request, env, ctx):
+        """
+        HTTP request handler - serves images from R2
 
-            if r2_object is None:
+        Routes:
+        - GET / - Returns HTML page with current image
+        - GET /current.png - Returns the current weather image from R2
+        - GET /status - Returns generation status and metadata
+        - POST /generate - Manually trigger image generation (for testing)
+        """
+        url = request.url
+        path = url.split('/')[-1] if '/' in url else ''
+
+        # Route: Serve current image
+        if path == 'current.png' or path == '':
+            try:
+                # Fetch image from R2
+                r2_object = await env.WEATHER_IMAGES.get('current.png')
+
+                if r2_object is None:
+                    return Response.new(
+                        json.dumps({'error': 'Image not found. Waiting for first generation.'}),
+                        {
+                            'status': 404,
+                            'headers': {'Content-Type': 'application/json'}
+                        }
+                    )
+
+                # Return image with appropriate headers
+                headers = Headers.new()
+                headers.set('Content-Type', 'image/png')
+                headers.set('Cache-Control', 'public, max-age=900')  # 15 minutes
+                headers.set('X-Generated-At', r2_object.customMetadata.get('generated-at', 'unknown'))
+
+                if path == '':
+                    # Return HTML page with image
+                    html = f"""
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Weather Landscape</title>
+                        <style>
+                            body {{
+                                font-family: system-ui, -apple-system, sans-serif;
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                padding: 2rem;
+                                background: #f5f5f5;
+                            }}
+                            img {{
+                                max-width: 100%;
+                                border: 1px solid #ddd;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                            }}
+                            .info {{
+                                margin-top: 1rem;
+                                text-align: center;
+                                color: #666;
+                            }}
+                        </style>
+                    </head>
+                    <body>
+                        <h1>Weather Landscape 🌤️</h1>
+                        <img src="/current.png" alt="Weather Landscape">
+                        <div class="info">
+                            <p>Generated: {r2_object.customMetadata.get('generated-at', 'unknown')}</p>
+                            <p>Location: {r2_object.customMetadata.get('latitude', '?')}, {r2_object.customMetadata.get('longitude', '?')}</p>
+                            <p><a href="/status">View Status</a></p>
+                        </div>
+                    </body>
+                    </html>
+                    """
+                    return Response.new(html, {
+                        'headers': {'Content-Type': 'text/html; charset=utf-8'}
+                    })
+
+                # Return just the image
+                return Response.new(r2_object.body, {'headers': headers})
+
+            except Exception as e:
                 return Response.new(
-                    json.dumps({'error': 'Image not found. Waiting for first generation.'}),
+                    json.dumps({'error': f'Failed to fetch image: {str(e)}'}),
                     {
-                        'status': 404,
+                        'status': 500,
                         'headers': {'Content-Type': 'application/json'}
                     }
                 )
 
-            # Return image with appropriate headers
-            headers = Headers.new()
-            headers.set('Content-Type', 'image/png')
-            headers.set('Cache-Control', 'public, max-age=900')  # 15 minutes
-            headers.set('X-Generated-At', r2_object.customMetadata.get('generated-at', 'unknown'))
+        # Route: Status endpoint
+        elif path == 'status':
+            try:
+                # Get status from KV
+                status_json = await env.CONFIG.get('status')
+                metadata_json = await env.CONFIG.get('latest-metadata')
 
-            if path == '':
-                # Return HTML page with image
-                html = f"""
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Weather Landscape</title>
-                    <style>
-                        body {{
-                            font-family: system-ui, -apple-system, sans-serif;
-                            display: flex;
-                            flex-direction: column;
-                            align-items: center;
-                            padding: 2rem;
-                            background: #f5f5f5;
-                        }}
-                        img {{
-                            max-width: 100%;
-                            border: 1px solid #ddd;
-                            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                        }}
-                        .info {{
-                            margin-top: 1rem;
-                            text-align: center;
-                            color: #666;
-                        }}
-                    </style>
-                </head>
-                <body>
-                    <h1>Weather Landscape 🌤️</h1>
-                    <img src="/current.png" alt="Weather Landscape">
-                    <div class="info">
-                        <p>Generated: {r2_object.customMetadata.get('generated-at', 'unknown')}</p>
-                        <p>Location: {r2_object.customMetadata.get('latitude', '?')}, {r2_object.customMetadata.get('longitude', '?')}</p>
-                        <p><a href="/status">View Status</a></p>
-                    </div>
-                </body>
-                </html>
-                """
-                return Response.new(html, {
-                    'headers': {'Content-Type': 'text/html; charset=utf-8'}
-                })
+                status = json.loads(status_json) if status_json else {}
+                metadata = json.loads(metadata_json) if metadata_json else {}
 
-            # Return just the image
-            return Response.new(r2_object.body, {'headers': headers})
+                response_data = {
+                    'status': status,
+                    'metadata': metadata,
+                    'workerTime': datetime.utcnow().isoformat() + 'Z'
+                }
 
-        except Exception as e:
+                return Response.new(
+                    json.dumps(response_data, indent=2),
+                    {
+                        'headers': {'Content-Type': 'application/json'}
+                    }
+                )
+            except Exception as e:
+                return Response.new(
+                    json.dumps({'error': f'Failed to fetch status: {str(e)}'}),
+                    {
+                        'status': 500,
+                        'headers': {'Content-Type': 'application/json'}
+                    }
+                )
+
+        # Route: Manual generation trigger (for testing)
+        elif path == 'generate' and request.method == 'POST':
+            try:
+                print("Manual generation triggered")
+                image_bytes, metadata = await generate_weather_image(env)
+                await upload_to_r2(env, image_bytes, metadata)
+
+                return Response.new(
+                    json.dumps({'success': True, 'metadata': metadata}),
+                    {
+                        'headers': {'Content-Type': 'application/json'}
+                    }
+                )
+            except Exception as e:
+                return Response.new(
+                    json.dumps({'error': f'Generation failed: {str(e)}'}),
+                    {
+                        'status': 500,
+                        'headers': {'Content-Type': 'application/json'}
+                    }
+                )
+
+        # Default: 404
+        else:
             return Response.new(
-                json.dumps({'error': f'Failed to fetch image: {str(e)}'}),
+                json.dumps({'error': 'Not found'}),
                 {
-                    'status': 500,
+                    'status': 404,
                     'headers': {'Content-Type': 'application/json'}
                 }
             )
-
-    # Route: Status endpoint
-    elif path == 'status':
-        try:
-            # Get status from KV
-            status_json = await env.CONFIG.get('status')
-            metadata_json = await env.CONFIG.get('latest-metadata')
-
-            status = json.loads(status_json) if status_json else {}
-            metadata = json.loads(metadata_json) if metadata_json else {}
-
-            response_data = {
-                'status': status,
-                'metadata': metadata,
-                'workerTime': datetime.utcnow().isoformat() + 'Z'
-            }
-
-            return Response.new(
-                json.dumps(response_data, indent=2),
-                {
-                    'headers': {'Content-Type': 'application/json'}
-                }
-            )
-        except Exception as e:
-            return Response.new(
-                json.dumps({'error': f'Failed to fetch status: {str(e)}'}),
-                {
-                    'status': 500,
-                    'headers': {'Content-Type': 'application/json'}
-                }
-            )
-
-    # Route: Manual generation trigger (for testing)
-    elif path == 'generate' and request.method == 'POST':
-        try:
-            print("Manual generation triggered")
-            image_bytes, metadata = await generate_weather_image(env)
-            await upload_to_r2(env, image_bytes, metadata)
-
-            return Response.new(
-                json.dumps({'success': True, 'metadata': metadata}),
-                {
-                    'headers': {'Content-Type': 'application/json'}
-                }
-            )
-        except Exception as e:
-            return Response.new(
-                json.dumps({'error': f'Generation failed: {str(e)}'}),
-                {
-                    'status': 500,
-                    'headers': {'Content-Type': 'application/json'}
-                }
-            )
-
-    # Default: 404
-    else:
-        return Response.new(
-            json.dumps({'error': 'Not found'}),
-            {
-                'status': 404,
-                'headers': {'Content-Type': 'application/json'}
-            }
-        )
