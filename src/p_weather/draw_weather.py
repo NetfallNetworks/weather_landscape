@@ -231,7 +231,7 @@ class DrawWeather():
                 dx = self.TimeDiffToPixels(t_midn-tf)  - xstep/2
                 ix =int(xpos+dx)
                 print(f"   🌸 Drawing BLUE FLOWER (midnight) at ix={ix}, xpos={xpos}, dx={dx}")
-                self.sprite.Draw("flower",0,ix,tline[ix]+1)
+                self.sprite.Draw("flower",2,ix,tline[ix]+1)
                 self.BlockRange(tline,ix-self.cfg.DRAW_FLOWER_LEFT_PX,ix+self.cfg.DRAW_FLOWER_RIGHT_PX)
 
             xpos+=xstep
