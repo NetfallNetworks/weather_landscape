@@ -1,4 +1,4 @@
 # Cloudflare Worker Requirements
 # Packages available in Pyodide for Python Workers
 
-Pillow
+pillow
