@@ -187,6 +187,11 @@ class DrawWeather():
         tf = t
         xpos = xstart
         objcounter=0
+
+        print(f"🌸 FLOWER DEBUG - Starting timeline loop")
+        print(f"   Start time: {t.strftime('%Y-%m-%d %H:%M')}")
+        print(f"   Period: {WeatherInfo.FORECAST_PERIOD_HOURS}h, Iterations: {nforecasrt+1}")
+
         for i in range(nforecasrt+1):
             # Calculate time markers (don't depend on forecast data)
             t_sunrise = s.sunrise(tf)
@@ -194,24 +199,30 @@ class DrawWeather():
             t_noon = datetime.datetime(tf.year,tf.month,tf.day,12,0,0,0)
             t_midn = datetime.datetime(tf.year,tf.month,tf.day,0,0,0,0)+datetime.timedelta(days=1)
 
-            #print("---",tf," - ",tf + dt,"   ",t_noon,t_midn)
+            # Debug first few iterations and when we detect events
+            if i < 5:
+                print(f"   [{i}] Range: {tf.strftime('%m/%d %H:%M')} to {(tf+dt).strftime('%m/%d %H:%M')}")
+                print(f"       Noon: {t_noon.strftime('%m/%d %H:%M')}, Midnight: {t_midn.strftime('%m/%d %H:%M')}")
 
             ymoon = ypos-ystep*5/8
 
             # Draw sun/moon/flowers regardless of forecast data availability
             if (tf<=t_sunrise) and (tf+dt>t_sunrise) and (objcounter<2):
                 dx = self.TimeDiffToPixels(t_sunrise-tf)  - xstep/2
+                print(f"   ☀️ Drawing SUN at xpos={xpos}, dx={dx}, final={xpos+dx}")
                 self.sprite.Draw("sun",0,xpos+dx,ymoon)
                 objcounter+=1
 
             if (tf<=t_sunset) and (tf+dt>t_sunset) and (objcounter<2):
                 dx = self.TimeDiffToPixels(t_sunset-tf)  - xstep/2
+                print(f"   🌙 Drawing MOON at xpos={xpos}, dx={dx}, final={xpos+dx}")
                 self.sprite.Draw("moon",0,xpos+dx,ymoon)
                 objcounter+=1
 
             if (tf<=t_noon) and (tf+dt>t_noon):
                 dx = self.TimeDiffToPixels(t_noon-tf)  - xstep/2
                 ix =int(xpos+dx)
+                print(f"   🌼 Drawing YELLOW FLOWER (noon) at ix={ix}, xpos={xpos}, dx={dx}")
                 self.sprite.Draw("flower",1,ix,tline[ix]+1)
                 self.BlockRange(tline,ix-self.cfg.DRAW_FLOWER_LEFT_PX,ix+self.cfg.DRAW_FLOWER_RIGHT_PX)
 
@@ -219,6 +230,7 @@ class DrawWeather():
             if (tf<=t_midn) and (tf+dt>t_midn):
                 dx = self.TimeDiffToPixels(t_midn-tf)  - xstep/2
                 ix =int(xpos+dx)
+                print(f"   🌸 Drawing BLUE FLOWER (midnight) at ix={ix}, xpos={xpos}, dx={dx}")
                 self.sprite.Draw("flower",0,ix,tline[ix]+1)
                 self.BlockRange(tline,ix-self.cfg.DRAW_FLOWER_LEFT_PX,ix+self.cfg.DRAW_FLOWER_RIGHT_PX)
 
