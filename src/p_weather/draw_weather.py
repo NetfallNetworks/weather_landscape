@@ -183,24 +183,22 @@ class DrawWeather():
         
         self.BlockRange(tline,0,x0)
         
-        s=sun(owm.LAT,owm.LON) 
-        tf = t 
+        s=sun(owm.LAT,owm.LON)
+        tf = t
         xpos = xstart
         objcounter=0
         for i in range(nforecasrt+1):
-            f = owm.Get(tf)
-            if (f==None):
-                continue
-
+            # Calculate time markers (don't depend on forecast data)
             t_sunrise = s.sunrise(tf)
-            t_sunset = s.sunset(tf) 
+            t_sunset = s.sunset(tf)
             t_noon = datetime.datetime(tf.year,tf.month,tf.day,12,0,0,0)
             t_midn = datetime.datetime(tf.year,tf.month,tf.day,0,0,0,0)+datetime.timedelta(days=1)
-            
+
             #print("---",tf," - ",tf + dt,"   ",t_noon,t_midn)
 
             ymoon = ypos-ystep*5/8
 
+            # Draw sun/moon/flowers regardless of forecast data availability
             if (tf<=t_sunrise) and (tf+dt>t_sunrise) and (objcounter<2):
                 dx = self.TimeDiffToPixels(t_sunrise-tf)  - xstep/2
                 self.sprite.Draw("sun",0,xpos+dx,ymoon)
@@ -221,9 +219,8 @@ class DrawWeather():
             if (tf<=t_midn) and (tf+dt>t_midn):
                 dx = self.TimeDiffToPixels(t_midn-tf)  - xstep/2
                 ix =int(xpos+dx)
-                self.sprite.Draw("flower",0,ix,tline[ix]+1)      
+                self.sprite.Draw("flower",0,ix,tline[ix]+1)
                 self.BlockRange(tline,ix-self.cfg.DRAW_FLOWER_LEFT_PX,ix+self.cfg.DRAW_FLOWER_RIGHT_PX)
-                    
 
             xpos+=xstep
             tf += dt
