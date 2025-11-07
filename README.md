@@ -146,10 +146,10 @@ wrangler login
 
 # Create R2 bucket and KV namespace
 wrangler r2 bucket create weather-landscapes
-wrangler kv:namespace create CONFIG
+wrangler kv namespace create CONFIG
 
 # Set your OpenWeather API key
-wrangler secret put OWM_API_KEY
+wrangler secret put OWM_API_KEY --name weather-landscape-worker
 
 # Deploy!
 wrangler deploy

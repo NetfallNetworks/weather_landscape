@@ -31,33 +31,25 @@ wrangler r2 bucket create weather-landscapes
 
 ```bash
 # Create KV namespace for configuration
-wrangler kv:namespace create CONFIG
+wrangler kv namespace create CONFIG
 
 # This will output a namespace ID like:
 # { binding = "CONFIG", id = "abc123..." }
-# Copy this ID and update wrangler.toml
-```
-
-Update `wrangler.toml` with your KV namespace ID:
-
-```toml
-[[kv_namespaces]]
-binding = "CONFIG"
-id = "YOUR_NAMESPACE_ID_HERE"  # Replace with actual ID from above
+# The ID is already configured in wrangler.toml
 ```
 
 ### Step 4: Set Secrets
 
 ```bash
 # Set your OpenWeather API key as a secret
-wrangler secret put OWM_API_KEY
+wrangler secret put OWM_API_KEY --name weather-landscape-worker
 # When prompted, paste your API key
 
 # Optionally, set custom coordinates
-wrangler secret put DEFAULT_LAT
+wrangler secret put DEFAULT_LAT --name weather-landscape-worker
 # Enter your latitude (e.g., 30.2672)
 
-wrangler secret put DEFAULT_LON
+wrangler secret put DEFAULT_LON --name weather-landscape-worker
 # Enter your longitude (e.g., -97.7431)
 ```
 
@@ -102,7 +94,7 @@ The worker stores configuration in KV. To set image variant preference:
 
 ```bash
 # Use wrangler to set KV values
-wrangler kv:key put --namespace-id YOUR_NAMESPACE_ID "config:variant" "rgb_white"
+wrangler kv key put --namespace-id dd40cebe5ac94bacbc1d056caccb26be "config:variant" "rgb_white"
 ```
 
 Available variants:
@@ -293,10 +285,10 @@ wrangler r2 object get weather-landscapes/current.png
 
 ```bash
 # List KV keys
-wrangler kv:key list --namespace-id YOUR_NAMESPACE_ID
+wrangler kv key list --namespace-id dd40cebe5ac94bacbc1d056caccb26be
 
 # Get a value
-wrangler kv:key get --namespace-id YOUR_NAMESPACE_ID "status"
+wrangler kv key get --namespace-id dd40cebe5ac94bacbc1d056caccb26be "status"
 ```
 
 ## 💰 Costs
