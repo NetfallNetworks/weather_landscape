@@ -35,7 +35,8 @@ wrangler kv namespace create CONFIG
 
 # This will output a namespace ID like:
 # { binding = "CONFIG", id = "abc123..." }
-# The ID is already configured in wrangler.toml
+# Copy the ID and update wrangler.toml:
+# Replace YOUR_KV_NAMESPACE_ID with your actual ID
 ```
 
 ### Step 4: Set Secrets
@@ -93,8 +94,8 @@ UPDATE_INTERVAL_MINUTES = 15 # How often to regenerate
 The worker stores configuration in KV. To set image variant preference:
 
 ```bash
-# Use wrangler to set KV values
-wrangler kv key put --namespace-id dd40cebe5ac94bacbc1d056caccb26be "config:variant" "rgb_white"
+# Use wrangler to set KV values (replace with your namespace ID)
+wrangler kv key put --namespace-id YOUR_KV_NAMESPACE_ID "config:variant" "rgb_white"
 ```
 
 Available variants:
@@ -284,11 +285,11 @@ wrangler r2 object get weather-landscapes/current.png
 ### Check KV Data
 
 ```bash
-# List KV keys
-wrangler kv key list --namespace-id dd40cebe5ac94bacbc1d056caccb26be
+# List KV keys (replace with your namespace ID)
+wrangler kv key list --namespace-id YOUR_KV_NAMESPACE_ID
 
-# Get a value
-wrangler kv key get --namespace-id dd40cebe5ac94bacbc1d056caccb26be "status"
+# Get a value (replace with your namespace ID)
+wrangler kv key get --namespace-id YOUR_KV_NAMESPACE_ID "status"
 ```
 
 ## 💰 Costs

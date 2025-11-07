@@ -13,9 +13,10 @@ binding = "WEATHER_IMAGES"
 bucket_name = "weather-landscapes"
 
 # KV Namespace Binding - stores configuration and metadata
+# Replace YOUR_KV_NAMESPACE_ID with the ID from: wrangler kv namespace create CONFIG
 [[kv_namespaces]]
 binding = "CONFIG"
-id = "dd40cebe5ac94bacbc1d056caccb26be"
+id = "YOUR_KV_NAMESPACE_ID"
 
 # Environment Variables (non-sensitive)
 [vars]
