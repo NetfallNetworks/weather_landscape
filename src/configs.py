@@ -5,8 +5,8 @@ class WLConfig_BW(WLBaseSettings):
     WORK_DIR = "tmp"
     OUT_FILENAME = "landscape_wb"
     OUT_FILEEXT = ".bmp"
-    TEMPLATE_FILENAME = "p_weather/template_wb.bmp"
-    SPRITES_DIR="p_weather/sprite"
+    TEMPLATE_FILENAME = "src/p_weather/template_wb.bmp"
+    SPRITES_DIR="src/p_weather/sprite"
     POSTPROCESS_INVERT = False
     POSTPROCESS_EINKFLIP = False    
     
@@ -26,13 +26,13 @@ class WLConfig_BWI(WLConfig_BW):
 
 
     
-class WLConfig_RGB_White(WLBaseSettings):    
+class WLConfig_RGB_White(WLBaseSettings):
     TITLE = "Color, white BG"
-    WORK_DIR = "tmp"    
+    WORK_DIR = "tmp"
     OUT_FILENAME = "landscape_rgb_w"
-    OUT_FILEEXT = ".png"    
-    SPRITES_DIR="p_weather/sprite_rgb"
-    TEMPLATE_FILENAME = "p_weather/template_rgb.bmp"
+    OUT_FILEEXT = ".png"
+    SPRITES_DIR="src/p_weather/sprite_rgb"
+    TEMPLATE_FILENAME = "src/p_weather/template_rgb.bmp"
 
     POSTPROCESS_INVERT = False
     POSTPROCESS_EINKFLIP = False
