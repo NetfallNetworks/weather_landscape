@@ -201,19 +201,15 @@ class DrawWeather():
 
             ymoon = ypos-ystep*5/8
 
-            if (tf<=t_sunrise) and (tf+dt>t_sunrise):
+            if (tf<=t_sunrise) and (tf+dt>t_sunrise) and (objcounter<2):
                 dx = self.TimeDiffToPixels(t_sunrise-tf)  - xstep/2
                 self.sprite.Draw("sun",0,xpos+dx,ymoon)
                 objcounter+=1
-                if (objcounter==2):
-                    break;
 
-            if (tf<=t_sunset) and (tf+dt>t_sunset):
+            if (tf<=t_sunset) and (tf+dt>t_sunset) and (objcounter<2):
                 dx = self.TimeDiffToPixels(t_sunset-tf)  - xstep/2
                 self.sprite.Draw("moon",0,xpos+dx,ymoon)
                 objcounter+=1
-                if (objcounter==2):
-                    break;
 
             if (tf<=t_noon) and (tf+dt>t_noon):
                 dx = self.TimeDiffToPixels(t_noon-tf)  - xstep/2
