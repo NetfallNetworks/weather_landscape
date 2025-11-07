@@ -1,5 +1,4 @@
 # Cloudflare Worker Requirements
-# Note: As of Jan 2025, Python Workers are in beta and package deployment
-# may not work in production. These packages work in local development.
+# Packages available in Pyodide for Python Workers
 
-pillow==10.4.0
+Pillow
