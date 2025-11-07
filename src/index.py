@@ -8,14 +8,21 @@ from workers import WorkerEntrypoint
 import json
 from datetime import datetime
 
-# Preload Pillow before any imports that depend on it
-# cf-requirements.txt should make it available, but we need to import it first
+# Try to load Pillow via pyodide
+try:
+    import pyodide
+    print("Attempting to load Pillow via pyodide...")
+    pyodide.loadPackage('pillow')
+    print("✓ Pillow loaded via pyodide")
+except Exception as e:
+    print(f"Pyodide load attempt: {e}")
+
+# Test if PIL is now available
 try:
     from PIL import Image as _
-    print("✓ Pillow loaded successfully")
+    print("✓ PIL import successful")
 except ImportError as e:
-    print(f"✗ Pillow import failed: {e}")
-    print("Note: This may be a cf-requirements.txt loading issue")
+    print(f"✗ PIL still not available: {e}")
 
 
 class WorkerConfig:
