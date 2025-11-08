@@ -64,9 +64,9 @@ class WLBaseSettings(object):
         return cfg 
 
         
-    DRAWOFFSET = 65    
+    DRAWOFFSET = 65
     DRAW_XSTART = 32
-    DRAW_XSTEP  = 44
+    DRAW_XSTEP  = 36  # Compressed to fit 24 hours (8 periods) on 296px canvas
     DRAW_XFLAT =  10
     DRAW_YSTEP = 50  #64
     DRAW_DEFAULT_DEGREE_PER_PIXEL = 0.5
