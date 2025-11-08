@@ -104,7 +104,8 @@ class DrawWeather():
         self.picwidth = self.IMGEWIDTH
         self.ypos = ypos
 
-        nforecasrt = ( (self.picwidth-xstart)/xstep ) 
+        # Reserve 10px on right edge for sprite width (flowers are ~10px wide)
+        nforecasrt = ( (self.picwidth-xstart-10)/xstep ) 
         maxtime = datetime.datetime.now() + datetime.timedelta(hours=WeatherInfo.FORECAST_PERIOD_HOURS*nforecasrt)
 
         (self.tmin,self.tmax) = owm.GetTempRange(maxtime)
