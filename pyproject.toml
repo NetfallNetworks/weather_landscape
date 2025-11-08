@@ -1,0 +1,12 @@
+[project]
+name = "weather-landscape-worker"
+version = "0.1.0"
+description = "Weather landscape visualization worker for Cloudflare"
+requires-python = ">=3.11"
+dependencies = [
+    "pillow",
+    "workers-py>=1.6.1",
+]
+
+[tool.pywrangler]
+main = "src/index.py"
