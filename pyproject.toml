@@ -12,3 +12,4 @@ dependencies = [
 
 [tool.pywrangler]
 main = "src/index.py"
+python-version = "3.10"
