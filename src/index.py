@@ -321,26 +321,33 @@ class Default(WorkerEntrypoint):
 
         Routes:
         - GET / - Returns HTML info page with links to all active ZIPs
-        - GET /{zip}/latest.png - Returns latest weather image for specific ZIP
+        - GET /{zip} - Returns latest weather image for ZIP
+        - GET /{zip}/ - Returns latest weather image for ZIP
+        - GET /{zip}/latest.png - Returns latest weather image for ZIP
+        - GET /{zip}/* - Returns latest weather image for ZIP (any path with ZIP)
         - GET /status - Returns generation status and metadata for all ZIPs
         """
         url = request.url
         path_parts = url.split('?')[0].split('/')
         path = path_parts[-1] if len(path_parts) > 0 else ''
 
-        # Extract ZIP from path (e.g., /78729/latest.png)
+        # Extract ZIP from path - matches /78729, /78729/, /78729/anything
+        # Path parts: ['', '78729', 'latest.png'] or ['', '78729', ''] etc.
         zip_from_path = None
-        if len(path_parts) >= 2 and path == 'latest.png':
-            zip_from_path = path_parts[-2]
+        for part in path_parts:
+            # Check if this part looks like a 5-digit ZIP code
+            if part and part.isdigit() and len(part) == 5:
+                zip_from_path = part
+                break
 
-        # Route: Info page (root)
-        if path == '':
+        # Route: Info page (root) - only if no ZIP in path
+        if path == '' and not zip_from_path:
             try:
                 # Get active ZIPs to show links
                 active_zips = await get_active_zips(self.env)
 
                 zip_links = '\n'.join([
-                    f'<li><a href="/{zip}/latest.png">ZIP {zip}</a></li>'
+                    f'<li><a href="/{zip}">ZIP {zip}</a></li>'
                     for zip in active_zips
                 ])
 
@@ -390,8 +397,8 @@ class Default(WorkerEntrypoint):
                     }
                 )
 
-        # Route: Serve latest image (must specify ZIP in path)
-        elif path == 'latest.png' and zip_from_path:
+        # Route: Serve latest image - any path with a ZIP code (except status)
+        elif zip_from_path and path != 'status':
             try:
                 zip_code = zip_from_path
 
