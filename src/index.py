@@ -386,6 +386,7 @@ class Default(WorkerEntrypoint):
                 </html>
                 """
                 return Response.new(html, {
+                    'status': 200,
                     'headers': {'Content-Type': 'text/html; charset=utf-8'}
                 })
             except Exception as e:
@@ -423,6 +424,7 @@ class Default(WorkerEntrypoint):
                 # Return the image - get body as arrayBuffer
                 image_data = await r2_object.arrayBuffer()
                 return Response.new(image_data, {
+                    'status': 200,
                     'headers': {
                         'Content-Type': 'image/png',
                         'Cache-Control': 'public, max-age=900',
@@ -470,6 +472,7 @@ class Default(WorkerEntrypoint):
                 return Response.new(
                     json.dumps(response_data, indent=2),
                     {
+                        'status': 200,
                         'headers': {'Content-Type': 'application/json'}
                     }
                 )
