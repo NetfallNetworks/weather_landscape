@@ -152,11 +152,11 @@ class Default(WorkerEntrypoint):
         try:
             # Generate the weather image
             print("Generating weather landscape image...")
-            image_bytes, metadata = await generate_weather_image(env)
+            image_bytes, metadata = await generate_weather_image(self.env)
 
             # Upload to R2
             print("Uploading to R2...")
-            await upload_to_r2(env, image_bytes, metadata)
+            await upload_to_r2(self.env, image_bytes, metadata)
 
             # Update status in KV
             status = {
@@ -164,7 +164,7 @@ class Default(WorkerEntrypoint):
                 'lastError': None,
                 'errorCount': 0
             }
-            await env.CONFIG.put('status', json.dumps(status))
+            await self.env.CONFIG.put('status', json.dumps(status))
 
             print("✅ Scheduled run completed successfully")
 
@@ -179,7 +179,7 @@ class Default(WorkerEntrypoint):
                     'lastError': error_msg,
                     'errorTimestamp': datetime.utcnow().isoformat() + 'Z'
                 }
-                await env.CONFIG.put('status', json.dumps(status))
+                await self.env.CONFIG.put('status', json.dumps(status))
             except:
                 pass
 
@@ -200,7 +200,7 @@ class Default(WorkerEntrypoint):
         if path == 'current.png' or path == '':
             try:
                 # Fetch image from R2
-                r2_object = await env.WEATHER_IMAGES.get('current.png')
+                r2_object = await self.env.WEATHER_IMAGES.get('current.png')
 
                 if r2_object is None:
                     return Response.new(
@@ -276,8 +276,8 @@ class Default(WorkerEntrypoint):
         elif path == 'status':
             try:
                 # Get status from KV
-                status_json = await env.CONFIG.get('status')
-                metadata_json = await env.CONFIG.get('latest-metadata')
+                status_json = await self.env.CONFIG.get('status')
+                metadata_json = await self.env.CONFIG.get('latest-metadata')
 
                 status = json.loads(status_json) if status_json else {}
                 metadata = json.loads(metadata_json) if metadata_json else {}
@@ -307,8 +307,8 @@ class Default(WorkerEntrypoint):
         elif path == 'generate' and request.method == 'POST':
             try:
                 print("Manual generation triggered")
-                image_bytes, metadata = await generate_weather_image(env)
-                await upload_to_r2(env, image_bytes, metadata)
+                image_bytes, metadata = await generate_weather_image(self.env)
+                await upload_to_r2(self.env, image_bytes, metadata)
 
                 return Response.new(
                     json.dumps({'success': True, 'metadata': metadata}),
