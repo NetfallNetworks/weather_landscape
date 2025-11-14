@@ -385,9 +385,9 @@ class Default(WorkerEntrypoint):
                 </body>
                 </html>
                 """
-                headers = Headers.new()
-                headers.set('Content-Type', 'text/html; charset=utf-8')
-                return Response.new(html, {'headers': headers})
+                return Response.new(html, {
+                    'headers': {'Content-Type': 'text/html; charset=utf-8'}
+                })
             except Exception as e:
                 return Response.new(
                     json.dumps({'error': f'Failed to load page: {str(e)}'}),
@@ -420,16 +420,16 @@ class Default(WorkerEntrypoint):
                 except:
                     generated_at = 'unknown'
 
-                # Return image with appropriate headers
-                headers = Headers.new()
-                headers.set('Content-Type', 'image/png')
-                headers.set('Cache-Control', 'public, max-age=900')  # 15 minutes
-                headers.set('X-Generated-At', generated_at)
-                headers.set('X-Zip-Code', zip_code)
-
                 # Return the image - get body as arrayBuffer
                 image_data = await r2_object.arrayBuffer()
-                return Response.new(image_data, {'headers': headers})
+                return Response.new(image_data, {
+                    'headers': {
+                        'Content-Type': 'image/png',
+                        'Cache-Control': 'public, max-age=900',
+                        'X-Generated-At': generated_at,
+                        'X-Zip-Code': zip_code
+                    }
+                })
 
             except Exception as e:
                 return Response.new(
