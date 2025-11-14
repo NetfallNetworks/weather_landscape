@@ -1,0 +1,20 @@
+[project]
+name = "weather-landscape-worker"
+version = "0.1.0"
+description = "Weather landscape visualization worker for Cloudflare"
+requires-python = ">=3.12"
+dependencies = [
+    "pillow",
+]
+
+[dependency-groups]
+dev = [
+    "workers-py>=1.7.0",
+]
+
+[tool.pywrangler]
+main = "src/index.py"
+include = [
+    "src/p_weather/**/*.bmp",
+    "src/p_weather/**/*.png",
+]

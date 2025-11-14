@@ -2,6 +2,7 @@ import os
 from PIL import Image, ImageOps
 import random
 import math
+from typing import List
 
 
 
@@ -106,10 +107,29 @@ class Sprites(Canvas):
 
 
     def GetSprite(self,name,index)->Image:
+        import io
+        import sys
         imagefilename = "%s_%02i%s" % (name, index, self.ext)
-        imagepath = os.path.join(self.dir,imagefilename) 
-        img = Image.open(imagepath)
-        return img
+        imagepath = os.path.join(self.dir,imagefilename)
+
+        # In Cloudflare Workers, files are bundled as buffers
+        try:
+            # Try __loader__ for bundled buffers
+            loader = sys.modules['__main__'].__loader__
+            buffer_data = loader.get_data(imagepath)
+            img = Image.open(io.BytesIO(buffer_data))
+            img.load()
+            return img
+        except:
+            # Fallback for local development
+            try:
+                with open(imagepath, 'rb') as f:
+                    img = Image.open(io.BytesIO(f.read()))
+                    img.load()
+                    return img
+            except:
+                img = Image.open(imagepath)
+                return img
 
 
 
@@ -279,7 +299,7 @@ class Sprites(Canvas):
                     self.pix[x,y] = self.Black if dotcolor==None else dotcolor
 
 
-    def DrawSoil(self,tline:list[int],xoffset =0, dotcolor=None):
+    def DrawSoil(self,tline:List[int],xoffset =0, dotcolor=None):
         width = len(tline)
         for x in range(width):
             self.Dot(x+xoffset,tline[x],self.Black if dotcolor==None else dotcolor)

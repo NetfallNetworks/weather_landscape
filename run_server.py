@@ -1,7 +1,9 @@
 
 import os
+import sys
 import time
 import datetime
+import asyncio
 from PIL import Image
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -10,6 +12,8 @@ import secrets
 
 import socket
 
+# Import from src/ directory
+sys.path.insert(0, 'src')
 from weather_landscape import WeatherLandscape
 from configs import *
 
@@ -90,11 +94,12 @@ class WeatherLandscapeServer(BaseHTTPRequestHandler):
 
     def CreateWeatherImage(self,weather):
         file_name = weather.cfg.ImageFilePath()
-        
+
         if not self.IsFileTooOld(file_name):
             return file_name
-       
-        return weather.SaveImage()
+
+        # Run async SaveImage in sync context
+        return asyncio.run(weather.SaveImage())
        
         
         
