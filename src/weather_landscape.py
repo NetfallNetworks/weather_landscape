@@ -19,11 +19,20 @@ class WeatherLandscape:
         """Generate weather landscape image (async for Cloudflare Workers)"""
         # Import PIL at runtime for Cloudflare Workers compatibility
         from PIL import Image
+        import io
 
         owm = OpenWeatherMap(self.cfg)
         await owm.FromAuto()
 
-        img = Image.open(self.cfg.TEMPLATE_FILENAME)
+        # In Cloudflare Workers, files are bundled as buffers, not filesystem files
+        try:
+            # Try opening as bundled resource
+            with open(self.cfg.TEMPLATE_FILENAME, 'rb') as f:
+                img = Image.open(io.BytesIO(f.read()))
+        except:
+            # Fallback for local development
+            img = Image.open(self.cfg.TEMPLATE_FILENAME)
+
         art = DrawWeather(img,self.cfg)
         img = art.Draw(owm)
 

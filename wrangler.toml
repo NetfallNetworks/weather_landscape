@@ -29,9 +29,3 @@ UPDATE_INTERVAL_MINUTES = 15
 # Note: Sensitive variables should be set using wrangler secrets:
 # wrangler secret put OWM_API_KEY
 # These will be available in env but not visible in wrangler.toml
-
-# Bundle template and sprite files as assets
-[[rules]]
-type = "Data"
-globs = ["**/*.bmp", "**/*.png"]
-fallthrough = true
