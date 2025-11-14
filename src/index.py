@@ -15,21 +15,11 @@ class WorkerConfig:
     def __init__(self, env):
         # Access environment variables directly from env object
         # Secrets (like OWM_API_KEY) are set via: wrangler secret put OWM_API_KEY
-        # Vars (like DEFAULT_LAT) are set in wrangler.toml [vars] section
+        # Vars (like DEFAULT_ZIP) are set in wrangler.toml [vars] section
         try:
             self.OWM_KEY = getattr(env, 'OWM_API_KEY', None)
         except Exception as e:
             self.OWM_KEY = None
-
-        try:
-            self.OWM_LAT = float(getattr(env, 'DEFAULT_LAT', 30.4515))
-        except:
-            self.OWM_LAT = 30.4515
-
-        try:
-            self.OWM_LON = float(getattr(env, 'DEFAULT_LON', -97.7676))
-        except:
-            self.OWM_LON = -97.7676
 
         try:
             self.ZIP_CODE = str(getattr(env, 'DEFAULT_ZIP', '78729'))
@@ -38,15 +28,21 @@ class WorkerConfig:
 
         self.WORK_DIR = "/tmp"
 
-    def to_weather_config(self, lat=None, lon=None):
-        """Convert to WeatherLandscape config format"""
+    def to_weather_config(self, lat, lon):
+        """
+        Convert to WeatherLandscape config format
+
+        Args:
+            lat: Latitude (required)
+            lon: Longitude (required)
+        """
         # Import at runtime to allow Pillow to load first
         from configs import WLConfig_RGB_White
 
         config = WLConfig_RGB_White()
         config.OWM_KEY = self.OWM_KEY
-        config.OWM_LAT = lat if lat is not None else self.OWM_LAT
-        config.OWM_LON = lon if lon is not None else self.OWM_LON
+        config.OWM_LAT = lat
+        config.OWM_LON = lon
         config.WORK_DIR = self.WORK_DIR
         return config
 

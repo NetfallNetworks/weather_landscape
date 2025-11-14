@@ -25,12 +25,9 @@ binding = "CONFIG"
 id = "YOUR_KV_NAMESPACE_ID"
 
 # Environment Variables (non-sensitive)
+# Note: DEFAULT_ZIP is only used as fallback if POST /generate called without zip parameter
 [vars]
-DEFAULT_LAT = 30.4515
-DEFAULT_LON = -97.7676
 DEFAULT_ZIP = "78729"
-IMAGE_WIDTH = 296
-IMAGE_HEIGHT = 128
 
 # Note: Sensitive variables should be set using wrangler secrets:
 # wrangler secret put OWM_API_KEY
