@@ -5,6 +5,7 @@ Handles loading static files bundled as Data modules
 
 import sys
 import os
+import pkgutil
 
 
 class AssetLoader:
@@ -30,7 +31,45 @@ class AssetLoader:
 
         print(f"DEBUG: === Loading asset: {path} ===")
 
-        # Method 1: Try __loader__.get_data() (for bundled Data modules)
+        # Method 1: Try pkgutil.get_data() for bundled modules
+        try:
+            # Split path into package and resource
+            # e.g., "p_weather/template_rgb.bmp" -> package="p_weather", resource="template_rgb.bmp"
+            parts = path.split('/')
+            if len(parts) > 1:
+                package_name = parts[0]
+                resource_name = '/'.join(parts[1:])
+
+                print(f"DEBUG: Trying pkgutil.get_data('{package_name}', '{resource_name}')...")
+                data = pkgutil.get_data(package_name, resource_name)
+                if data:
+                    self._cache[path] = data
+                    print(f"DEBUG: ✓ SUCCESS via pkgutil.get_data: {len(data)} bytes")
+                    return data
+        except Exception as e:
+            print(f"DEBUG: ✗ pkgutil.get_data failed: {type(e).__name__}: {e}")
+
+        # Method 2: Try importing as a module directly
+        try:
+            # Convert path to module name: p_weather/template_rgb.bmp -> p_weather.template_rgb
+            module_path = path.replace('/', '.').rsplit('.', 1)[0]
+            print(f"DEBUG: Trying to import module '{module_path}'...")
+
+            import importlib
+            mod = importlib.import_module(module_path)
+
+            # Check if module has __file__ or data attribute
+            if hasattr(mod, '__file__'):
+                print(f"DEBUG: Module has __file__: {mod.__file__}")
+                with open(mod.__file__, 'rb') as f:
+                    data = f.read()
+                    self._cache[path] = data
+                    print(f"DEBUG: ✓ SUCCESS via module import: {len(data)} bytes")
+                    return data
+        except Exception as e:
+            print(f"DEBUG: ✗ Module import failed: {type(e).__name__}: {e}")
+
+        # Method 3: Try __loader__.get_data() (for bundled Data modules)
         try:
             print(f"DEBUG: Checking for __loader__...")
             if hasattr(sys.modules['__main__'], '__loader__'):
@@ -56,15 +95,10 @@ class AssetLoader:
                             return data
                         except Exception as e:
                             print(f"DEBUG: ✗ Failed __loader__.get_data('{try_path}'): {type(e).__name__}: {e}")
-                else:
-                    print(f"DEBUG: __loader__ exists but has no get_data method")
-                    print(f"DEBUG: __loader__ attributes: {dir(loader)}")
-            else:
-                print(f"DEBUG: No __loader__ found in __main__")
         except Exception as e:
             print(f"DEBUG: Exception checking __loader__: {type(e).__name__}: {e}")
 
-        # Method 2: Try direct filesystem access (for local development)
+        # Method 4: Try direct filesystem access (for local development)
         print(f"DEBUG: Trying filesystem access...")
         search_paths = ["", "src/", "/", "/src/"]
         for base in search_paths:
