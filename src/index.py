@@ -106,10 +106,16 @@ async def upload_to_r2(env, image_bytes, metadata):
             'file-size': str(metadata['fileSize'])
         }
 
+        # Convert Python bytes to JavaScript Uint8Array for R2
+        from js import Uint8Array
+        js_array = Uint8Array.new(len(image_bytes))
+        for i, byte in enumerate(image_bytes):
+            js_array[i] = byte
+
         # Upload to R2
         await env.WEATHER_IMAGES.put(
             key,
-            image_bytes,
+            js_array,
             {
                 'httpMetadata': {
                     'contentType': 'image/png',
