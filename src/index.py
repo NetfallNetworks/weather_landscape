@@ -1,9 +1,10 @@
 """
 Cloudflare Worker for Weather Landscape Image Generation
 Generates weather visualizations and serves them from R2 storage
+Supports multiple ZIP codes with geocoding and KV caching
 """
 
-from js import Response, Headers
+from js import Response, Headers, fetch
 from workers import WorkerEntrypoint
 import json
 from datetime import datetime
@@ -37,23 +38,112 @@ class WorkerConfig:
 
         self.WORK_DIR = "/tmp"
 
-    def to_weather_config(self):
+    def to_weather_config(self, lat=None, lon=None):
         """Convert to WeatherLandscape config format"""
         # Import at runtime to allow Pillow to load first
         from configs import WLConfig_RGB_White
 
         config = WLConfig_RGB_White()
         config.OWM_KEY = self.OWM_KEY
-        config.OWM_LAT = self.OWM_LAT
-        config.OWM_LON = self.OWM_LON
+        config.OWM_LAT = lat if lat is not None else self.OWM_LAT
+        config.OWM_LON = lon if lon is not None else self.OWM_LON
         config.WORK_DIR = self.WORK_DIR
         return config
 
 
-async def generate_weather_image(env):
+async def geocode_zip(env, zip_code, api_key):
+    """
+    Geocode a ZIP code to lat/lon coordinates with KV caching
+
+    Args:
+        env: Worker environment (for KV access)
+        zip_code: US ZIP code as string
+        api_key: OpenWeatherMap API key
+
+    Returns:
+        dict: {'lat': float, 'lon': float, 'zip': str, 'cached_at': str}
+
+    Raises:
+        ValueError: If geocoding fails
+    """
+    kv_key = f"geo:{zip_code}"
+
+    # Check KV cache first
+    try:
+        cached = await env.CONFIG.get(kv_key)
+        if cached:
+            geo_data = json.loads(cached)
+            print(f"📍 Using cached geocoding for {zip_code}: {geo_data['lat']}, {geo_data['lon']}")
+            return geo_data
+    except Exception as e:
+        print(f"Warning: Failed to read geocoding cache for {zip_code}: {e}")
+
+    # Not in cache, call OWM Geocoding API
+    print(f"🌐 Geocoding ZIP {zip_code} via OWM API...")
+    try:
+        url = f"http://api.openweathermap.org/geo/1.0/zip?zip={zip_code},US&appid={api_key}"
+        response = await fetch(url)
+
+        if response.status != 200:
+            raise ValueError(f"Geocoding API returned status {response.status}")
+
+        data = await response.json()
+
+        # Extract lat/lon from response
+        geo_data = {
+            'lat': float(data.lat),
+            'lon': float(data.lon),
+            'zip': zip_code,
+            'cached_at': datetime.utcnow().isoformat() + 'Z'
+        }
+
+        # Store in KV cache (cache forever)
+        try:
+            await env.CONFIG.put(kv_key, json.dumps(geo_data))
+            print(f"✅ Cached geocoding for {zip_code}: {geo_data['lat']}, {geo_data['lon']}")
+        except Exception as e:
+            print(f"Warning: Failed to cache geocoding for {zip_code}: {e}")
+
+        return geo_data
+
+    except Exception as e:
+        raise ValueError(f"Failed to geocode ZIP {zip_code}: {e}")
+
+
+async def get_active_zips(env):
+    """
+    Get list of active ZIP codes from KV
+
+    Returns:
+        list: List of ZIP code strings
+    """
+    try:
+        active_zips_json = await env.CONFIG.get('active_zips')
+        if active_zips_json:
+            return json.loads(active_zips_json)
+        else:
+            # Initialize with default ZIP if not set
+            default_zips = ['78729']
+            await env.CONFIG.put('active_zips', json.dumps(default_zips))
+            print(f"📝 Initialized active_zips with default: {default_zips}")
+            return default_zips
+    except Exception as e:
+        print(f"Warning: Failed to get active_zips from KV: {e}")
+        return ['78729']  # Fallback to default
+
+
+async def generate_weather_image(env, zip_code, lat, lon):
     """
     Generate a weather landscape image using current weather data
-    Returns: (image_bytes, metadata_dict, zip_code)
+
+    Args:
+        env: Worker environment
+        zip_code: ZIP code for this generation
+        lat: Latitude for weather lookup
+        lon: Longitude for weather lookup
+
+    Returns:
+        tuple: (image_bytes, metadata_dict, zip_code)
     """
     try:
         # Import at runtime (Pillow loaded from cf-requirements.txt)
@@ -71,8 +161,8 @@ async def generate_weather_image(env):
         if not config.OWM_KEY:
             raise ValueError("OWM_API_KEY not set in environment")
 
-        # Generate the image
-        wl = WeatherLandscape(config.to_weather_config())
+        # Generate the image with provided lat/lon
+        wl = WeatherLandscape(config.to_weather_config(lat=lat, lon=lon))
         img = await wl.MakeImage()
 
         # Convert PIL Image to bytes
@@ -83,26 +173,37 @@ async def generate_weather_image(env):
         # Create metadata
         metadata = {
             'generatedAt': datetime.utcnow().isoformat() + 'Z',
-            'latitude': config.OWM_LAT,
-            'longitude': config.OWM_LON,
-            'zipCode': config.ZIP_CODE,
+            'latitude': lat,
+            'longitude': lon,
+            'zipCode': zip_code,
             'fileSize': len(image_bytes),
             'format': 'PNG',
             'variant': 'rgb_white'
         }
 
-        return image_bytes, metadata, config.ZIP_CODE
+        return image_bytes, metadata, zip_code
 
     except Exception as e:
-        print(f"Error generating image: {e}")
+        print(f"Error generating image for {zip_code}: {e}")
         raise
 
 
 async def upload_to_r2(env, image_bytes, metadata, zip_code):
-    """Upload generated image to R2 bucket"""
+    """
+    Upload generated image to R2 bucket
+
+    Args:
+        env: Worker environment
+        image_bytes: PNG image as bytes
+        metadata: Image metadata dict
+        zip_code: ZIP code for folder organization
+
+    Returns:
+        bool: True if successful
+    """
     try:
-        # Create the key for the current image with zip code folder
-        key = f"{zip_code}/current.png"
+        # Create the key for the latest image with zip code folder
+        key = f"{zip_code}/latest.png"
 
         # Prepare R2 metadata
         custom_metadata = {
@@ -133,16 +234,16 @@ async def upload_to_r2(env, image_bytes, metadata, zip_code):
 
         print(f"✅ Uploaded {key} to R2 ({len(image_bytes)} bytes)")
 
-        # Also save metadata to KV
+        # Also save metadata to KV (per-ZIP)
         await env.CONFIG.put(
-            'latest-metadata',
+            f'metadata:{zip_code}',
             json.dumps(metadata)
         )
 
         return True
 
     except Exception as e:
-        print(f"Error uploading to R2: {e}")
+        print(f"Error uploading {zip_code} to R2: {e}")
         raise
 
 
@@ -155,66 +256,98 @@ class Default(WorkerEntrypoint):
     async def scheduled(self, event, env, ctx):
         """
         Scheduled handler - runs on cron trigger (every 15 minutes)
-        Generates new weather landscape image and uploads to R2
+        Generates weather landscape images for all active ZIP codes
         """
         print(f"🕐 Scheduled run started at {datetime.utcnow().isoformat()}")
 
+        # Get configuration
+        config = WorkerConfig(self.env)
+        if not config.OWM_KEY:
+            print("❌ OWM_API_KEY not set")
+            return
+
+        # Get active ZIP codes
+        active_zips = await get_active_zips(self.env)
+        print(f"📋 Processing {len(active_zips)} ZIP code(s): {', '.join(active_zips)}")
+
+        success_count = 0
+        error_count = 0
+        errors = []
+
+        # Process each ZIP code
+        for zip_code in active_zips:
+            try:
+                print(f"\n🔄 Processing ZIP {zip_code}...")
+
+                # Geocode the ZIP (uses cache if available)
+                geo_data = await geocode_zip(self.env, zip_code, config.OWM_KEY)
+
+                # Generate the weather image
+                print(f"🎨 Generating weather landscape for {zip_code}...")
+                image_bytes, metadata, _ = await generate_weather_image(
+                    self.env,
+                    zip_code,
+                    geo_data['lat'],
+                    geo_data['lon']
+                )
+
+                # Upload to R2
+                print(f"☁️  Uploading {zip_code} to R2...")
+                await upload_to_r2(self.env, image_bytes, metadata, zip_code)
+
+                success_count += 1
+                print(f"✅ Completed {zip_code}")
+
+            except Exception as e:
+                error_count += 1
+                error_msg = f"ZIP {zip_code}: {str(e)}"
+                errors.append(error_msg)
+                print(f"❌ Failed {zip_code}: {e}")
+
+        # Update overall status in KV
         try:
-            # Generate the weather image
-            print("Generating weather landscape image...")
-            image_bytes, metadata, zip_code = await generate_weather_image(self.env)
-
-            # Upload to R2
-            print("Uploading to R2...")
-            await upload_to_r2(self.env, image_bytes, metadata, zip_code)
-
-            # Update status in KV
             status = {
-                'lastSuccess': datetime.utcnow().isoformat() + 'Z',
-                'lastError': None,
-                'errorCount': 0
+                'lastRun': datetime.utcnow().isoformat() + 'Z',
+                'totalZips': len(active_zips),
+                'successCount': success_count,
+                'errorCount': error_count,
+                'errors': errors if errors else None
             }
             await self.env.CONFIG.put('status', json.dumps(status))
-
-            print("✅ Scheduled run completed successfully")
-
         except Exception as e:
-            error_msg = str(e)
-            print(f"❌ Scheduled run failed: {error_msg}")
+            print(f"Warning: Failed to update status in KV: {e}")
 
-            # Update error status in KV
-            try:
-                status = {
-                    'lastSuccess': None,
-                    'lastError': error_msg,
-                    'errorTimestamp': datetime.utcnow().isoformat() + 'Z'
-                }
-                await self.env.CONFIG.put('status', json.dumps(status))
-            except:
-                pass
+        print(f"\n✅ Scheduled run completed: {success_count} success, {error_count} errors")
 
     async def on_fetch(self, request, env, ctx):
         """
         HTTP request handler - serves images from R2
 
         Routes:
-        - GET / - Returns HTML page with current image
-        - GET /current.png - Returns the current weather image from R2
-        - GET /status - Returns generation status and metadata
-        - POST /generate - Manually trigger image generation (for testing)
+        - GET / - Returns HTML page with default ZIP image
+        - GET /latest.png - Returns latest weather image for default ZIP
+        - GET /{zip}/latest.png - Returns latest weather image for specific ZIP
+        - GET /status - Returns generation status and metadata for all ZIPs
+        - POST /generate?zip={zip} - Manually trigger image generation for specific ZIP
         """
         url = request.url
-        path = url.split('/')[-1] if '/' in url else ''
+        path_parts = url.split('?')[0].split('/')
+        path = path_parts[-1] if len(path_parts) > 0 else ''
 
-        # Route: Serve current image
-        if path == 'current.png' or path == '':
+        # Extract ZIP from path (e.g., /78729/latest.png or /78729/current.png)
+        zip_from_path = None
+        if len(path_parts) >= 2 and (path == 'latest.png' or path == 'current.png'):
+            zip_from_path = path_parts[-2]
+
+        # Route: Serve latest image (supports both latest.png and current.png for backward compatibility)
+        if path == 'latest.png' or path == 'current.png' or path == '':
             try:
-                # Get zip code from config
+                # Get zip code from path or use default
                 config = WorkerConfig(self.env)
-                zip_code = config.ZIP_CODE
+                zip_code = zip_from_path if zip_from_path else config.ZIP_CODE
 
                 # Fetch image from R2 using zip code folder
-                r2_object = await self.env.WEATHER_IMAGES.get(f'{zip_code}/current.png')
+                r2_object = await self.env.WEATHER_IMAGES.get(f'{zip_code}/latest.png')
 
                 if r2_object is None:
                     return Response.new(
@@ -237,7 +370,7 @@ class Default(WorkerEntrypoint):
                     <!DOCTYPE html>
                     <html>
                     <head>
-                        <title>Weather Landscape</title>
+                        <title>Weather Landscape - ZIP {zip_code}</title>
                         <style>
                             body {{
                                 font-family: system-ui, -apple-system, sans-serif;
@@ -261,7 +394,8 @@ class Default(WorkerEntrypoint):
                     </head>
                     <body>
                         <h1>Weather Landscape 🌤️</h1>
-                        <img src="/current.png" alt="Weather Landscape">
+                        <h2>ZIP Code: {zip_code}</h2>
+                        <img src="/{zip_code}/latest.png" alt="Weather Landscape">
                         <div class="info">
                             <p>Generated: {r2_object.customMetadata.get('generated-at', 'unknown')}</p>
                             <p>Location: {r2_object.customMetadata.get('latitude', '?')}, {r2_object.customMetadata.get('longitude', '?')}</p>
@@ -289,16 +423,27 @@ class Default(WorkerEntrypoint):
         # Route: Status endpoint
         elif path == 'status':
             try:
-                # Get status from KV
+                # Get overall status from KV
                 status_json = await self.env.CONFIG.get('status')
-                metadata_json = await self.env.CONFIG.get('latest-metadata')
-
                 status = json.loads(status_json) if status_json else {}
-                metadata = json.loads(metadata_json) if metadata_json else {}
+
+                # Get active ZIPs
+                active_zips = await get_active_zips(self.env)
+
+                # Get metadata for each ZIP
+                zip_metadata = {}
+                for zip_code in active_zips:
+                    try:
+                        metadata_json = await self.env.CONFIG.get(f'metadata:{zip_code}')
+                        if metadata_json:
+                            zip_metadata[zip_code] = json.loads(metadata_json)
+                    except:
+                        pass
 
                 response_data = {
                     'status': status,
-                    'metadata': metadata,
+                    'activeZips': active_zips,
+                    'zipMetadata': zip_metadata,
                     'workerTime': datetime.utcnow().isoformat() + 'Z'
                 }
 
@@ -320,12 +465,36 @@ class Default(WorkerEntrypoint):
         # Route: Manual generation trigger (for testing)
         elif path == 'generate' and request.method == 'POST':
             try:
-                print("Manual generation triggered")
-                image_bytes, metadata, zip_code = await generate_weather_image(self.env)
+                # Get ZIP from query parameter or use default
+                query_params = url.split('?')[1] if '?' in url else ''
+                zip_param = None
+                if query_params:
+                    for param in query_params.split('&'):
+                        if param.startswith('zip='):
+                            zip_param = param.split('=')[1]
+                            break
+
+                config = WorkerConfig(self.env)
+                zip_code = zip_param if zip_param else config.ZIP_CODE
+
+                print(f"Manual generation triggered for ZIP {zip_code}")
+
+                # Geocode the ZIP
+                geo_data = await geocode_zip(self.env, zip_code, config.OWM_KEY)
+
+                # Generate the image
+                image_bytes, metadata, _ = await generate_weather_image(
+                    self.env,
+                    zip_code,
+                    geo_data['lat'],
+                    geo_data['lon']
+                )
+
+                # Upload to R2
                 await upload_to_r2(self.env, image_bytes, metadata, zip_code)
 
                 return Response.new(
-                    json.dumps({'success': True, 'metadata': metadata}),
+                    json.dumps({'success': True, 'zip': zip_code, 'metadata': metadata}),
                     {
                         'headers': {'Content-Type': 'application/json'}
                     }
