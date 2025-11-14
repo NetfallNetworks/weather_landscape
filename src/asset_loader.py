@@ -36,8 +36,11 @@ class AssetLoader:
             import importlib.resources as importlib_resources
             parts = path.split('/')
             if len(parts) > 1:
-                package_name = parts[0]
-                resource_name = '/'.join(parts[1:])
+                # For nested paths like "p_weather/sprite_rgb/house_00.png"
+                # Convert to package: "p_weather.sprite_rgb" and resource: "house_00.png"
+                package_parts = parts[:-1]  # All but the last part
+                package_name = '.'.join(package_parts)
+                resource_name = parts[-1]  # Just the filename
 
                 print(f"DEBUG: Trying importlib.resources.read_binary('{package_name}', '{resource_name}')...")
                 data = importlib_resources.read_binary(package_name, resource_name)
@@ -49,8 +52,6 @@ class AssetLoader:
                     print(f"DEBUG: ✗ importlib.resources returned None")
         except Exception as e:
             print(f"DEBUG: ✗ importlib.resources failed: {type(e).__name__}: {e}")
-            import traceback
-            print(f"DEBUG: Traceback: {traceback.format_exc()}")
 
         # Method 2: Try pkgutil.get_data() for bundled modules
         try:
