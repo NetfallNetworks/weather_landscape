@@ -12,9 +12,24 @@ from datetime import datetime
 class WorkerConfig:
     """Configuration loaded from KV and environment"""
     def __init__(self, env):
-        self.OWM_KEY = env.OWM_API_KEY if hasattr(env, 'OWM_API_KEY') else None
-        self.OWM_LAT = float(env.DEFAULT_LAT) if hasattr(env, 'DEFAULT_LAT') else 52.196136
-        self.OWM_LON = float(env.DEFAULT_LON) if hasattr(env, 'DEFAULT_LON') else 21.007963
+        # Access environment variables directly from env object
+        # Secrets (like OWM_API_KEY) are set via: wrangler secret put OWM_API_KEY
+        # Vars (like DEFAULT_LAT) are set in wrangler.toml [vars] section
+        try:
+            self.OWM_KEY = getattr(env, 'OWM_API_KEY', None)
+        except:
+            self.OWM_KEY = None
+
+        try:
+            self.OWM_LAT = float(getattr(env, 'DEFAULT_LAT', 52.196136))
+        except:
+            self.OWM_LAT = 52.196136
+
+        try:
+            self.OWM_LON = float(getattr(env, 'DEFAULT_LON', 21.007963))
+        except:
+            self.OWM_LON = 21.007963
+
         self.WORK_DIR = "/tmp"
 
     def to_weather_config(self):
