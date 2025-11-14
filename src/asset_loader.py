@@ -1,53 +1,18 @@
 """
 Asset loader for Cloudflare Workers
-Handles loading static files from the virtual filesystem
+Handles loading static files bundled as Data modules
 """
 
+import sys
 import os
 
 
 class AssetLoader:
-    """Loads static assets in Cloudflare Workers from virtual filesystem"""
+    """Loads static assets in Cloudflare Workers"""
 
     def __init__(self):
         """Initialize the asset loader"""
         self._cache = {}
-        # Possible base paths where files might be located in the worker
-        self._search_paths = [
-            "",  # Current directory
-            "/",  # Root
-            "/src/",  # Src directory with leading slash
-            "src/",  # Src directory without leading slash
-        ]
-
-    def _find_file(self, path: str) -> str:
-        """
-        Try to find a file in various possible locations
-
-        Args:
-            path: Relative path to the file
-
-        Returns:
-            str: The actual path where the file was found
-
-        Raises:
-            FileNotFoundError: If file cannot be found
-        """
-        # Remove leading slash if present
-        clean_path = path.lstrip('/')
-
-        # Try each search path
-        for base in self._search_paths:
-            full_path = os.path.join(base, clean_path) if base else clean_path
-            try:
-                with open(full_path, 'rb') as f:
-                    f.read(1)  # Just test if readable
-                print(f"DEBUG: Found file at: {full_path}")
-                return full_path
-            except (FileNotFoundError, IOError, OSError):
-                continue
-
-        raise FileNotFoundError(f"Could not find asset: {path} in any search path")
 
     def load_asset(self, path: str) -> bytes:
         """
@@ -63,15 +28,46 @@ class AssetLoader:
         if path in self._cache:
             return self._cache[path]
 
-        # Find and load the file
-        actual_path = self._find_file(path)
-        with open(actual_path, 'rb') as f:
-            data = f.read()
+        # Try different methods to load the file
 
-        # Cache the result
-        self._cache[path] = data
-        print(f"DEBUG: Loaded {path} ({len(data)} bytes)")
-        return data
+        # Method 1: Try __loader__.get_data() (for bundled Data modules)
+        try:
+            if hasattr(sys.modules['__main__'], '__loader__'):
+                loader = sys.modules['__main__'].__loader__
+                # Try with src/ prefix
+                try:
+                    data = loader.get_data(f"src/{path}")
+                    self._cache[path] = data
+                    print(f"DEBUG: Loaded via __loader__ with src/ prefix: {path} ({len(data)} bytes)")
+                    return data
+                except:
+                    pass
+
+                # Try without src/ prefix
+                try:
+                    data = loader.get_data(path)
+                    self._cache[path] = data
+                    print(f"DEBUG: Loaded via __loader__: {path} ({len(data)} bytes)")
+                    return data
+                except:
+                    pass
+        except Exception as e:
+            print(f"DEBUG: __loader__.get_data() failed: {e}")
+
+        # Method 2: Try direct filesystem access (for local development)
+        search_paths = ["", "src/", "/", "/src/"]
+        for base in search_paths:
+            try:
+                full_path = os.path.join(base, path) if base else path
+                with open(full_path, 'rb') as f:
+                    data = f.read()
+                self._cache[path] = data
+                print(f"DEBUG: Loaded via filesystem: {full_path} ({len(data)} bytes)")
+                return data
+            except (FileNotFoundError, IOError, OSError):
+                continue
+
+        raise FileNotFoundError(f"Could not load asset: {path}")
 
 
 # Global instance
