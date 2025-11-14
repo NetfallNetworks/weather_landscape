@@ -303,14 +303,18 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "pillow" },
+]
+
+[package.dev-dependencies]
+dev = [
     { name = "workers-py" },
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "pillow" },
-    { name = "workers-py", specifier = ">=1.7.0" },
-]
+requires-dist = [{ name = "pillow" }]
+
+[package.metadata.requires-dev]
+dev = [{ name = "workers-py", specifier = ">=1.7.0" }]
 
 [[package]]
 name = "workers-py"

@@ -5,6 +5,10 @@ description = "Weather landscape visualization worker for Cloudflare"
 requires-python = ">=3.12"
 dependencies = [
     "pillow",
+]
+
+[dependency-groups]
+dev = [
     "workers-py>=1.7.0",
 ]
 
