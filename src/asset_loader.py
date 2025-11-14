@@ -28,45 +28,58 @@ class AssetLoader:
         if path in self._cache:
             return self._cache[path]
 
-        # Try different methods to load the file
+        print(f"DEBUG: === Loading asset: {path} ===")
 
         # Method 1: Try __loader__.get_data() (for bundled Data modules)
         try:
+            print(f"DEBUG: Checking for __loader__...")
             if hasattr(sys.modules['__main__'], '__loader__'):
                 loader = sys.modules['__main__'].__loader__
-                # Try with src/ prefix
-                try:
-                    data = loader.get_data(f"src/{path}")
-                    self._cache[path] = data
-                    print(f"DEBUG: Loaded via __loader__ with src/ prefix: {path} ({len(data)} bytes)")
-                    return data
-                except:
-                    pass
+                print(f"DEBUG: __loader__ found: {type(loader)}")
+                print(f"DEBUG: __loader__ has get_data: {hasattr(loader, 'get_data')}")
 
-                # Try without src/ prefix
-                try:
-                    data = loader.get_data(path)
-                    self._cache[path] = data
-                    print(f"DEBUG: Loaded via __loader__: {path} ({len(data)} bytes)")
-                    return data
-                except:
-                    pass
+                if hasattr(loader, 'get_data'):
+                    # Try various path combinations
+                    paths_to_try = [
+                        path,
+                        f"src/{path}",
+                        f"/{path}",
+                        f"/src/{path}",
+                    ]
+
+                    for try_path in paths_to_try:
+                        try:
+                            print(f"DEBUG: Trying __loader__.get_data('{try_path}')...")
+                            data = loader.get_data(try_path)
+                            self._cache[path] = data
+                            print(f"DEBUG: ✓ SUCCESS via __loader__.get_data('{try_path}'): {len(data)} bytes")
+                            return data
+                        except Exception as e:
+                            print(f"DEBUG: ✗ Failed __loader__.get_data('{try_path}'): {type(e).__name__}: {e}")
+                else:
+                    print(f"DEBUG: __loader__ exists but has no get_data method")
+                    print(f"DEBUG: __loader__ attributes: {dir(loader)}")
+            else:
+                print(f"DEBUG: No __loader__ found in __main__")
         except Exception as e:
-            print(f"DEBUG: __loader__.get_data() failed: {e}")
+            print(f"DEBUG: Exception checking __loader__: {type(e).__name__}: {e}")
 
         # Method 2: Try direct filesystem access (for local development)
+        print(f"DEBUG: Trying filesystem access...")
         search_paths = ["", "src/", "/", "/src/"]
         for base in search_paths:
             try:
                 full_path = os.path.join(base, path) if base else path
+                print(f"DEBUG: Trying open('{full_path}')...")
                 with open(full_path, 'rb') as f:
                     data = f.read()
                 self._cache[path] = data
-                print(f"DEBUG: Loaded via filesystem: {full_path} ({len(data)} bytes)")
+                print(f"DEBUG: ✓ SUCCESS via filesystem: {full_path} ({len(data)} bytes)")
                 return data
-            except (FileNotFoundError, IOError, OSError):
-                continue
+            except Exception as e:
+                print(f"DEBUG: ✗ Failed open('{full_path}'): {type(e).__name__}: {e}")
 
+        print(f"DEBUG: === All methods failed for: {path} ===")
         raise FileNotFoundError(f"Could not load asset: {path}")
 
 
