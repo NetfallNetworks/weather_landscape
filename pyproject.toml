@@ -2,14 +2,11 @@
 name = "weather-landscape-worker"
 version = "0.1.0"
 description = "Weather landscape visualization worker for Cloudflare"
-requires-python = ">=3.10,<3.11"
+requires-python = ">=3.12"
 dependencies = [
     "pillow",
     "workers-py>=1.6.1",
-    "tomli>=2.0.0",
-    "pyjson5>=1.6.0,<2.0",
 ]
 
 [tool.pywrangler]
 main = "src/index.py"
-python-version = "3.10"
