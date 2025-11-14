@@ -12,19 +12,12 @@ from datetime import datetime
 class WorkerConfig:
     """Configuration loaded from KV and environment"""
     def __init__(self, env):
-        # Debug: log what we receive
-        print(f"DEBUG: env type = {type(env)}")
-        print(f"DEBUG: env = {env}")
-        print(f"DEBUG: dir(env) = {dir(env) if env else 'None'}")
-
         # Access environment variables directly from env object
         # Secrets (like OWM_API_KEY) are set via: wrangler secret put OWM_API_KEY
         # Vars (like DEFAULT_LAT) are set in wrangler.toml [vars] section
         try:
             self.OWM_KEY = getattr(env, 'OWM_API_KEY', None)
-            print(f"DEBUG: OWM_KEY via getattr = {self.OWM_KEY}")
         except Exception as e:
-            print(f"DEBUG: getattr OWM_API_KEY failed: {e}")
             self.OWM_KEY = None
 
         try:
@@ -142,7 +135,7 @@ class Default(WorkerEntrypoint):
     Handles both scheduled (cron) and fetch (HTTP) requests
     """
 
-    async def scheduled(self, event, env, ctx):
+    async def on_scheduled(self, event, env, ctx):
         """
         Scheduled handler - runs on cron trigger (every 15 minutes)
         Generates new weather landscape image and uploads to R2
@@ -183,7 +176,7 @@ class Default(WorkerEntrypoint):
             except:
                 pass
 
-    async def fetch(self, request, env, ctx):
+    async def on_fetch(self, request, env, ctx):
         """
         HTTP request handler - serves images from R2
 

@@ -3,9 +3,9 @@ main = "src/index.py"
 compatibility_date = "2025-01-10"
 compatibility_flags = ["python_workers"]
 
-# Cron Trigger - DISABLED while debugging
-# [triggers]
-# crons = ["*/5 * * * *"]
+# Cron Trigger - runs every 5 minutes to regenerate weather images
+[triggers]
+crons = ["*/5 * * * *"]
 
 # R2 Bucket Binding - stores generated weather landscape images
 [[r2_buckets]]
