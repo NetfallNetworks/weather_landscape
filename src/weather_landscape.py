@@ -29,11 +29,19 @@ class WeatherLandscape:
         try:
             # Try using module-relative path
             module_dir = os.path.dirname(os.path.abspath(__file__))
-            template_path = os.path.join(module_dir, self.cfg.TEMPLATE_FILENAME)
-            print(f"DEBUG: Trying template path: {template_path}")
-            print(f"DEBUG: __file__ = {__file__}")
-            print(f"DEBUG: module_dir = {module_dir}")
-            print(f"DEBUG: Files in module_dir: {os.listdir(module_dir) if os.path.exists(module_dir) else 'DIR NOT EXISTS'}")
+
+            # Check what's in p_weather directory
+            p_weather_dir = os.path.join(module_dir, 'p_weather')
+            print(f"DEBUG: p_weather dir exists: {os.path.exists(p_weather_dir)}")
+            print(f"DEBUG: p_weather dir is dir: {os.path.isdir(p_weather_dir)}")
+            if os.path.isdir(p_weather_dir):
+                print(f"DEBUG: Files in p_weather: {os.listdir(p_weather_dir)[:10]}")  # First 10
+
+            # Try absolute path to template
+            template_path = os.path.join(module_dir, 'p_weather', 'template_rgb.bmp')
+            print(f"DEBUG: Trying absolute template path: {template_path}")
+            print(f"DEBUG: Template file exists: {os.path.exists(template_path)}")
+            print(f"DEBUG: Template is file: {os.path.isfile(template_path)}")
 
             with open(template_path, 'rb') as f:
                 img = Image.open(io.BytesIO(f.read()))
