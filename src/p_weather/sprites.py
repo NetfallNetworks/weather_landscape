@@ -111,13 +111,13 @@ class Sprites(Canvas):
         imagefilename = "%s_%02i%s" % (name, index, self.ext)
         imagepath = os.path.join(self.dir,imagefilename)
 
-        # Load asset using the asset loader (synchronously from cache)
+        # Load asset using the asset loader
         try:
             from asset_loader import get_global_loader
             loader = get_global_loader()
 
-            # Get from preloaded cache
-            buffer_data = loader.get_asset_sync(imagepath)
+            # Load the sprite file
+            buffer_data = loader.load_asset(imagepath)
 
             img = Image.open(io.BytesIO(buffer_data))
             img.load()

@@ -1,66 +1,60 @@
 """
 Asset loader for Cloudflare Workers
-Handles loading static files using the ASSETS binding
+Handles loading static files from the virtual filesystem
 """
 
-import io
-import asyncio
+import os
 
 
 class AssetLoader:
-    """Loads static assets in Cloudflare Workers using ASSETS binding"""
+    """Loads static assets in Cloudflare Workers from virtual filesystem"""
 
-    def __init__(self, env=None):
-        """
-        Initialize the asset loader
-
-        Args:
-            env: Cloudflare Worker environment object with ASSETS binding
-        """
-        self.env = env
+    def __init__(self):
+        """Initialize the asset loader"""
         self._cache = {}
-        self._preloaded = False
-
-    async def preload_assets(self):
-        """Preload common assets into cache"""
-        if self._preloaded:
-            return
-
-        print("DEBUG: Preloading assets...")
-
-        # List of assets to preload
-        assets_to_load = [
-            'p_weather/template_rgb.bmp',
-            'p_weather/template_wb.bmp',
+        # Possible base paths where files might be located in the worker
+        self._search_paths = [
+            "",  # Current directory
+            "/",  # Root
+            "/src/",  # Src directory with leading slash
+            "src/",  # Src directory without leading slash
         ]
 
-        # Add sprite files
-        sprite_dirs = ['p_weather/sprite_rgb', 'p_weather/sprite']
-        sprite_names = ['cloud', 'digit', 'house', 'pine', 'east', 'palm', 'tree']
+    def _find_file(self, path: str) -> str:
+        """
+        Try to find a file in various possible locations
 
-        for sprite_dir in sprite_dirs:
-            for name in sprite_names:
-                for i in range(100):  # Load up to 100 variants
-                    path = f"{sprite_dir}/{name}_{i:02d}.png"
-                    assets_to_load.append(path)
+        Args:
+            path: Relative path to the file
 
-        # Load all assets
-        for path in assets_to_load:
+        Returns:
+            str: The actual path where the file was found
+
+        Raises:
+            FileNotFoundError: If file cannot be found
+        """
+        # Remove leading slash if present
+        clean_path = path.lstrip('/')
+
+        # Try each search path
+        for base in self._search_paths:
+            full_path = os.path.join(base, clean_path) if base else clean_path
             try:
-                await self.load_asset(path)
-            except:
-                # Ignore missing assets (not all sprites exist)
-                pass
+                with open(full_path, 'rb') as f:
+                    f.read(1)  # Just test if readable
+                print(f"DEBUG: Found file at: {full_path}")
+                return full_path
+            except (FileNotFoundError, IOError, OSError):
+                continue
 
-        self._preloaded = True
-        print(f"DEBUG: Preloaded {len(self._cache)} assets")
+        raise FileNotFoundError(f"Could not find asset: {path} in any search path")
 
-    async def load_asset(self, path: str) -> bytes:
+    def load_asset(self, path: str) -> bytes:
         """
         Load an asset file as bytes
 
         Args:
-            path: Path to the asset file (relative to src/)
+            path: Path to the asset file
 
         Returns:
             bytes: The file contents
@@ -69,87 +63,30 @@ class AssetLoader:
         if path in self._cache:
             return self._cache[path]
 
-        # Try Workers ASSETS binding first
-        if self.env and hasattr(self.env, 'ASSETS'):
-            try:
-                # Create a request for the asset
-                from js import Request
+        # Find and load the file
+        actual_path = self._find_file(path)
+        with open(actual_path, 'rb') as f:
+            data = f.read()
 
-                # Ensure path has leading slash for ASSETS binding
-                asset_path = path if path.startswith('/') else f'/{path}'
-
-                # ASSETS expects a proper URL with the asset path
-                request = Request.new(f"http://fake-host{asset_path}")
-
-                # Fetch using ASSETS binding
-                response = await self.env.ASSETS.fetch(request.js_object)
-
-                # Check if successful
-                if response.ok:
-                    # Read the response as bytes
-                    array_buffer = await response.arrayBuffer()
-                    # Convert JS ArrayBuffer to Python bytes
-                    from js import Uint8Array
-                    uint8_array = Uint8Array.new(array_buffer)
-                    data = bytes(uint8_array.to_py())
-
-                    # Cache the result
-                    self._cache[path] = data
-                    return data
-                else:
-                    print(f"DEBUG: ASSETS fetch failed for {path} with status {response.status}")
-            except Exception as e:
-                print(f"DEBUG: ASSETS binding failed for {path}: {e}")
-
-        # Fallback to local file system (for development)
-        try:
-            with open(path, 'rb') as f:
-                data = f.read()
-                self._cache[path] = data
-                return data
-        except Exception as e:
-            raise FileNotFoundError(f"Could not load asset: {path}. Error: {e}")
-
-    def get_asset_sync(self, path: str) -> bytes:
-        """
-        Get an asset synchronously from cache (must be preloaded)
-
-        Args:
-            path: Path to the asset file
-
-        Returns:
-            bytes: The file contents
-
-        Raises:
-            KeyError: If asset not in cache
-        """
-        if path not in self._cache:
-            # Try filesystem as fallback
-            try:
-                with open(path, 'rb') as f:
-                    data = f.read()
-                    self._cache[path] = data
-                    return data
-            except:
-                raise KeyError(f"Asset not in cache and filesystem load failed: {path}")
-
-        return self._cache[path]
+        # Cache the result
+        self._cache[path] = data
+        print(f"DEBUG: Loaded {path} ({len(data)} bytes)")
+        return data
 
 
-# Global instance that can be set by the worker
+# Global instance
 _global_loader = None
 
 
-def set_global_loader(env):
-    """Set the global asset loader with the worker environment"""
+def set_global_loader():
+    """Initialize the global asset loader"""
     global _global_loader
-    _global_loader = AssetLoader(env)
+    _global_loader = AssetLoader()
 
 
 def get_global_loader() -> AssetLoader:
     """Get the global asset loader instance"""
     global _global_loader
     if _global_loader is None:
-        # Create a fallback loader without env (for local development)
-        _global_loader = AssetLoader(None)
+        _global_loader = AssetLoader()
     return _global_loader

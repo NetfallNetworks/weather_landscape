@@ -32,9 +32,8 @@ class WeatherLandscape:
             buffer_path = 'p_weather/template_rgb.bmp'
             print(f"DEBUG: Trying to load buffer: {buffer_path}")
 
-            # Get the buffer data using asset loader (from preloaded cache)
-            buffer_data = loader.get_asset_sync(buffer_path)
-            print(f"DEBUG: Loaded buffer, size: {len(buffer_data)} bytes")
+            # Get the buffer data using asset loader
+            buffer_data = loader.load_asset(buffer_path)
 
             img = Image.open(io.BytesIO(buffer_data))
         except Exception as e:
