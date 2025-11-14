@@ -385,11 +385,11 @@ class Default(WorkerEntrypoint):
                 </body>
                 </html>
                 """
-                # Create proper headers
+                # Create response with headers
                 headers = Headers.new()
-                headers.set('Content-Type', 'text/html; charset=utf-8')
+                headers.append('Content-Type', 'text/html; charset=utf-8')
 
-                return Response.new(html, {'status': 200, 'headers': headers})
+                return Response.new(html, init={'headers': headers})
             except Exception as e:
                 return Response.new(
                     json.dumps({'error': f'Failed to load page: {str(e)}'}),
@@ -424,14 +424,14 @@ class Default(WorkerEntrypoint):
 
                 # Create proper headers
                 headers = Headers.new()
-                headers.set('Content-Type', 'image/png')
-                headers.set('Cache-Control', 'public, max-age=900')
-                headers.set('X-Generated-At', generated_at)
-                headers.set('X-Zip-Code', zip_code)
+                headers.append('Content-Type', 'image/png')
+                headers.append('Cache-Control', 'public, max-age=900')
+                headers.append('X-Generated-At', generated_at)
+                headers.append('X-Zip-Code', zip_code)
 
                 # Return the image - get body as arrayBuffer
                 image_data = await r2_object.arrayBuffer()
-                return Response.new(image_data, {'status': 200, 'headers': headers})
+                return Response.new(image_data, init={'headers': headers})
 
             except Exception as e:
                 return Response.new(
@@ -471,11 +471,11 @@ class Default(WorkerEntrypoint):
 
                 # Create proper headers
                 headers = Headers.new()
-                headers.set('Content-Type', 'application/json')
+                headers.append('Content-Type', 'application/json')
 
                 return Response.new(
                     json.dumps(response_data, indent=2),
-                    {'status': 200, 'headers': headers}
+                    init={'headers': headers}
                 )
             except Exception as e:
                 return Response.new(
