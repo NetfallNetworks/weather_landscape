@@ -324,8 +324,7 @@ class Default(WorkerEntrypoint):
         HTTP request handler - serves images from R2
 
         Routes:
-        - GET / - Returns HTML page with default ZIP image
-        - GET /latest.png - Returns latest weather image for default ZIP
+        - GET / - Returns HTML info page with links to all active ZIPs
         - GET /{zip}/latest.png - Returns latest weather image for specific ZIP
         - GET /status - Returns generation status and metadata for all ZIPs
         - POST /generate?zip={zip} - Manually trigger image generation for specific ZIP
@@ -334,17 +333,91 @@ class Default(WorkerEntrypoint):
         path_parts = url.split('?')[0].split('/')
         path = path_parts[-1] if len(path_parts) > 0 else ''
 
-        # Extract ZIP from path (e.g., /78729/latest.png or /78729/current.png)
+        # Extract ZIP from path (e.g., /78729/latest.png)
         zip_from_path = None
-        if len(path_parts) >= 2 and (path == 'latest.png' or path == 'current.png'):
+        if len(path_parts) >= 2 and path == 'latest.png':
             zip_from_path = path_parts[-2]
 
-        # Route: Serve latest image (supports both latest.png and current.png for backward compatibility)
-        if path == 'latest.png' or path == 'current.png' or path == '':
+        # Route: Info page (root)
+        if path == '':
             try:
-                # Get zip code from path or use default
-                config = WorkerConfig(self.env)
-                zip_code = zip_from_path if zip_from_path else config.ZIP_CODE
+                # Get active ZIPs to show links
+                active_zips = await get_active_zips(self.env)
+
+                zip_links = '\n'.join([
+                    f'<li><a href="/{zip}/latest.png">ZIP {zip}</a></li>'
+                    for zip in active_zips
+                ])
+
+                html = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Weather Landscape</title>
+                    <style>
+                        body {{
+                            font-family: system-ui, -apple-system, sans-serif;
+                            max-width: 600px;
+                            margin: 2rem auto;
+                            padding: 2rem;
+                            background: #f5f5f5;
+                        }}
+                        h1 {{ color: #333; }}
+                        ul {{ list-style: none; padding: 0; }}
+                        li {{ margin: 0.5rem 0; }}
+                        a {{
+                            color: #0066cc;
+                            text-decoration: none;
+                            padding: 0.5rem 1rem;
+                            background: white;
+                            border-radius: 4px;
+                            display: inline-block;
+                        }}
+                        a:hover {{ background: #e6f2ff; }}
+                        .api {{
+                            margin-top: 2rem;
+                            padding: 1rem;
+                            background: white;
+                            border-radius: 4px;
+                        }}
+                        code {{
+                            background: #f0f0f0;
+                            padding: 0.2rem 0.4rem;
+                            border-radius: 3px;
+                            font-size: 0.9em;
+                        }}
+                    </style>
+                </head>
+                <body>
+                    <h1>🌤️ Weather Landscape</h1>
+                    <h2>Active ZIP Codes</h2>
+                    <ul>{zip_links}</ul>
+
+                    <div class="api">
+                        <h3>API Endpoints</h3>
+                        <p><code>GET /<strong>{{zip}}</strong>/latest.png</code> - Get latest image for ZIP</p>
+                        <p><code>GET /status</code> - View status for all ZIPs</p>
+                        <p><code>POST /generate?zip=<strong>{{zip}}</strong></code> - Trigger generation</p>
+                    </div>
+                </body>
+                </html>
+                """
+                return Response.new(html, {
+                    'headers': {'Content-Type': 'text/html; charset=utf-8'}
+                })
+            except Exception as e:
+                return Response.new(
+                    json.dumps({'error': f'Failed to load page: {str(e)}'}),
+                    {
+                        'status': 500,
+                        'headers': {'Content-Type': 'application/json'}
+                    }
+                )
+
+        # Route: Serve latest image (must specify ZIP in path)
+        elif path == 'latest.png' and zip_from_path:
+            try:
+                zip_code = zip_from_path
 
                 # Fetch image from R2 using zip code folder
                 r2_object = await self.env.WEATHER_IMAGES.get(f'{zip_code}/latest.png')
@@ -358,67 +431,20 @@ class Default(WorkerEntrypoint):
                         }
                     )
 
-                # Get metadata (handle JavaScript object)
+                # Get metadata (handle JavaScript object) for headers
                 try:
                     generated_at = r2_object.customMetadata['generated-at'] if r2_object.customMetadata else 'unknown'
-                    latitude = r2_object.customMetadata['latitude'] if r2_object.customMetadata else '?'
-                    longitude = r2_object.customMetadata['longitude'] if r2_object.customMetadata else '?'
                 except:
                     generated_at = 'unknown'
-                    latitude = '?'
-                    longitude = '?'
 
                 # Return image with appropriate headers
                 headers = Headers.new()
                 headers.set('Content-Type', 'image/png')
                 headers.set('Cache-Control', 'public, max-age=900')  # 15 minutes
                 headers.set('X-Generated-At', generated_at)
+                headers.set('X-Zip-Code', zip_code)
 
-                if path == '':
-                    # Return HTML page with image
-                    html = f"""
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <title>Weather Landscape - ZIP {zip_code}</title>
-                        <style>
-                            body {{
-                                font-family: system-ui, -apple-system, sans-serif;
-                                display: flex;
-                                flex-direction: column;
-                                align-items: center;
-                                padding: 2rem;
-                                background: #f5f5f5;
-                            }}
-                            img {{
-                                max-width: 100%;
-                                border: 1px solid #ddd;
-                                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                            }}
-                            .info {{
-                                margin-top: 1rem;
-                                text-align: center;
-                                color: #666;
-                            }}
-                        </style>
-                    </head>
-                    <body>
-                        <h1>Weather Landscape 🌤️</h1>
-                        <h2>ZIP Code: {zip_code}</h2>
-                        <img src="/{zip_code}/latest.png" alt="Weather Landscape">
-                        <div class="info">
-                            <p>Generated: {generated_at}</p>
-                            <p>Location: {latitude}, {longitude}</p>
-                            <p><a href="/status">View Status</a></p>
-                        </div>
-                    </body>
-                    </html>
-                    """
-                    return Response.new(html, {
-                        'headers': {'Content-Type': 'text/html; charset=utf-8'}
-                    })
-
-                # Return just the image - get body as arrayBuffer
+                # Return the image - get body as arrayBuffer
                 image_data = await r2_object.arrayBuffer()
                 return Response.new(image_data, {'headers': headers})
 

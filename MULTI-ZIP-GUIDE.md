@@ -1,37 +1,27 @@
-# Multi-ZIP Code Support Guide
+# Multi-ZIP Code Weather Landscape
 
-This guide explains how to use the weather landscape worker with multiple ZIP codes.
+Complete guide for the multi-ZIP code weather landscape worker running on Cloudflare.
 
-## Overview
+## Quick Start
 
-The worker now supports generating weather landscape images for multiple US ZIP codes simultaneously. Each ZIP code gets its own folder in R2 storage, and the system uses OpenWeatherMap's Geocoding API to convert ZIP codes to coordinates with efficient KV caching.
+The worker automatically generates weather landscape images for multiple US ZIP codes. Each ZIP gets its own image stored in R2 at `{ZIP}/latest.png`.
 
-## Architecture
+### Architecture
 
-### Geocoding with KV Caching
-- **API**: OpenWeatherMap Geocoding API (`http://api.openweathermap.org/geo/1.0/zip`)
-- **Cache Key Pattern**: `geo:{ZIP}` (e.g., `geo:78729`)
-- **Cache Format**:
-  ```json
-  {
-    "lat": 30.4515,
-    "lon": -97.7676,
-    "zip": "78729",
-    "cached_at": "2025-11-14T12:00:00Z"
-  }
-  ```
-- **Cache Duration**: Forever (ZIP codes don't change location)
-- **First Request**: Calls OWM Geocoding API and stores result
-- **Subsequent Requests**: Uses cached coordinates from KV
+```
+Cloudflare Worker (Python)
+├── Cron: Every 15 minutes
+├── For each active ZIP:
+│   ├── Geocode ZIP → lat/lon (cached in KV)
+│   ├── Fetch weather from OpenWeatherMap
+│   ├── Generate landscape PNG
+│   └── Upload to R2 at {ZIP}/latest.png
+└── Update status in KV
+```
 
-### Active ZIP Codes List
-- **KV Key**: `active_zips`
-- **Format**: JSON array of ZIP code strings
-- **Example**: `["78729", "90210", "10001"]`
-- **Default**: `["78729"]` (Austin, TX)
-- **Management**: Update via KV dashboard or API
+### Storage Structure
 
-### R2 Storage Structure
+**R2 Bucket: `weather-landscapes`**
 ```
 weather-landscapes/
 ├── 78729/
@@ -42,172 +32,423 @@ weather-landscapes/
     └── latest.png
 ```
 
-### KV Metadata Structure
-- **Per-ZIP Metadata**: `metadata:{ZIP}` (e.g., `metadata:78729`)
-- **Overall Status**: `status` (contains last run info, success/error counts)
-- **Format**:
-  ```json
-  {
-    "generatedAt": "2025-11-14T12:00:00Z",
-    "latitude": 30.4515,
-    "longitude": -97.7676,
-    "zipCode": "78729",
-    "fileSize": 12345,
-    "format": "PNG",
-    "variant": "rgb_white"
-  }
-  ```
-
-## Scheduled Execution Flow
-
-Every 15 minutes (or per your cron schedule):
-
-1. **Load Active ZIPs**: Reads `active_zips` from KV
-2. **For Each ZIP**:
-   - Check KV for cached geocoding (`geo:{ZIP}`)
-   - If not cached: call OWM Geocoding API and cache result
-   - Use cached lat/lon to fetch weather from OWM
-   - Generate landscape image
-   - Upload to R2 as `{ZIP}/latest.png`
-   - Store metadata in KV as `metadata:{ZIP}`
-3. **Update Status**: Store overall run status in KV
+**KV Namespace: `weather-config`**
+```
+active_zips          → ["78729", "90210", "10001"]
+geo:78729            → {"lat": 30.4515, "lon": -97.7676, ...}
+geo:90210            → {"lat": 34.0901, "lon": -118.4065, ...}
+metadata:78729       → {"generatedAt": "...", "latitude": 30.4515, ...}
+status               → {"lastRun": "...", "successCount": 3, ...}
+```
 
 ## HTTP Endpoints
 
-### Image Serving
-- `GET /` - HTML page with default ZIP image
-- `GET /latest.png` - Latest image for default ZIP (78729)
-- `GET /{zip}/latest.png` - Latest image for specific ZIP (e.g., `/78729/latest.png`)
-- `GET /current.png` - Backward compatible alias for `/latest.png`
-- `GET /{zip}/current.png` - Backward compatible per-ZIP access
+### Image Access
 
-### Status and Control
-- `GET /status` - Returns status for all active ZIPs
-  ```json
-  {
-    "status": {
-      "lastRun": "2025-11-14T12:00:00Z",
-      "totalZips": 3,
-      "successCount": 3,
-      "errorCount": 0
-    },
-    "activeZips": ["78729", "90210", "10001"],
-    "zipMetadata": {
-      "78729": {...},
-      "90210": {...},
-      "10001": {...}
-    },
-    "workerTime": "2025-11-14T12:05:00Z"
-  }
-  ```
+**`GET /{zip}/latest.png`** - Get latest image for specific ZIP
 
-- `POST /generate?zip={ZIP}` - Manually trigger generation for specific ZIP
-  - Example: `POST /generate?zip=90210`
-  - Returns: `{"success": true, "zip": "90210", "metadata": {...}}`
+```bash
+curl https://your-worker.workers.dev/78729/latest.png > austin.png
+```
+
+Response headers:
+- `Content-Type: image/png`
+- `X-Generated-At: 2025-11-14T12:00:00Z`
+- `X-Zip-Code: 78729`
+- `Cache-Control: public, max-age=900`
+
+### Status & Control
+
+**`GET /status`** - View status for all active ZIPs
+
+```bash
+curl https://your-worker.workers.dev/status
+```
+
+Response:
+```json
+{
+  "status": {
+    "lastRun": "2025-11-14T12:00:00Z",
+    "totalZips": 3,
+    "successCount": 3,
+    "errorCount": 0,
+    "errors": null
+  },
+  "activeZips": ["78729", "90210", "10001"],
+  "zipMetadata": {
+    "78729": {
+      "generatedAt": "2025-11-14T12:00:00Z",
+      "latitude": 30.4515,
+      "longitude": -97.7676,
+      "zipCode": "78729",
+      "fileSize": 12345,
+      "format": "PNG",
+      "variant": "rgb_white"
+    },
+    ...
+  },
+  "workerTime": "2025-11-14T12:05:00Z"
+}
+```
+
+**`POST /generate?zip={zip}`** - Manually trigger generation
+
+```bash
+# Generate for specific ZIP
+curl -X POST https://your-worker.workers.dev/generate?zip=90210
+
+# Response
+{"success": true, "zip": "90210", "metadata": {...}}
+```
+
+**`GET /`** - Info page with links to all active ZIPs
+
+Shows clickable links to all active ZIP codes and API documentation.
 
 ## Managing Active ZIP Codes
 
 ### Via Wrangler CLI
-```bash
-# Add multiple ZIP codes
-wrangler kv:key put --binding=CONFIG "active_zips" '["78729","90210","10001"]'
 
-# Check current list
+```bash
+# View current ZIPs
 wrangler kv:key get --binding=CONFIG "active_zips"
+
+# Set ZIPs (replaces entire list)
+wrangler kv:key put --binding=CONFIG "active_zips" '["78729","90210","10001","02134"]'
+
+# Add a single ZIP (requires reading first)
+# 1. Get current list
+CURRENT=$(wrangler kv:key get --binding=CONFIG "active_zips")
+# 2. Add new ZIP and update
+echo '["78729","90210","10001","02134"]' | wrangler kv:key put --binding=CONFIG "active_zips"
 ```
 
 ### Via Cloudflare Dashboard
-1. Go to Workers & Pages → KV
+
+1. Navigate to **Workers & Pages** → **KV**
 2. Select your `weather-config` namespace
-3. Edit the `active_zips` key
-4. Set value as JSON array: `["78729","90210","10001"]`
+3. Find the `active_zips` key
+4. Edit value: `["78729","90210","10001"]`
+5. Save
 
-### Via API (using curl)
+### Via Manual Trigger
+
 ```bash
-# Manually trigger generation for a new ZIP
-curl -X POST https://your-worker.workers.dev/generate?zip=90210
-
-# Check status
-curl https://your-worker.workers.dev/status
+# Trigger generation for a new ZIP (also adds to geocoding cache)
+curl -X POST https://your-worker.workers.dev/generate?zip=02134
 ```
 
-## Adding a New ZIP Code
+## Geocoding with KV Caching
 
-1. **Update KV**: Add the ZIP to the `active_zips` array
-2. **Wait for Cron**: The next scheduled run will automatically:
-   - Geocode the new ZIP (first time only)
-   - Generate and upload the image
-   - Store metadata
-3. **Or Trigger Manually**:
-   ```bash
-   curl -X POST https://your-worker.workers.dev/generate?zip=NEW_ZIP
-   ```
+### How It Works
 
-## Performance Considerations
+1. **First request for a ZIP:**
+   - Calls OpenWeatherMap Geocoding API
+   - Gets lat/lon coordinates
+   - Stores in KV as `geo:{ZIP}`
+   - Cache never expires (ZIP locations don't change)
 
-- **First Run**: Calls OWM Geocoding API once per new ZIP
-- **Subsequent Runs**: Uses cached coordinates (no extra API calls)
-- **Multiple ZIPs**: Processed sequentially in each cron run
-- **Cron Interval**: Default 15 minutes (adjust in `wrangler.toml`)
+2. **Subsequent requests:**
+   - Reads from KV cache
+   - No API call needed
+   - Instant lookup
 
-## Migration from Single-ZIP Setup
+### Cache Format
 
-The system is backward compatible:
-- `/current.png` still works (redirects to default ZIP's latest.png)
-- Default ZIP is set in `wrangler.toml` as `DEFAULT_ZIP`
-- If `active_zips` is not set, defaults to `["78729"]`
+**KV Key:** `geo:78729`
+
+**Value:**
+```json
+{
+  "lat": 30.4515,
+  "lon": -97.7676,
+  "zip": "78729",
+  "cached_at": "2025-11-14T10:00:00Z"
+}
+```
+
+### Manual Cache Management
+
+```bash
+# View cached geocoding for a ZIP
+wrangler kv:key get --binding=CONFIG "geo:78729"
+
+# Clear cache for a ZIP (will re-geocode on next run)
+wrangler kv:key delete --binding=CONFIG "geo:78729"
+
+# Clear all geocoding cache
+wrangler kv:key list --binding=CONFIG --prefix="geo:" | \
+  jq -r '.[].name' | \
+  xargs -I {} wrangler kv:key delete --binding=CONFIG "{}"
+```
+
+## Scheduled Execution
+
+The worker runs every 15 minutes (configurable in `wrangler.toml`):
+
+```toml
+[triggers]
+crons = ["*/15 * * * *"]  # Every 15 minutes
+```
+
+### Execution Flow
+
+```
+1. Load active_zips from KV → ["78729", "90210", "10001"]
+2. For each ZIP:
+   a. Check geo:{ZIP} in KV
+   b. If not cached: Call OWM Geocoding API, store in KV
+   c. Use lat/lon to fetch weather from OWM
+   d. Generate landscape image (296x128 PNG)
+   e. Upload to R2: {ZIP}/latest.png
+   f. Store metadata in KV: metadata:{ZIP}
+   g. Log success/failure
+3. Update overall status in KV
+4. Log summary: X success, Y errors
+```
+
+### Logs
+
+View worker logs:
+```bash
+wrangler tail
+```
+
+Example output:
+```
+🕐 Scheduled run started at 2025-11-14T12:00:00.000Z
+📋 Processing 3 ZIP code(s): 78729, 90210, 10001
+
+🔄 Processing ZIP 78729...
+📍 Using cached geocoding for 78729: 30.4515, -97.7676
+🎨 Generating weather landscape for 78729...
+☁️  Uploading 78729 to R2...
+✅ Uploaded 78729/latest.png to R2 (12345 bytes)
+✅ Completed 78729
+
+🔄 Processing ZIP 90210...
+🌐 Geocoding ZIP 90210 via OWM API...
+✅ Cached geocoding for 90210: 34.0901, -118.4065
+🎨 Generating weather landscape for 90210...
+☁️  Uploading 90210 to R2...
+✅ Uploaded 90210/latest.png to R2 (11234 bytes)
+✅ Completed 90210
+
+...
+
+✅ Scheduled run completed: 3 success, 0 errors
+```
+
+## Configuration
+
+### Environment Variables
+
+Set in `wrangler.toml`:
+
+```toml
+[vars]
+DEFAULT_LAT = 30.4515        # Fallback latitude (Austin, TX)
+DEFAULT_LON = -97.7676       # Fallback longitude
+DEFAULT_ZIP = "78729"        # Default ZIP code
+IMAGE_WIDTH = 296            # Image width in pixels
+IMAGE_HEIGHT = 128           # Image height in pixels
+UPDATE_INTERVAL_MINUTES = 15 # Cron interval
+```
+
+### Secrets
+
+Set via Wrangler (NOT in wrangler.toml):
+
+```bash
+# OpenWeatherMap API key (required)
+wrangler secret put OWM_API_KEY
+```
+
+## API Costs & Limits
+
+### OpenWeatherMap Free Tier
+
+- **Weather API:** 1,000 calls/day
+- **Geocoding API:** 1,000 calls/day
+
+### Our Usage
+
+**With 3 active ZIPs:**
+- Weather calls: 3 ZIPs × 4 calls/hour × 24 hours = **288/day** ✅
+- Geocoding calls: One-time per new ZIP (then cached)
+
+**With 10 active ZIPs:**
+- Weather calls: 10 ZIPs × 4 calls/hour × 24 hours = **960/day** ✅
+- Still within free tier!
+
+**With 20 active ZIPs:**
+- Weather calls: 20 ZIPs × 4 calls/hour × 24 hours = **1,920/day** ⚠️
+- Exceeds free tier - need paid plan or reduce frequency
+
+### Cloudflare Free Tier
+
+**R2 Storage:**
+- 10 GB storage/month
+- Our usage: ~30 KB/image × 20 ZIPs = **600 KB** ✅
+
+**KV Operations:**
+- 100,000 reads/day
+- 1,000 writes/day
+- Our usage: ~100 reads/day, ~100 writes/day ✅
+
+**Workers Requests:**
+- 100,000 requests/day
+- Our usage: Cron only (96/day) + manual requests ✅
 
 ## Troubleshooting
 
-### ZIP Not Generating
-- Check `/status` endpoint for error details
-- Verify ZIP is in `active_zips` list
-- Check worker logs for geocoding errors
+### ZIP not generating
 
-### Geocoding Failures
-- Verify OWM API key is valid
-- Check that ZIP code is valid US ZIP
-- OWM Geocoding API rate limits: 60 calls/minute (should not be an issue with caching)
+1. Check if ZIP is in active_zips:
+   ```bash
+   wrangler kv:key get --binding=CONFIG "active_zips"
+   ```
 
-### R2 Storage Not Found
-- First generation may take up to 15 minutes
-- Manually trigger: `POST /generate?zip=YOUR_ZIP`
-- Check worker logs for upload errors
+2. View logs for errors:
+   ```bash
+   wrangler tail
+   ```
 
-## Example Usage
+3. Check status endpoint:
+   ```bash
+   curl https://your-worker.workers.dev/status | jq '.status.errors'
+   ```
 
-```bash
-# Add three ZIP codes
-wrangler kv:key put --binding=CONFIG "active_zips" '["78729","94102","10001"]'
+4. Manually trigger to see error:
+   ```bash
+   curl -X POST https://your-worker.workers.dev/generate?zip=78729
+   ```
 
-# Wait for next cron run (or trigger manually)
-curl -X POST https://your-worker.workers.dev/generate?zip=94102
+### Geocoding failures
 
-# Check status
-curl https://your-worker.workers.dev/status
+- **Invalid ZIP:** OWM returns 404 for non-existent ZIPs
+- **API key invalid:** Check `wrangler secret list`
+- **Rate limit:** Wait and retry, cache will prevent future calls
 
-# Access specific ZIP's image
-curl https://your-worker.workers.dev/78729/latest.png > austin.png
-curl https://your-worker.workers.dev/94102/latest.png > san-francisco.png
-curl https://your-worker.workers.dev/10001/latest.png > new-york.png
+### Image not found (404)
+
+- **First generation:** Wait up to 15 minutes for cron
+- **Missing from active_zips:** Add ZIP to list
+- **Generation failed:** Check logs for error
+
+### Out-of-date images
+
+- Images update every 15 minutes
+- Check `X-Generated-At` header on image response
+- Manually trigger: `POST /generate?zip={zip}`
+
+## Advanced Usage
+
+### Different Cron Schedules
+
+```toml
+# Every 5 minutes (more API calls!)
+crons = ["*/5 * * * *"]
+
+# Every hour (fewer API calls)
+crons = ["0 * * * *"]
+
+# Every 30 minutes
+crons = ["*/30 * * * *"]
+
+# Specific times only (e.g., hourly during day)
+crons = ["0 6-22 * * *"]  # Every hour from 6am-10pm
 ```
 
-## Cost Considerations
+### Batch Add Multiple ZIPs
 
-- **OWM Geocoding API**: Free tier includes 1,000 calls/day
-  - With caching, only called once per new ZIP
-  - Example: 100 new ZIPs = 100 API calls (one-time)
+```bash
+# Create list of ZIPs
+cat > zips.json <<EOF
+["78729","90210","10001","02134","60601","94102","98101"]
+EOF
 
-- **OWM Weather API**: Free tier includes 1,000 calls/day
-  - Called every 15 minutes per ZIP
-  - Example: 3 ZIPs × 4 calls/hour × 24 hours = 288 calls/day
+# Upload to KV
+wrangler kv:key put --binding=CONFIG "active_zips" "$(cat zips.json)"
 
-- **R2 Storage**:
-  - Each ZIP: ~10-50 KB per image
-  - 100 ZIPs = ~5 MB total storage
-  - Very low cost
+# Verify
+wrangler kv:key get --binding=CONFIG "active_zips"
+```
 
-- **KV Operations**:
-  - Geocoding cache: Read-heavy after initial setup
-  - Metadata: Write on each generation
-  - Well within free tier limits
+### Export All Images
+
+```bash
+# Download all images for all active ZIPs
+ACTIVE_ZIPS=$(curl -s https://your-worker.workers.dev/status | jq -r '.activeZips[]')
+
+for zip in $ACTIVE_ZIPS; do
+  curl "https://your-worker.workers.dev/$zip/latest.png" > "$zip.png"
+  echo "Downloaded $zip.png"
+done
+```
+
+### Monitor Generation Status
+
+```bash
+# Check status every minute
+watch -n 60 'curl -s https://your-worker.workers.dev/status | jq ".status"'
+```
+
+## Migration Notes
+
+### From Single ZIP Setup
+
+The system automatically migrates:
+- If `active_zips` not in KV → creates `["78729"]`
+- Old images continue working (if manually placed at `{ZIP}/latest.png`)
+- No code changes needed
+
+### Adding New ZIPs
+
+1. Update `active_zips` in KV
+2. Wait for next cron run (auto-generates)
+3. Or manually trigger: `POST /generate?zip={new_zip}`
+
+## Development
+
+### Local Testing
+
+```bash
+# Test generation locally (requires OWM API key in secrets.py)
+uv run python test_local_generation.py
+```
+
+### Deploy Changes
+
+```bash
+# Deploy to Cloudflare
+wrangler deploy
+
+# View logs
+wrangler tail
+```
+
+### Test Endpoints
+
+```bash
+# Root page
+curl https://your-worker.workers.dev/
+
+# Specific ZIP image
+curl https://your-worker.workers.dev/78729/latest.png -I
+
+# Status
+curl https://your-worker.workers.dev/status | jq
+
+# Manual generation
+curl -X POST https://your-worker.workers.dev/generate?zip=78729 | jq
+```
+
+## Support
+
+For issues or questions:
+1. Check worker logs: `wrangler tail`
+2. Check status endpoint: `GET /status`
+3. Review this guide
+4. Check OpenWeatherMap API status

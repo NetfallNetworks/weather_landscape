@@ -133,6 +133,7 @@ Deploy your weather landscape as a globally distributed Cloudflare Worker with a
 - 🌍 Global edge distribution via Cloudflare's network
 - 💾 Image storage in R2 (S3-compatible object storage)
 - 🔑 Secure configuration via KV store and Secrets
+- 📍 **Multi-ZIP support** - Generate images for multiple locations
 - 💰 Free tier friendly (well within limits)
 
 ### Quick Deploy
@@ -152,17 +153,16 @@ wrangler kv namespace create CONFIG
 wrangler deploy
 
 # Set secrets AFTER deployment
-wrangler secret put OWM_API_KEY --name weather-landscape-worker
+wrangler secret put OWM_API_KEY
 ```
 
 Your weather landscape will be available at:
-`https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/current.png`
+- Root: `https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/`
+- Specific ZIP: `https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/78729/latest.png`
 
 **📚 Full deployment guide:** See [DEPLOYMENT.md](DEPLOYMENT.md)
 
-**🏗️ Architecture guide:** See [CLOUDFLARE-STORAGE-GUIDE.md](CLOUDFLARE-STORAGE-GUIDE.md)
-
-**⚠️ Note:** Python Workers are currently in beta. Package deployment (Pillow) works in local development but may not deploy to production. See deployment guide for details and workarounds.
+**📍 Multi-ZIP guide:** See [MULTI-ZIP-GUIDE.md](MULTI-ZIP-GUIDE.md) for managing multiple locations
 
 
 ## E-Ink module
