@@ -4,10 +4,16 @@ Generates weather visualizations and serves them from R2 storage
 Supports multiple ZIP codes with geocoding and KV caching
 """
 
-from js import Response, Headers, fetch
+from js import Response, Headers, fetch, Object
 from workers import WorkerEntrypoint
+from pyodide.ffi import to_js as _to_js
 import json
 from datetime import datetime
+
+
+def to_js(obj):
+    """Convert Python dict to JavaScript object for Response headers"""
+    return _to_js(obj, dict_converter=Object.fromEntries)
 
 
 class WorkerConfig:
@@ -385,11 +391,7 @@ class Default(WorkerEntrypoint):
                 </body>
                 </html>
                 """
-                # Create response with headers
-                headers = Headers.new()
-                headers.append('Content-Type', 'text/html; charset=utf-8')
-
-                return Response.new(html, init={'headers': headers})
+                return Response.new(html, headers=to_js({"content-type": "text/html;charset=UTF-8"}))
             except Exception as e:
                 return Response.new(
                     json.dumps({'error': f'Failed to load page: {str(e)}'}),
@@ -422,16 +424,14 @@ class Default(WorkerEntrypoint):
                 except:
                     generated_at = 'unknown'
 
-                # Create proper headers
-                headers = Headers.new()
-                headers.append('Content-Type', 'image/png')
-                headers.append('Cache-Control', 'public, max-age=900')
-                headers.append('X-Generated-At', generated_at)
-                headers.append('X-Zip-Code', zip_code)
-
                 # Return the image - get body as arrayBuffer
                 image_data = await r2_object.arrayBuffer()
-                return Response.new(image_data, init={'headers': headers})
+                return Response.new(image_data, headers=to_js({
+                    "content-type": "image/png",
+                    "cache-control": "public, max-age=900",
+                    "x-generated-at": generated_at,
+                    "x-zip-code": zip_code
+                }))
 
             except Exception as e:
                 return Response.new(
@@ -469,13 +469,9 @@ class Default(WorkerEntrypoint):
                     'workerTime': datetime.utcnow().isoformat() + 'Z'
                 }
 
-                # Create proper headers
-                headers = Headers.new()
-                headers.append('Content-Type', 'application/json')
-
                 return Response.new(
                     json.dumps(response_data, indent=2),
-                    init={'headers': headers}
+                    headers=to_js({"content-type": "application/json"})
                 )
             except Exception as e:
                 return Response.new(
