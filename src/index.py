@@ -21,14 +21,19 @@ class WorkerConfig:
             self.OWM_KEY = None
 
         try:
-            self.OWM_LAT = float(getattr(env, 'DEFAULT_LAT', 52.196136))
+            self.OWM_LAT = float(getattr(env, 'DEFAULT_LAT', 30.4515))
         except:
-            self.OWM_LAT = 52.196136
+            self.OWM_LAT = 30.4515
 
         try:
-            self.OWM_LON = float(getattr(env, 'DEFAULT_LON', 21.007963))
+            self.OWM_LON = float(getattr(env, 'DEFAULT_LON', -97.7676))
         except:
-            self.OWM_LON = 21.007963
+            self.OWM_LON = -97.7676
+
+        try:
+            self.ZIP_CODE = str(getattr(env, 'DEFAULT_ZIP', '78729'))
+        except:
+            self.ZIP_CODE = '78729'
 
         self.WORK_DIR = "/tmp"
 
@@ -48,7 +53,7 @@ class WorkerConfig:
 async def generate_weather_image(env):
     """
     Generate a weather landscape image using current weather data
-    Returns: (image_bytes, metadata_dict)
+    Returns: (image_bytes, metadata_dict, zip_code)
     """
     try:
         # Import at runtime (Pillow loaded from cf-requirements.txt)
@@ -80,29 +85,31 @@ async def generate_weather_image(env):
             'generatedAt': datetime.utcnow().isoformat() + 'Z',
             'latitude': config.OWM_LAT,
             'longitude': config.OWM_LON,
+            'zipCode': config.ZIP_CODE,
             'fileSize': len(image_bytes),
             'format': 'PNG',
             'variant': 'rgb_white'
         }
 
-        return image_bytes, metadata
+        return image_bytes, metadata, config.ZIP_CODE
 
     except Exception as e:
         print(f"Error generating image: {e}")
         raise
 
 
-async def upload_to_r2(env, image_bytes, metadata):
+async def upload_to_r2(env, image_bytes, metadata, zip_code):
     """Upload generated image to R2 bucket"""
     try:
-        # Create the key for the current image
-        key = "current.png"
+        # Create the key for the current image with zip code folder
+        key = f"{zip_code}/current.png"
 
         # Prepare R2 metadata
         custom_metadata = {
             'generated-at': metadata['generatedAt'],
             'latitude': str(metadata['latitude']),
             'longitude': str(metadata['longitude']),
+            'zip-code': zip_code,
             'file-size': str(metadata['fileSize'])
         }
 
@@ -155,11 +162,11 @@ class Default(WorkerEntrypoint):
         try:
             # Generate the weather image
             print("Generating weather landscape image...")
-            image_bytes, metadata = await generate_weather_image(self.env)
+            image_bytes, metadata, zip_code = await generate_weather_image(self.env)
 
             # Upload to R2
             print("Uploading to R2...")
-            await upload_to_r2(self.env, image_bytes, metadata)
+            await upload_to_r2(self.env, image_bytes, metadata, zip_code)
 
             # Update status in KV
             status = {
@@ -202,8 +209,12 @@ class Default(WorkerEntrypoint):
         # Route: Serve current image
         if path == 'current.png' or path == '':
             try:
-                # Fetch image from R2
-                r2_object = await self.env.WEATHER_IMAGES.get('current.png')
+                # Get zip code from config
+                config = WorkerConfig(self.env)
+                zip_code = config.ZIP_CODE
+
+                # Fetch image from R2 using zip code folder
+                r2_object = await self.env.WEATHER_IMAGES.get(f'{zip_code}/current.png')
 
                 if r2_object is None:
                     return Response.new(
@@ -310,8 +321,8 @@ class Default(WorkerEntrypoint):
         elif path == 'generate' and request.method == 'POST':
             try:
                 print("Manual generation triggered")
-                image_bytes, metadata = await generate_weather_image(self.env)
-                await upload_to_r2(self.env, image_bytes, metadata)
+                image_bytes, metadata, zip_code = await generate_weather_image(self.env)
+                await upload_to_r2(self.env, image_bytes, metadata, zip_code)
 
                 return Response.new(
                     json.dumps({'success': True, 'metadata': metadata}),

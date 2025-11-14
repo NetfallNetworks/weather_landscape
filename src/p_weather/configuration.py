@@ -22,9 +22,9 @@ class WLBaseSettings(object):
         return self.TEMPUNITS_MODE!=self.TEMP_UNITS_FAHRENHEIT
 
     TITLE = "Base config"
-    OWM_KEY = "000000000000000000" 
-    OWM_LAT = 52.196136
-    OWM_LON = 21.007963
+    OWM_KEY = "000000000000000000"
+    OWM_LAT = 30.4515
+    OWM_LON = -97.7676
     TEMPUNITS_MODE = 0
     PRESSURE_MIN = 980
     PRESSURE_MAX = 1030
