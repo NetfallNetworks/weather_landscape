@@ -135,7 +135,7 @@ class Default(WorkerEntrypoint):
     Handles both scheduled (cron) and fetch (HTTP) requests
     """
 
-    async def on_scheduled(self, event, env, ctx):
+    async def scheduled(self, event, env, ctx):
         """
         Scheduled handler - runs on cron trigger (every 15 minutes)
         Generates new weather landscape image and uploads to R2
@@ -176,7 +176,7 @@ class Default(WorkerEntrypoint):
             except:
                 pass
 
-    async def on_fetch(self, request, env, ctx):
+    async def fetch(self, request, env, ctx):
         """
         HTTP request handler - serves images from R2
 
