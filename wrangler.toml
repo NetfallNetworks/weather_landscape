@@ -9,9 +9,9 @@ type = "Data"
 globs = ["**/*.bmp", "**/*.png", "**/*.jpg", "**/*.jpeg"]
 fallthrough = true
 
-# Cron Trigger - runs every 5 minutes to regenerate weather images
+# Cron Trigger - runs every 15 minutes to regenerate weather images
 [triggers]
-crons = ["*/5 * * * *"]
+crons = ["*/15 * * * *"]
 
 # R2 Bucket Binding - stores generated weather landscape images
 [[r2_buckets]]
@@ -31,7 +31,6 @@ DEFAULT_LON = -97.7676
 DEFAULT_ZIP = "78729"
 IMAGE_WIDTH = 296
 IMAGE_HEIGHT = 128
-UPDATE_INTERVAL_MINUTES = 15
 
 # Note: Sensitive variables should be set using wrangler secrets:
 # wrangler secret put OWM_API_KEY
