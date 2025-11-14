@@ -31,7 +31,28 @@ class AssetLoader:
 
         print(f"DEBUG: === Loading asset: {path} ===")
 
-        # Method 1: Try pkgutil.get_data() for bundled modules
+        # Method 1: Try importlib.resources (Python 3.7+)
+        try:
+            import importlib.resources as importlib_resources
+            parts = path.split('/')
+            if len(parts) > 1:
+                package_name = parts[0]
+                resource_name = '/'.join(parts[1:])
+
+                print(f"DEBUG: Trying importlib.resources.read_binary('{package_name}', '{resource_name}')...")
+                data = importlib_resources.read_binary(package_name, resource_name)
+                if data:
+                    self._cache[path] = data
+                    print(f"DEBUG: ✓ SUCCESS via importlib.resources: {len(data)} bytes")
+                    return data
+                else:
+                    print(f"DEBUG: ✗ importlib.resources returned None")
+        except Exception as e:
+            print(f"DEBUG: ✗ importlib.resources failed: {type(e).__name__}: {e}")
+            import traceback
+            print(f"DEBUG: Traceback: {traceback.format_exc()}")
+
+        # Method 2: Try pkgutil.get_data() for bundled modules
         try:
             # Split path into package and resource
             # e.g., "p_weather/template_rgb.bmp" -> package="p_weather", resource="template_rgb.bmp"
@@ -46,10 +67,14 @@ class AssetLoader:
                     self._cache[path] = data
                     print(f"DEBUG: ✓ SUCCESS via pkgutil.get_data: {len(data)} bytes")
                     return data
+                else:
+                    print(f"DEBUG: ✗ pkgutil.get_data returned None or empty")
         except Exception as e:
             print(f"DEBUG: ✗ pkgutil.get_data failed: {type(e).__name__}: {e}")
+            import traceback
+            print(f"DEBUG: Traceback: {traceback.format_exc()}")
 
-        # Method 2: Try importing as a module directly
+        # Method 3: Try importing as a module directly
         try:
             # Convert path to module name: p_weather/template_rgb.bmp -> p_weather.template_rgb
             module_path = path.replace('/', '.').rsplit('.', 1)[0]
@@ -69,7 +94,7 @@ class AssetLoader:
         except Exception as e:
             print(f"DEBUG: ✗ Module import failed: {type(e).__name__}: {e}")
 
-        # Method 3: Try __loader__.get_data() (for bundled Data modules)
+        # Method 4: Try __loader__.get_data() (for bundled Data modules)
         try:
             print(f"DEBUG: Checking for __loader__...")
             if hasattr(sys.modules['__main__'], '__loader__'):
@@ -98,7 +123,7 @@ class AssetLoader:
         except Exception as e:
             print(f"DEBUG: Exception checking __loader__: {type(e).__name__}: {e}")
 
-        # Method 4: Try direct filesystem access (for local development)
+        # Method 5: Try direct filesystem access (for local development)
         print(f"DEBUG: Trying filesystem access...")
         search_paths = ["", "src/", "/", "/src/"]
         for base in search_paths:
