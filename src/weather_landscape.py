@@ -20,18 +20,32 @@ class WeatherLandscape:
         # Import PIL at runtime for Cloudflare Workers compatibility
         from PIL import Image
         import io
+        import os
 
         owm = OpenWeatherMap(self.cfg)
         await owm.FromAuto()
 
-        # In Cloudflare Workers, files are bundled as buffers, not filesystem files
+        # In Cloudflare Workers, bundled files are in the same directory as the module
         try:
-            # Try opening as bundled resource
-            with open(self.cfg.TEMPLATE_FILENAME, 'rb') as f:
+            # Try using module-relative path
+            module_dir = os.path.dirname(os.path.abspath(__file__))
+            template_path = os.path.join(module_dir, self.cfg.TEMPLATE_FILENAME)
+            print(f"DEBUG: Trying template path: {template_path}")
+            print(f"DEBUG: __file__ = {__file__}")
+            print(f"DEBUG: module_dir = {module_dir}")
+            print(f"DEBUG: Files in module_dir: {os.listdir(module_dir) if os.path.exists(module_dir) else 'DIR NOT EXISTS'}")
+
+            with open(template_path, 'rb') as f:
                 img = Image.open(io.BytesIO(f.read()))
-        except:
-            # Fallback for local development
-            img = Image.open(self.cfg.TEMPLATE_FILENAME)
+        except Exception as e:
+            print(f"DEBUG: Module-relative failed: {e}, trying config path directly")
+            # Fallback: try config path directly
+            try:
+                with open(self.cfg.TEMPLATE_FILENAME, 'rb') as f:
+                    img = Image.open(io.BytesIO(f.read()))
+            except:
+                # Final fallback for local development
+                img = Image.open(self.cfg.TEMPLATE_FILENAME)
 
         art = DrawWeather(img,self.cfg)
         img = art.Draw(owm)
