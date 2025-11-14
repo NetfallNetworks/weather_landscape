@@ -53,7 +53,15 @@ async def generate_weather_image(env):
     try:
         # Import at runtime (Pillow loaded from cf-requirements.txt)
         from weather_landscape import WeatherLandscape
+        from asset_loader import set_global_loader, get_global_loader
         import io
+
+        # Initialize the asset loader with the worker environment
+        set_global_loader(env)
+
+        # Preload all assets before generating the image
+        loader = get_global_loader()
+        await loader.preload_assets()
 
         # Load configuration from environment
         config = WorkerConfig(env)

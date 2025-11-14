@@ -3,6 +3,10 @@ main = "src/index.py"
 compatibility_date = "2025-01-10"
 compatibility_flags = ["python_workers"]
 
+# Assets configuration - static files bundled with the worker
+[assets]
+directory = "src"
+
 # Cron Trigger - runs every 5 minutes to regenerate weather images
 [triggers]
 crons = ["*/5 * * * *"]
