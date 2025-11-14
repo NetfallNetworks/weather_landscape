@@ -370,37 +370,18 @@ class Default(WorkerEntrypoint):
                             display: inline-block;
                         }}
                         a:hover {{ background: #e6f2ff; }}
-                        .api {{
-                            margin-top: 2rem;
-                            padding: 1rem;
-                            background: white;
-                            border-radius: 4px;
-                        }}
-                        code {{
-                            background: #f0f0f0;
-                            padding: 0.2rem 0.4rem;
-                            border-radius: 3px;
-                            font-size: 0.9em;
-                        }}
                     </style>
                 </head>
                 <body>
                     <h1>🌤️ Weather Landscape</h1>
                     <h2>Active ZIP Codes</h2>
                     <ul>{zip_links}</ul>
-
-                    <div class="api">
-                        <h3>API Endpoints</h3>
-                        <p><code>GET /<strong>{{zip}}</strong>/latest.png</code> - Get latest image for ZIP</p>
-                        <p><code>GET /status</code> - View status for all ZIPs</p>
-                        <p><code>POST /generate?zip=<strong>{{zip}}</strong></code> - Trigger generation</p>
-                    </div>
                 </body>
                 </html>
                 """
-                return Response.new(html, {
-                    'headers': {'Content-Type': 'text/html; charset=utf-8'}
-                })
+                headers = Headers.new()
+                headers.set('Content-Type', 'text/html; charset=utf-8')
+                return Response.new(html, {'headers': headers})
             except Exception as e:
                 return Response.new(
                     json.dumps({'error': f'Failed to load page: {str(e)}'}),
