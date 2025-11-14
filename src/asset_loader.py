@@ -72,10 +72,14 @@ class AssetLoader:
         # Try Workers ASSETS binding first
         if self.env and hasattr(self.env, 'ASSETS'):
             try:
-                # Create a fake request for the asset
+                # Create a request for the asset
                 from js import Request
-                # ASSETS expects an absolute URL, construct one
-                request = Request.new(f"http://fake-host/{path}")
+
+                # Ensure path has leading slash for ASSETS binding
+                asset_path = path if path.startswith('/') else f'/{path}'
+
+                # ASSETS expects a proper URL with the asset path
+                request = Request.new(f"http://fake-host{asset_path}")
 
                 # Fetch using ASSETS binding
                 response = await self.env.ASSETS.fetch(request.js_object)
