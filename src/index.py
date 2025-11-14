@@ -323,7 +323,6 @@ class Default(WorkerEntrypoint):
         - GET / - Returns HTML info page with links to all active ZIPs
         - GET /{zip}/latest.png - Returns latest weather image for specific ZIP
         - GET /status - Returns generation status and metadata for all ZIPs
-        - POST /generate?zip={zip} - Manually trigger image generation for specific ZIP
         """
         url = request.url
         path_parts = url.split('?')[0].split('/')
@@ -470,52 +469,6 @@ class Default(WorkerEntrypoint):
             except Exception as e:
                 return Response.new(
                     json.dumps({'error': f'Failed to fetch status: {str(e)}'}),
-                    {
-                        'status': 500,
-                        'headers': {'Content-Type': 'application/json'}
-                    }
-                )
-
-        # Route: Manual generation trigger (for testing)
-        elif path == 'generate' and request.method == 'POST':
-            try:
-                # Get ZIP from query parameter or use default
-                query_params = url.split('?')[1] if '?' in url else ''
-                zip_param = None
-                if query_params:
-                    for param in query_params.split('&'):
-                        if param.startswith('zip='):
-                            zip_param = param.split('=')[1]
-                            break
-
-                config = WorkerConfig(self.env)
-                zip_code = zip_param if zip_param else config.ZIP_CODE
-
-                print(f"Manual generation triggered for ZIP {zip_code}")
-
-                # Geocode the ZIP
-                geo_data = await geocode_zip(self.env, zip_code, config.OWM_KEY)
-
-                # Generate the image
-                image_bytes, metadata, _ = await generate_weather_image(
-                    self.env,
-                    zip_code,
-                    geo_data['lat'],
-                    geo_data['lon']
-                )
-
-                # Upload to R2
-                await upload_to_r2(self.env, image_bytes, metadata, zip_code)
-
-                return Response.new(
-                    json.dumps({'success': True, 'zip': zip_code, 'metadata': metadata}),
-                    {
-                        'headers': {'Content-Type': 'application/json'}
-                    }
-                )
-            except Exception as e:
-                return Response.new(
-                    json.dumps({'error': f'Generation failed: {str(e)}'}),
                     {
                         'status': 500,
                         'headers': {'Content-Type': 'application/json'}
