@@ -3,11 +3,11 @@ main = "src/index.py"
 compatibility_date = "2025-01-10"
 compatibility_flags = ["python_workers"]
 
-# Assets configuration - only include image files, exclude Python source
-[assets]
-directory = "src"
-# Include only image files
-include = ["**/*.bmp", "**/*.png", "**/*.jpg", "**/*.jpeg"]
+# Bundle image files as Data modules so Python can access them
+[[rules]]
+type = "Data"
+globs = ["**/*.bmp", "**/*.png", "**/*.jpg", "**/*.jpeg"]
+fallthrough = true
 
 # Cron Trigger - runs every 5 minutes to regenerate weather images
 [triggers]
