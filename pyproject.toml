@@ -14,7 +14,7 @@ dev = [
 
 [tool.pywrangler]
 main = "src/index.py"
-assets = [
-    { pattern = "src/p_weather/**/*.bmp", dir = "src" },
-    { pattern = "src/p_weather/**/*.png", dir = "src" },
+include = [
+    "src/p_weather/**/*.bmp",
+    "src/p_weather/**/*.png",
 ]
