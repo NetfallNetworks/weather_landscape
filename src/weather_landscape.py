@@ -30,14 +30,13 @@ class WeatherLandscape:
         try:
             loader = get_global_loader()
             buffer_path = 'p_weather/template_rgb.bmp'
-            print(f"DEBUG: Trying to load buffer: {buffer_path}")
 
             # Get the buffer data using asset loader
             buffer_data = loader.load_asset(buffer_path)
 
             img = Image.open(io.BytesIO(buffer_data))
         except Exception as e:
-            print(f"DEBUG: Buffer loading failed: {e}")
+            print(f"Error loading template buffer: {e}")
             # Fallback for local development
             img = Image.open(self.cfg.TEMPLATE_FILENAME)
 
