@@ -358,11 +358,21 @@ class Default(WorkerEntrypoint):
                         }
                     )
 
+                # Get metadata (handle JavaScript object)
+                try:
+                    generated_at = r2_object.customMetadata['generated-at'] if r2_object.customMetadata else 'unknown'
+                    latitude = r2_object.customMetadata['latitude'] if r2_object.customMetadata else '?'
+                    longitude = r2_object.customMetadata['longitude'] if r2_object.customMetadata else '?'
+                except:
+                    generated_at = 'unknown'
+                    latitude = '?'
+                    longitude = '?'
+
                 # Return image with appropriate headers
                 headers = Headers.new()
                 headers.set('Content-Type', 'image/png')
                 headers.set('Cache-Control', 'public, max-age=900')  # 15 minutes
-                headers.set('X-Generated-At', r2_object.customMetadata.get('generated-at', 'unknown'))
+                headers.set('X-Generated-At', generated_at)
 
                 if path == '':
                     # Return HTML page with image
@@ -397,8 +407,8 @@ class Default(WorkerEntrypoint):
                         <h2>ZIP Code: {zip_code}</h2>
                         <img src="/{zip_code}/latest.png" alt="Weather Landscape">
                         <div class="info">
-                            <p>Generated: {r2_object.customMetadata.get('generated-at', 'unknown')}</p>
-                            <p>Location: {r2_object.customMetadata.get('latitude', '?')}, {r2_object.customMetadata.get('longitude', '?')}</p>
+                            <p>Generated: {generated_at}</p>
+                            <p>Location: {latitude}, {longitude}</p>
                             <p><a href="/status">View Status</a></p>
                         </div>
                     </body>
@@ -408,8 +418,9 @@ class Default(WorkerEntrypoint):
                         'headers': {'Content-Type': 'text/html; charset=utf-8'}
                     })
 
-                # Return just the image
-                return Response.new(r2_object.body, {'headers': headers})
+                # Return just the image - get body as arrayBuffer
+                image_data = await r2_object.arrayBuffer()
+                return Response.new(image_data, {'headers': headers})
 
             except Exception as e:
                 return Response.new(
