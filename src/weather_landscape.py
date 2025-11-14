@@ -25,35 +25,25 @@ class WeatherLandscape:
         owm = OpenWeatherMap(self.cfg)
         await owm.FromAuto()
 
-        # In Cloudflare Workers, bundled files are in the same directory as the module
+        # In Cloudflare Workers, bundled buffer files need special access
         try:
-            # Try using module-relative path
-            module_dir = os.path.dirname(os.path.abspath(__file__))
+            # Try importing the buffer via __loader__
+            import sys
+            loader = sys.modules['__main__'].__loader__
 
-            # Check what's in p_weather directory
-            p_weather_dir = os.path.join(module_dir, 'p_weather')
-            print(f"DEBUG: p_weather dir exists: {os.path.exists(p_weather_dir)}")
-            print(f"DEBUG: p_weather dir is dir: {os.path.isdir(p_weather_dir)}")
-            if os.path.isdir(p_weather_dir):
-                print(f"DEBUG: Files in p_weather: {os.listdir(p_weather_dir)[:10]}")  # First 10
+            # The bundled path from deployment output
+            buffer_path = 'p_weather/template_rgb.bmp'
+            print(f"DEBUG: Trying to load buffer: {buffer_path}")
 
-            # Try absolute path to template
-            template_path = os.path.join(module_dir, 'p_weather', 'template_rgb.bmp')
-            print(f"DEBUG: Trying absolute template path: {template_path}")
-            print(f"DEBUG: Template file exists: {os.path.exists(template_path)}")
-            print(f"DEBUG: Template is file: {os.path.isfile(template_path)}")
+            # Get the buffer data
+            buffer_data = loader.get_data(buffer_path)
+            print(f"DEBUG: Loaded buffer, size: {len(buffer_data)} bytes")
 
-            with open(template_path, 'rb') as f:
-                img = Image.open(io.BytesIO(f.read()))
+            img = Image.open(io.BytesIO(buffer_data))
         except Exception as e:
-            print(f"DEBUG: Module-relative failed: {e}, trying config path directly")
-            # Fallback: try config path directly
-            try:
-                with open(self.cfg.TEMPLATE_FILENAME, 'rb') as f:
-                    img = Image.open(io.BytesIO(f.read()))
-            except:
-                # Final fallback for local development
-                img = Image.open(self.cfg.TEMPLATE_FILENAME)
+            print(f"DEBUG: Buffer loading failed: {e}")
+            # Fallback for local development
+            img = Image.open(self.cfg.TEMPLATE_FILENAME)
 
         art = DrawWeather(img,self.cfg)
         img = art.Draw(owm)

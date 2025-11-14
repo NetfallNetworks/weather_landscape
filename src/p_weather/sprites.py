@@ -108,19 +108,28 @@ class Sprites(Canvas):
 
     def GetSprite(self,name,index)->Image:
         import io
+        import sys
         imagefilename = "%s_%02i%s" % (name, index, self.ext)
         imagepath = os.path.join(self.dir,imagefilename)
 
         # In Cloudflare Workers, files are bundled as buffers
         try:
-            with open(imagepath, 'rb') as f:
-                img = Image.open(io.BytesIO(f.read()))
-                img.load()  # Force load into memory before file handle closes
-                return img
+            # Try __loader__ for bundled buffers
+            loader = sys.modules['__main__'].__loader__
+            buffer_data = loader.get_data(imagepath)
+            img = Image.open(io.BytesIO(buffer_data))
+            img.load()
+            return img
         except:
             # Fallback for local development
-            img = Image.open(imagepath)
-            return img
+            try:
+                with open(imagepath, 'rb') as f:
+                    img = Image.open(io.BytesIO(f.read()))
+                    img.load()
+                    return img
+            except:
+                img = Image.open(imagepath)
+                return img
 
 
 
