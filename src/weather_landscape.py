@@ -15,12 +15,13 @@ class WeatherLandscape:
         assert self.cfg.OWM_KEY != "000000000000000000",  "Set OWM_KEY variable to your OpenWeather API key in secrets.py"
 
 
-    def MakeImage(self):
+    async def MakeImage(self):
+        """Generate weather landscape image (async for Cloudflare Workers)"""
         # Import PIL at runtime for Cloudflare Workers compatibility
         from PIL import Image
 
         owm = OpenWeatherMap(self.cfg)
-        owm.FromAuto()
+        await owm.FromAuto()
 
         img = Image.open(self.cfg.TEMPLATE_FILENAME)
         art = DrawWeather(img,self.cfg)
@@ -28,10 +29,11 @@ class WeatherLandscape:
 
         return img
 
-    def SaveImage(self,suffix:str=None)->str:
-        img = self.MakeImage() 
+    async def SaveImage(self,suffix:str=None)->str:
+        """Save generated image to file (async-aware)"""
+        img = await self.MakeImage()
         outfilepath = self.cfg.ImageFilePath(suffix)
-        img.save(outfilepath) 
+        img.save(outfilepath)
         return outfilepath
         
 

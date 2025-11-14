@@ -2,8 +2,15 @@ import os
 import time
 import json
 import datetime
-from urllib.request import urlopen
 
+try:
+    # Import JavaScript fetch for Cloudflare Workers
+    from js import fetch
+    CLOUDFLARE_WORKER = True
+except ImportError:
+    # Fallback to urllib for local testing
+    from urllib.request import urlopen
+    CLOUDFLARE_WORKER = False
 
 from p_weather.configuration import WLBaseSettings
 
@@ -160,20 +167,34 @@ class OpenWeatherMap():
     def MakePlaceKey(latitude:float,longitude:float):
         return  OpenWeatherMap.MakeCoordinateKey(latitude) + OpenWeatherMap.MakeCoordinateKey(longitude)
 
-    def FromWWW(self):
-    
-        fjsontext = urlopen(self.URL_FOREAST).read()
-        fdata = json.loads(fjsontext)
-        ff = open(self.filename_forecast,"wb")
-        ff.write( json.dumps(fdata, indent=4).encode('utf-8',errors='ignore') )
-        ff.close()
-        
-        cjsontext = urlopen(self.URL_CURR).read()
-        cdata = json.loads(cjsontext)
-        cf = open(self.filename_curr,"wb")
-        cf.write( json.dumps(cdata, indent=4).encode('utf-8',errors='ignore') )
-        cf.close()
-        
+    async def FromWWW(self):
+        """Fetch weather data from OpenWeatherMap API (async for Cloudflare Workers)"""
+
+        if CLOUDFLARE_WORKER:
+            # Use JavaScript fetch API for Cloudflare Workers
+            # Fetch forecast data
+            forecast_response = await fetch(self.URL_FOREAST)
+            fjsontext = await forecast_response.text()
+            fdata = json.loads(fjsontext)
+
+            # Fetch current weather data
+            current_response = await fetch(self.URL_CURR)
+            cjsontext = await current_response.text()
+            cdata = json.loads(cjsontext)
+        else:
+            # Use urllib for local testing (synchronous)
+            fjsontext = urlopen(self.URL_FOREAST).read()
+            fdata = json.loads(fjsontext)
+            ff = open(self.filename_forecast,"wb")
+            ff.write( json.dumps(fdata, indent=4).encode('utf-8',errors='ignore') )
+            ff.close()
+
+            cjsontext = urlopen(self.URL_CURR).read()
+            cdata = json.loads(cjsontext)
+            cf = open(self.filename_curr,"wb")
+            cf.write( json.dumps(cdata, indent=4).encode('utf-8',errors='ignore') )
+            cf.close()
+
         return self.FromJSON(cdata,fdata)
 
 
@@ -228,11 +249,18 @@ class OpenWeatherMap():
     def IsFileTooOld(self, filename):
         return (not os.path.isfile(filename)) or ( (time.time() - os.stat(filename).st_mtime) > self.FILETOOOLD_SEC )
 
-    def FromAuto(self):
+    async def FromAuto(self):
+        """Auto-fetch weather data (from cache or API, async-aware)"""
+        if CLOUDFLARE_WORKER:
+            # In Cloudflare Workers, always fetch from WWW (no file caching)
+            print("Using WWW")
+            return await self.FromWWW()
+
+        # Local mode: use file cache if available
         if (self.IsFileTooOld(self.filename_forecast) or self.IsFileTooOld(self.filename_curr)):
             print("Using WWW")
-            return self.FromWWW()
-       
+            return await self.FromWWW()
+
         print("Using Cache '%s','%s'" % (self.filename_curr,self.filename_forecast))
         return self.FromFile()
 

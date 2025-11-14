@@ -4,13 +4,14 @@ Simple test script to verify local image generation works
 """
 
 import sys
+import asyncio
 
 # Import from src/ directory
 sys.path.insert(0, 'src')
 from weather_landscape import WeatherLandscape
 from configs import WLConfig_RGB_White
 
-def main():
+async def main():
     print("Testing local weather landscape generation...")
     print()
 
@@ -23,11 +24,11 @@ def main():
         wl = WeatherLandscape(config)
 
         print("Generating image (this will fetch weather data)...")
-        img = wl.MakeImage()
+        img = await wl.MakeImage()
 
         # Save the image
         print("Saving image...")
-        filepath = wl.SaveImage()
+        filepath = await wl.SaveImage()
 
         print()
         print(f"✅ Success! Image generated at: {filepath}")
@@ -54,4 +55,4 @@ def main():
         sys.exit(1)
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

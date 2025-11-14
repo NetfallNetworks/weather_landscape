@@ -64,7 +64,7 @@ async def generate_weather_image(env):
 
         # Generate the image
         wl = WeatherLandscape(config.to_weather_config())
-        img = wl.MakeImage()
+        img = await wl.MakeImage()
 
         # Convert PIL Image to bytes
         buffer = io.BytesIO()
