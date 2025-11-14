@@ -5,12 +5,12 @@ description = "Weather landscape visualization worker for Cloudflare"
 requires-python = ">=3.12"
 dependencies = [
     "pillow",
-    "aiohttp",  # For geocoding in local tests
 ]
 
 [dependency-groups]
 dev = [
     "workers-py>=1.7.0",
+    "aiohttp",  # Only needed for local test_local_generation.py
 ]
 
 [tool.pywrangler]
