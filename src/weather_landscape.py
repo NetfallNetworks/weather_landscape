@@ -21,27 +21,22 @@ class WeatherLandscape:
         from PIL import Image
         import io
         import os
+        from asset_loader import get_global_loader
 
         owm = OpenWeatherMap(self.cfg)
         await owm.FromAuto()
 
-        # In Cloudflare Workers, bundled buffer files need special access
+        # Load the template image using the asset loader
         try:
-            # Try importing the buffer via __loader__
-            import sys
-            loader = sys.modules['__main__'].__loader__
-
-            # The bundled path from deployment output
+            loader = get_global_loader()
             buffer_path = 'p_weather/template_rgb.bmp'
-            print(f"DEBUG: Trying to load buffer: {buffer_path}")
 
-            # Get the buffer data
-            buffer_data = loader.get_data(buffer_path)
-            print(f"DEBUG: Loaded buffer, size: {len(buffer_data)} bytes")
+            # Get the buffer data using asset loader
+            buffer_data = loader.load_asset(buffer_path)
 
             img = Image.open(io.BytesIO(buffer_data))
         except Exception as e:
-            print(f"DEBUG: Buffer loading failed: {e}")
+            print(f"Error loading template buffer: {e}")
             # Fallback for local development
             img = Image.open(self.cfg.TEMPLATE_FILENAME)
 

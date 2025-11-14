@@ -108,15 +108,17 @@ class Sprites(Canvas):
 
     def GetSprite(self,name,index)->Image:
         import io
-        import sys
         imagefilename = "%s_%02i%s" % (name, index, self.ext)
         imagepath = os.path.join(self.dir,imagefilename)
 
-        # In Cloudflare Workers, files are bundled as buffers
+        # Load asset using the asset loader
         try:
-            # Try __loader__ for bundled buffers
-            loader = sys.modules['__main__'].__loader__
-            buffer_data = loader.get_data(imagepath)
+            from asset_loader import get_global_loader
+            loader = get_global_loader()
+
+            # Load the sprite file
+            buffer_data = loader.load_asset(imagepath)
+
             img = Image.open(io.BytesIO(buffer_data))
             img.load()
             return img
