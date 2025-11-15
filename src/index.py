@@ -420,13 +420,13 @@ class Default(WorkerEntrypoint):
                 all_zips = await get_all_zips_from_r2(self.env)
                 active_zips = await get_active_zips(self.env)
 
-                # Build ZIP links with active/inactive status
+                # Build ZIP links with active/inactive status dots
                 zip_items = []
                 for zip_code in all_zips:
                     is_active = zip_code in active_zips
-                    status_badge = '<span class="badge active">Auto-regenerating</span>' if is_active else '<span class="badge inactive">Stored only</span>'
+                    dot_class = 'dot active' if is_active else 'dot inactive'
                     zip_items.append(
-                        f'<li><a href="/{zip_code}">ZIP {zip_code}</a> {status_badge}</li>'
+                        f'<li><span class="{dot_class}"></span><a href="/{zip_code}">ZIP {zip_code}</a></li>'
                     )
 
                 zip_links = '\n'.join(zip_items) if zip_items else '<li><em>No ZIP codes found in R2</em></li>'
@@ -451,7 +451,7 @@ class Default(WorkerEntrypoint):
                             margin: 0.5rem 0;
                             display: flex;
                             align-items: center;
-                            gap: 0.5rem;
+                            gap: 0.75rem;
                         }}
                         a {{
                             color: #0066cc;
@@ -460,36 +460,33 @@ class Default(WorkerEntrypoint):
                             background: white;
                             border-radius: 4px;
                             display: inline-block;
-                            flex-shrink: 0;
                         }}
                         a:hover {{ background: #e6f2ff; }}
-                        .badge {{
-                            font-size: 0.75rem;
-                            padding: 0.25rem 0.5rem;
-                            border-radius: 3px;
-                            font-weight: 500;
+                        .dot {{
+                            width: 8px;
+                            height: 8px;
+                            border-radius: 50%;
+                            flex-shrink: 0;
                         }}
-                        .badge.active {{
-                            background: #e6f7e6;
-                            color: #2d662d;
+                        .dot.active {{
+                            background: #22c55e;
                         }}
-                        .badge.inactive {{
-                            background: #f0f0f0;
+                        .dot.inactive {{
+                            background: #e5e7eb;
+                        }}
+                        .key {{
+                            margin-top: 2rem;
+                            padding-top: 1rem;
+                            border-top: 1px solid #ddd;
+                            font-size: 0.85rem;
                             color: #666;
+                            display: flex;
+                            gap: 1.5rem;
                         }}
-                        .info {{
-                            background: white;
-                            padding: 1rem;
-                            border-radius: 4px;
-                            margin-top: 1rem;
-                            border-left: 3px solid #0066cc;
-                        }}
-                        .info p {{ margin: 0.5rem 0; }}
-                        code {{
-                            background: #f5f5f5;
-                            padding: 0.2rem 0.4rem;
-                            border-radius: 3px;
-                            font-size: 0.9rem;
+                        .key-item {{
+                            display: flex;
+                            align-items: center;
+                            gap: 0.5rem;
                         }}
                     </style>
                 </head>
@@ -497,10 +494,15 @@ class Default(WorkerEntrypoint):
                     <h1>🌤️ Weather Landscape</h1>
                     <h2>Available ZIP Codes ({len(all_zips)})</h2>
                     <ul>{zip_links}</ul>
-                    <div class="info">
-                        <p><strong>Auto-regenerating:</strong> Images update every 15 minutes via cron</p>
-                        <p><strong>Stored only:</strong> Images exist but won't auto-update</p>
-                        <p><strong>View status:</strong> <a href="/status">/status</a></p>
+                    <div class="key">
+                        <div class="key-item">
+                            <span class="dot active"></span>
+                            <span>Up to date</span>
+                        </div>
+                        <div class="key-item">
+                            <span class="dot inactive"></span>
+                            <span>Not updating</span>
+                        </div>
                     </div>
                 </body>
                 </html>
