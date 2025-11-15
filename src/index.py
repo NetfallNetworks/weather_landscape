@@ -603,11 +603,13 @@ class Default(WorkerEntrypoint):
                     if formats:
                         format_links = []
                         for fmt in formats:
+                            # Get friendly title for this format
+                            fmt_title = FORMAT_CONFIGS.get(fmt, {}).get('title', fmt)
                             # Default format gets no query param, others use ?format
                             if fmt == DEFAULT_FORMAT:
-                                format_links.append(f'<a href="/{zip_code}" class="format-link">{fmt}</a>')
+                                format_links.append(f'<a href="/{zip_code}" class="format-link">{fmt_title}</a>')
                             else:
-                                format_links.append(f'<a href="/{zip_code}?{fmt}" class="format-link">{fmt}</a>')
+                                format_links.append(f'<a href="/{zip_code}?{fmt}" class="format-link">{fmt_title}</a>')
                         formats_html = '<span class="formats">' + ' '.join(format_links) + '</span>'
                     else:
                         formats_html = '<span class="formats"><em>no formats</em></span>'
