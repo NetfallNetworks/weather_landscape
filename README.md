@@ -164,6 +164,59 @@ Your weather landscape will be available at:
 
 **📍 Multi-ZIP guide:** See [MULTI-ZIP-GUIDE.md](MULTI-ZIP-GUIDE.md) for managing multiple locations
 
+### Multi-Format Generation 🎨
+
+Generate images in multiple formats simultaneously! By default, only the `rgb_white` format is generated, but you can configure additional formats.
+
+**Available Formats:**
+- `rgb_white` (default) - Color image with white background (.png)
+- `rgb_black` - Color image with black background (.png)
+- `bw` - Black & White for E-Ink displays (.bmp)
+- `eink` - Black & White with 90° rotation for E-Ink (.bmp)
+- `bwi` - Black & White inverted (.bmp)
+
+**Configuration:**
+
+Add the `ADDITIONAL_FORMATS` environment variable in `wrangler.toml`:
+
+```toml
+[vars]
+DEFAULT_ZIP = "78729"
+ADDITIONAL_FORMATS = "bw,eink,rgb_black"  # Generate additional formats
+```
+
+**Accessing Different Formats:**
+
+Use the `format` query parameter to request specific formats:
+
+```
+# Default format (rgb_white)
+https://your-worker.workers.dev/78729
+
+# Request black & white format
+https://your-worker.workers.dev/78729?format=bw
+
+# Request E-Ink format
+https://your-worker.workers.dev/78729?format=eink
+
+# Request RGB with black background
+https://your-worker.workers.dev/78729?format=rgb_black
+```
+
+**Format Query Parameter Behavior:**
+- If the requested format doesn't exist, the default format is returned
+- If an invalid format is requested, the default format is returned
+- Format names can use hyphens or underscores (e.g., `rgb_white` or `rgb-white`)
+
+**Storage:**
+
+Images are stored in R2 with format-specific filenames:
+- `{zip}/latest-rgb-white.png` (default format)
+- `{zip}/latest-bw.bmp`
+- `{zip}/latest-eink.bmp`
+- `{zip}/latest-rgb-black.png`
+- `{zip}/latest.png` (backwards compatible, same as default format)
+
 
 ## E-Ink module
 

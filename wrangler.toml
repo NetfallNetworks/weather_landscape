@@ -29,6 +29,13 @@ id = "YOUR_KV_NAMESPACE_ID"
 [vars]
 DEFAULT_ZIP = "78729"
 
+# ADDITIONAL_FORMATS: Configure additional image formats to generate (optional)
+# Default format 'rgb_white' is always generated
+# Available formats: bw, eink, bwi, rgb_black
+# Example: ADDITIONAL_FORMATS = "bw,eink"
+# Uncomment to enable additional formats:
+# ADDITIONAL_FORMATS = "bw,eink"
+
 # Note: Sensitive variables should be set using wrangler secrets:
 # wrangler secret put OWM_API_KEY
 # These will be available in env but not visible in wrangler.toml

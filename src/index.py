@@ -16,6 +16,70 @@ def to_js(obj):
     return _to_js(obj, dict_converter=Object.fromEntries)
 
 
+# Format configuration mapping
+FORMAT_CONFIGS = {
+    'rgb_white': {
+        'class_name': 'WLConfig_RGB_White',
+        'extension': '.png',
+        'mime_type': 'image/png',
+        'title': 'RGB White Background'
+    },
+    'rgb_black': {
+        'class_name': 'WLConfig_RGB_Black',
+        'extension': '.png',
+        'mime_type': 'image/png',
+        'title': 'RGB Black Background'
+    },
+    'bw': {
+        'class_name': 'WLConfig_BW',
+        'extension': '.bmp',
+        'mime_type': 'image/bmp',
+        'title': 'Black & White'
+    },
+    'eink': {
+        'class_name': 'WLConfig_EINK',
+        'extension': '.bmp',
+        'mime_type': 'image/bmp',
+        'title': 'E-Ink (Flipped)'
+    },
+    'bwi': {
+        'class_name': 'WLConfig_BWI',
+        'extension': '.bmp',
+        'mime_type': 'image/bmp',
+        'title': 'Black & White Inverted'
+    }
+}
+
+# Default format (always generated)
+DEFAULT_FORMAT = 'rgb_white'
+
+
+def get_enabled_formats(env):
+    """
+    Get list of formats to generate
+    Always includes DEFAULT_FORMAT, plus any additional configured formats
+
+    Returns:
+        list: Format names (e.g., ['rgb_white', 'bw', 'eink'])
+    """
+    # Always include the default format
+    formats = [DEFAULT_FORMAT]
+
+    # Check for additional formats in environment variable
+    # Format: comma-separated list like "bw,eink,rgb_black"
+    try:
+        additional = getattr(env, 'ADDITIONAL_FORMATS', '')
+        if additional:
+            for fmt in additional.split(','):
+                fmt = fmt.strip().lower()
+                if fmt and fmt in FORMAT_CONFIGS and fmt not in formats:
+                    formats.append(fmt)
+    except:
+        pass
+
+    return formats
+
+
 class WorkerConfig:
     """Configuration loaded from KV and environment"""
     def __init__(self, env):
@@ -34,18 +98,31 @@ class WorkerConfig:
 
         self.WORK_DIR = "/tmp"
 
-    def to_weather_config(self, lat, lon):
+    def to_weather_config(self, lat, lon, format_name=None):
         """
         Convert to WeatherLandscape config format
 
         Args:
             lat: Latitude (required)
             lon: Longitude (required)
+            format_name: Format name (e.g., 'rgb_white', 'bw', 'eink')
         """
         # Import at runtime to allow Pillow to load first
-        from configs import WLConfig_RGB_White
+        import configs
 
-        config = WLConfig_RGB_White()
+        # Default to RGB_White if no format specified
+        if format_name is None:
+            format_name = DEFAULT_FORMAT
+
+        # Get config class for this format
+        format_info = FORMAT_CONFIGS.get(format_name)
+        if not format_info:
+            raise ValueError(f"Unknown format: {format_name}")
+
+        # Get the config class dynamically
+        config_class = getattr(configs, format_info['class_name'])
+        config = config_class()
+
         config.OWM_KEY = self.OWM_KEY
         config.OWM_LAT = lat
         config.OWM_LON = lon
@@ -188,7 +265,7 @@ async def add_zip_to_active(env, zip_code):
         raise
 
 
-async def generate_weather_image(env, zip_code, lat, lon):
+async def generate_weather_image(env, zip_code, lat, lon, format_name=None):
     """
     Generate a weather landscape image using current weather data
 
@@ -197,9 +274,10 @@ async def generate_weather_image(env, zip_code, lat, lon):
         zip_code: ZIP code for this generation
         lat: Latitude for weather lookup
         lon: Longitude for weather lookup
+        format_name: Format to generate (e.g., 'rgb_white', 'bw', 'eink')
 
     Returns:
-        tuple: (image_bytes, metadata_dict, zip_code)
+        tuple: (image_bytes, metadata_dict, format_name)
     """
     try:
         # Import at runtime (Pillow loaded from cf-requirements.txt)
@@ -217,13 +295,24 @@ async def generate_weather_image(env, zip_code, lat, lon):
         if not config.OWM_KEY:
             raise ValueError("OWM_API_KEY not set in environment")
 
-        # Generate the image with provided lat/lon
-        wl = WeatherLandscape(config.to_weather_config(lat=lat, lon=lon))
+        # Default to DEFAULT_FORMAT if not specified
+        if format_name is None:
+            format_name = DEFAULT_FORMAT
+
+        # Get format info
+        format_info = FORMAT_CONFIGS.get(format_name)
+        if not format_info:
+            raise ValueError(f"Unknown format: {format_name}")
+
+        # Generate the image with provided lat/lon and format
+        wl = WeatherLandscape(config.to_weather_config(lat=lat, lon=lon, format_name=format_name))
         img = await wl.MakeImage()
 
         # Convert PIL Image to bytes
         buffer = io.BytesIO()
-        img.save(buffer, format='PNG')
+        # Determine save format based on extension
+        save_format = 'PNG' if format_info['extension'] == '.png' else 'BMP'
+        img.save(buffer, format=save_format)
         image_bytes = buffer.getvalue()
 
         # Create metadata
@@ -233,33 +322,45 @@ async def generate_weather_image(env, zip_code, lat, lon):
             'longitude': lon,
             'zipCode': zip_code,
             'fileSize': len(image_bytes),
-            'format': 'PNG',
-            'variant': 'rgb_white'
+            'format': save_format,
+            'variant': format_name
         }
 
-        return image_bytes, metadata, zip_code
+        return image_bytes, metadata, format_name
 
     except Exception as e:
-        print(f"Error generating image for {zip_code}: {e}")
+        print(f"Error generating {format_name} image for {zip_code}: {e}")
         raise
 
 
-async def upload_to_r2(env, image_bytes, metadata, zip_code):
+async def upload_to_r2(env, image_bytes, metadata, zip_code, format_name=None):
     """
     Upload generated image to R2 bucket
 
     Args:
         env: Worker environment
-        image_bytes: PNG image as bytes
+        image_bytes: Image bytes (PNG or BMP)
         metadata: Image metadata dict
         zip_code: ZIP code for folder organization
+        format_name: Format name (e.g., 'rgb_white', 'bw')
 
     Returns:
         bool: True if successful
     """
     try:
-        # Create the key for the latest image with zip code folder
-        key = f"{zip_code}/latest.png"
+        # Default to DEFAULT_FORMAT if not specified
+        if format_name is None:
+            format_name = DEFAULT_FORMAT
+
+        # Get format info
+        format_info = FORMAT_CONFIGS.get(format_name)
+        if not format_info:
+            raise ValueError(f"Unknown format: {format_name}")
+
+        # Create the key for this format's image with zip code folder
+        # Format: {zip}/latest-{format}.{ext} (e.g., "78729/latest-rgb-white.png")
+        extension = format_info['extension']
+        key = f"{zip_code}/latest-{format_name.replace('_', '-')}{extension}"
 
         # Prepare R2 metadata
         custom_metadata = {
@@ -267,7 +368,8 @@ async def upload_to_r2(env, image_bytes, metadata, zip_code):
             'latitude': str(metadata['latitude']),
             'longitude': str(metadata['longitude']),
             'zip-code': zip_code,
-            'file-size': str(metadata['fileSize'])
+            'file-size': str(metadata['fileSize']),
+            'variant': format_name
         }
 
         # Convert Python bytes to JavaScript Uint8Array for R2
@@ -282,7 +384,7 @@ async def upload_to_r2(env, image_bytes, metadata, zip_code):
             js_array,
             {
                 'httpMetadata': {
-                    'contentType': 'image/png',
+                    'contentType': format_info['mime_type'],
                 },
                 'customMetadata': custom_metadata
             }
@@ -290,16 +392,31 @@ async def upload_to_r2(env, image_bytes, metadata, zip_code):
 
         print(f"✅ Uploaded {key} to R2 ({len(image_bytes)} bytes)")
 
-        # Also save metadata to KV (per-ZIP)
+        # Also upload as latest.png for backwards compatibility (only for default format)
+        if format_name == DEFAULT_FORMAT:
+            legacy_key = f"{zip_code}/latest.png"
+            await env.WEATHER_IMAGES.put(
+                legacy_key,
+                js_array,
+                {
+                    'httpMetadata': {
+                        'contentType': format_info['mime_type'],
+                    },
+                    'customMetadata': custom_metadata
+                }
+            )
+            print(f"✅ Uploaded {legacy_key} to R2 (backwards compatibility)")
+
+        # Save metadata to KV (per-ZIP-format)
         await env.CONFIG.put(
-            f'metadata:{zip_code}',
+            f'metadata:{zip_code}:{format_name}',
             json.dumps(metadata)
         )
 
         return True
 
     except Exception as e:
-        print(f"Error uploading {zip_code} to R2: {e}")
+        print(f"Error uploading {zip_code}/{format_name} to R2: {e}")
         raise
 
 
@@ -326,6 +443,10 @@ class Default(WorkerEntrypoint):
         active_zips = await get_active_zips(self.env)
         print(f"📋 Processing {len(active_zips)} ZIP code(s): {', '.join(active_zips)}")
 
+        # Get enabled formats
+        enabled_formats = get_enabled_formats(self.env)
+        print(f"🎨 Generating {len(enabled_formats)} format(s): {', '.join(enabled_formats)}")
+
         success_count = 0
         error_count = 0
         errors = []
@@ -338,21 +459,36 @@ class Default(WorkerEntrypoint):
                 # Geocode the ZIP (uses cache if available)
                 geo_data = await geocode_zip(self.env, zip_code, config.OWM_KEY)
 
-                # Generate the weather image
-                print(f"🎨 Generating weather landscape for {zip_code}...")
-                image_bytes, metadata, _ = await generate_weather_image(
-                    self.env,
-                    zip_code,
-                    geo_data['lat'],
-                    geo_data['lon']
-                )
+                # Generate images for all enabled formats
+                zip_success = True
+                for format_name in enabled_formats:
+                    try:
+                        print(f"🎨 Generating {format_name} for {zip_code}...")
+                        image_bytes, metadata, _ = await generate_weather_image(
+                            self.env,
+                            zip_code,
+                            geo_data['lat'],
+                            geo_data['lon'],
+                            format_name
+                        )
 
-                # Upload to R2
-                print(f"☁️  Uploading {zip_code} to R2...")
-                await upload_to_r2(self.env, image_bytes, metadata, zip_code)
+                        # Upload to R2
+                        print(f"☁️  Uploading {format_name} for {zip_code} to R2...")
+                        await upload_to_r2(self.env, image_bytes, metadata, zip_code, format_name)
 
-                success_count += 1
-                print(f"✅ Completed {zip_code}")
+                        print(f"✅ Completed {format_name} for {zip_code}")
+
+                    except Exception as e:
+                        zip_success = False
+                        error_msg = f"ZIP {zip_code} ({format_name}): {str(e)}"
+                        errors.append(error_msg)
+                        print(f"❌ Failed {format_name} for {zip_code}: {e}")
+
+                # Count as success if at least one format succeeded
+                if zip_success:
+                    success_count += 1
+                else:
+                    error_count += 1
 
             except Exception as e:
                 error_count += 1
@@ -522,8 +658,41 @@ class Default(WorkerEntrypoint):
             try:
                 zip_code = zip_from_path
 
-                # Fetch image from R2 using zip code folder
-                r2_object = await self.env.WEATHER_IMAGES.get(f'{zip_code}/latest.png')
+                # Get format from query parameter (default to DEFAULT_FORMAT)
+                requested_format = query_params.get('format', DEFAULT_FORMAT).lower().replace('-', '_')
+
+                # Validate format - if invalid or not in FORMAT_CONFIGS, use default
+                if requested_format not in FORMAT_CONFIGS:
+                    print(f"⚠️  Invalid format '{requested_format}' requested, using default")
+                    requested_format = DEFAULT_FORMAT
+
+                # Get format info
+                format_info = FORMAT_CONFIGS.get(requested_format)
+                extension = format_info['extension']
+                mime_type = format_info['mime_type']
+
+                # Build R2 key for the requested format
+                # Format: {zip}/latest-{format}.{ext} (e.g., "78729/latest-rgb-white.png")
+                format_key = f"{zip_code}/latest-{requested_format.replace('_', '-')}{extension}"
+
+                # Try to fetch the requested format
+                r2_object = await self.env.WEATHER_IMAGES.get(format_key)
+
+                # If not found and not default format, try default format
+                if r2_object is None and requested_format != DEFAULT_FORMAT:
+                    print(f"⚠️  Format '{requested_format}' not found for {zip_code}, trying default")
+                    requested_format = DEFAULT_FORMAT
+                    format_info = FORMAT_CONFIGS.get(DEFAULT_FORMAT)
+                    extension = format_info['extension']
+                    mime_type = format_info['mime_type']
+                    format_key = f"{zip_code}/latest-{requested_format.replace('_', '-')}{extension}"
+                    r2_object = await self.env.WEATHER_IMAGES.get(format_key)
+
+                # If still not found, try legacy latest.png
+                if r2_object is None:
+                    print(f"⚠️  Format file not found, trying legacy latest.png")
+                    r2_object = await self.env.WEATHER_IMAGES.get(f'{zip_code}/latest.png')
+                    mime_type = 'image/png'
 
                 if r2_object is None:
                     return Response.new(
@@ -537,16 +706,20 @@ class Default(WorkerEntrypoint):
                 # Get metadata (handle JavaScript object) for headers
                 try:
                     generated_at = r2_object.customMetadata['generated-at'] if r2_object.customMetadata else 'unknown'
+                    variant = r2_object.customMetadata.get('variant', 'unknown') if r2_object.customMetadata else 'unknown'
                 except:
                     generated_at = 'unknown'
+                    variant = 'unknown'
 
                 # Return the image - get body as arrayBuffer
                 image_data = await r2_object.arrayBuffer()
                 return Response.new(image_data, headers=to_js({
-                    "content-type": "image/png",
+                    "content-type": mime_type,
                     "cache-control": "public, max-age=900",
                     "x-generated-at": generated_at,
-                    "x-zip-code": zip_code
+                    "x-zip-code": zip_code,
+                    "x-format": requested_format,
+                    "x-variant": variant
                 }))
 
             except Exception as e:
@@ -695,23 +868,39 @@ class Default(WorkerEntrypoint):
                 # Geocode the ZIP (uses cache if available)
                 geo_data = await geocode_zip(self.env, zip_code, config.OWM_KEY)
 
-                # Generate the weather image
-                image_bytes, metadata, _ = await generate_weather_image(
-                    self.env,
-                    zip_code,
-                    geo_data['lat'],
-                    geo_data['lon']
-                )
+                # Get enabled formats
+                enabled_formats = get_enabled_formats(self.env)
 
-                # Upload to R2
-                await upload_to_r2(self.env, image_bytes, metadata, zip_code)
+                # Generate images for all enabled formats
+                generated_formats = []
+                all_metadata = {}
+                for format_name in enabled_formats:
+                    try:
+                        # Generate the weather image for this format
+                        image_bytes, metadata, _ = await generate_weather_image(
+                            self.env,
+                            zip_code,
+                            geo_data['lat'],
+                            geo_data['lon'],
+                            format_name
+                        )
+
+                        # Upload to R2
+                        await upload_to_r2(self.env, image_bytes, metadata, zip_code, format_name)
+
+                        generated_formats.append(format_name)
+                        all_metadata[format_name] = metadata
+                    except Exception as e:
+                        print(f"Failed to generate {format_name} for {zip_code}: {e}")
+                        all_metadata[format_name] = {'error': str(e)}
 
                 return Response.new(
                     json.dumps({
                         'success': True,
                         'zip': zip_code,
-                        'metadata': metadata,
-                        'message': f'Generated and uploaded image for ZIP {zip_code}'
+                        'formats': generated_formats,
+                        'metadata': all_metadata,
+                        'message': f'Generated {len(generated_formats)} format(s) for ZIP {zip_code}'
                     }),
                     headers=to_js({'Content-Type': 'application/json'})
                 )
