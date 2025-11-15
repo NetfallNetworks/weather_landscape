@@ -17,10 +17,13 @@ class sun:
  s = sun(lat=49,long=3) 
  print('sunrise at ',s.sunrise(when=datetime.datetime.now()) 
  """  
- def __init__(self,lat=50.4546600,long=30.5238000): # default Kyiv  
-  self.lat=lat  
+ def __init__(self,lat=50.4546600,long=30.5238000): # default Kyiv
+  self.lat=lat
   self.long=long
-  self.tzoffset = ( datetime.now() - datetime.utcnow() ).total_seconds()/(60*60)
+  # Use UTC timezone since the server runs in UTC
+  # This ensures current time and sunrise/sunset are in the same timezone
+  self.tzoffset = 0
+  print(f"🕐 Sunrise calc: lat={lat}, lon={long}, tzoffset={self.tzoffset}h (UTC)")
     
  def sunrise(self,when=None):  
   """ 

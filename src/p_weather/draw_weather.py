@@ -196,12 +196,30 @@ class DrawWeather():
             # Calculate time markers (don't depend on forecast data)
             t_sunrise = s.sunrise(tf)
             t_sunset = s.sunset(tf)
-            t_noon = datetime.datetime(tf.year,tf.month,tf.day,12,0,0,0)
-            t_midn = datetime.datetime(tf.year,tf.month,tf.day,0,0,0,0)+datetime.timedelta(days=1)
+
+            # Flowers use local clock time (12:00 and 00:00 in the location's timezone)
+            # Convert current UTC time to local time
+            tz_offset_delta = datetime.timedelta(seconds=owm.timezone_offset)
+            local_time = tf + tz_offset_delta
+
+            # Find next local noon
+            local_noon = datetime.datetime(local_time.year, local_time.month, local_time.day, 12, 0, 0, 0)
+            if local_time >= local_noon:
+                local_noon += datetime.timedelta(days=1)
+            # Convert back to UTC for timeline positioning
+            t_noon = local_noon - tz_offset_delta
+
+            # Find next local midnight
+            local_midn = datetime.datetime(local_time.year, local_time.month, local_time.day, 0, 0, 0, 0)
+            if local_time >= local_midn:
+                local_midn += datetime.timedelta(days=1)
+            # Convert back to UTC for timeline positioning
+            t_midn = local_midn - tz_offset_delta
 
             # Debug first few iterations and when we detect events
             if i < 5:
                 print(f"   [{i}] Range: {tf.strftime('%m/%d %H:%M')} to {(tf+dt).strftime('%m/%d %H:%M')}")
+                print(f"       Sunrise: {t_sunrise.strftime('%m/%d %H:%M')}, Sunset: {t_sunset.strftime('%m/%d %H:%M')}")
                 print(f"       Noon: {t_noon.strftime('%m/%d %H:%M')}, Midnight: {t_midn.strftime('%m/%d %H:%M')}")
 
             ymoon = ypos-ystep*5/8
