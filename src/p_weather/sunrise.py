@@ -20,8 +20,10 @@ class sun:
  def __init__(self,lat=50.4546600,long=30.5238000): # default Kyiv
   self.lat=lat
   self.long=long
-  self.tzoffset = ( datetime.now() - datetime.utcnow() ).total_seconds()/(60*60)
-  print(f"🕐 Sunrise calc: lat={lat}, lon={long}, tzoffset={self.tzoffset}h")
+  # Calculate timezone offset from longitude (approximate: 15 degrees = 1 hour)
+  # Negative longitude (West) = negative offset from UTC
+  self.tzoffset = round(self.long / 15.0)
+  print(f"🕐 Sunrise calc: lat={lat}, lon={long}, tzoffset={self.tzoffset}h (from longitude)")
     
  def sunrise(self,when=None):  
   """ 
