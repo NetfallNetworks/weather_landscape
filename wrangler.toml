@@ -29,12 +29,11 @@ id = "YOUR_KV_NAMESPACE_ID"
 [vars]
 DEFAULT_ZIP = "78729"
 
-# ADDITIONAL_FORMATS: Configure additional image formats to generate (optional)
-# Default format 'rgb_light' is always generated
-# Available formats: bw, eink, bwi, rgb_dark
-# Example: ADDITIONAL_FORMATS = "bw,eink,rgb_dark"
-# Uncomment to enable additional formats:
-# ADDITIONAL_FORMATS = "bw,eink"
+# Note: Image formats are configured per-ZIP via the API:
+# POST /formats/add?zip=78729&format=rgb_dark
+# POST /formats/remove?zip=78729&format=bw
+# GET /formats?zip=78729
+# Format config is stored in KV under 'formats:{zip}'
 
 # Note: Sensitive variables should be set using wrangler secrets:
 # wrangler secret put OWM_API_KEY

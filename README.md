@@ -166,28 +166,38 @@ Your weather landscape will be available at:
 
 ### Multi-Format Generation 🎨
 
-Generate images in multiple formats simultaneously! By default, only the `rgb_light` format is generated, but you can configure additional formats.
+Generate images in multiple formats per ZIP code! Each ZIP can have its own format configuration stored in KV. By default, only the `rgb_light` format is generated.
 
 **Available Formats:**
-- `rgb_light` (default) - Color image with light theme (.png)
+- `rgb_light` (default, always generated) - Color image with light theme (.png)
 - `rgb_dark` - Color image with dark theme (.png)
 - `bw` - Black & White for E-Ink displays (.bmp)
 - `eink` - Black & White with 90° rotation for E-Ink (.bmp)
 - `bwi` - Black & White inverted (.bmp)
 
-**Configuration:**
+**Managing Formats via API:**
 
-Add the `ADDITIONAL_FORMATS` environment variable in `wrangler.toml`:
+```bash
+# Add RGB Dark format to ZIP 78729
+curl -X POST "https://your-worker.workers.dev/formats/add?zip=78729&format=rgb_dark"
 
-```toml
-[vars]
-DEFAULT_ZIP = "78729"
-ADDITIONAL_FORMATS = "bw,eink,rgb_dark"  # Generate additional formats
+# Add Black & White format
+curl -X POST "https://your-worker.workers.dev/formats/add?zip=78729&format=bw"
+
+# Remove a format (cannot remove default rgb_light)
+curl -X POST "https://your-worker.workers.dev/formats/remove?zip=78729&format=bw"
+
+# Get current formats for a ZIP
+curl "https://your-worker.workers.dev/formats?zip=78729"
+# Returns: {"zip": "78729", "formats": ["rgb_light", "rgb_dark"], "available": [...]}
+
+# Generate all configured formats for a ZIP
+curl -X POST "https://your-worker.workers.dev/generate?zip=78729"
 ```
 
 **Accessing Different Formats:**
 
-Request specific formats using either query parameters or paths:
+Request specific formats using query parameters:
 
 ```
 # Default format (rgb_light)
@@ -198,21 +208,16 @@ https://your-worker.workers.dev/78729?bw
 https://your-worker.workers.dev/78729?eink
 https://your-worker.workers.dev/78729?rgb_dark
 
-# Request via path
-https://your-worker.workers.dev/78729/bw
-https://your-worker.workers.dev/78729/rgb_dark
-
-# Both work with either underscores or hyphens
-https://your-worker.workers.dev/78729/rgb_dark
-https://your-worker.workers.dev/78729/rgb-dark  # same result
+# Format names can use hyphens or underscores
+https://your-worker.workers.dev/78729?rgb_dark
+https://your-worker.workers.dev/78729?rgb-dark  # same result
 ```
 
 **Format Request Behavior:**
 - If the requested format doesn't exist, the default format is returned
 - If an invalid format is requested, the default format is returned
 - Format names can use hyphens or underscores (e.g., `rgb_light` or `rgb-dark`)
-- Query parameters and path-based access work identically
-- Controller routing handles format selection - only one file stored per format
+- Each ZIP has its own format configuration stored in KV (`formats:{zip}`)
 
 **Storage:**
 
@@ -223,7 +228,7 @@ One file per format is stored in R2:
 - `{zip}/rgb_dark.png`
 - `{zip}/bwi.bmp`
 
-The routing layer serves the appropriate format based on the request. No duplicate files or aliases.
+The routing layer serves the appropriate format based on the request.
 
 
 ## E-Ink module

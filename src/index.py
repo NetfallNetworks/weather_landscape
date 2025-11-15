@@ -56,17 +56,13 @@ DEFAULT_FORMAT = 'rgb_light'
 
 def get_enabled_formats(env):
     """
-    Get list of formats to generate
-    Always includes DEFAULT_FORMAT, plus any additional configured formats
-
-    Returns:
-        list: Format names (e.g., ['rgb_white', 'bw', 'eink'])
+    DEPRECATED: Use get_formats_for_zip() instead
+    Get list of formats from environment variable (global, not per-ZIP)
     """
     # Always include the default format
     formats = [DEFAULT_FORMAT]
 
     # Check for additional formats in environment variable
-    # Format: comma-separated list like "bw,eink,rgb_black"
     try:
         additional = getattr(env, 'ADDITIONAL_FORMATS', '')
         if additional:
@@ -77,6 +73,82 @@ def get_enabled_formats(env):
     except:
         pass
 
+    return formats
+
+
+async def get_formats_for_zip(env, zip_code):
+    """
+    Get list of formats to generate for a specific ZIP code from KV
+
+    Args:
+        env: Worker environment
+        zip_code: ZIP code
+
+    Returns:
+        list: Format names (always includes DEFAULT_FORMAT)
+    """
+    try:
+        kv_key = f"formats:{zip_code}"
+        formats_json = await env.CONFIG.get(kv_key)
+        if formats_json:
+            formats = json.loads(formats_json)
+            # Ensure default format is always included
+            if DEFAULT_FORMAT not in formats:
+                formats.insert(0, DEFAULT_FORMAT)
+            return formats
+        else:
+            # No config for this ZIP, use default only
+            return [DEFAULT_FORMAT]
+    except Exception as e:
+        print(f"Warning: Failed to get formats for {zip_code}: {e}")
+        return [DEFAULT_FORMAT]
+
+
+async def add_format_to_zip(env, zip_code, format_name):
+    """
+    Add a format to be generated for a specific ZIP code
+
+    Args:
+        env: Worker environment
+        zip_code: ZIP code
+        format_name: Format to add (e.g., 'rgb_dark', 'bw')
+
+    Returns:
+        list: Updated list of formats for this ZIP
+    """
+    if format_name not in FORMAT_CONFIGS:
+        raise ValueError(f"Unknown format: {format_name}")
+
+    formats = await get_formats_for_zip(env, zip_code)
+    if format_name not in formats:
+        formats.append(format_name)
+        kv_key = f"formats:{zip_code}"
+        await env.CONFIG.put(kv_key, json.dumps(formats))
+        print(f"✅ Added format {format_name} to {zip_code}")
+    return formats
+
+
+async def remove_format_from_zip(env, zip_code, format_name):
+    """
+    Remove a format from being generated for a specific ZIP code
+
+    Args:
+        env: Worker environment
+        zip_code: ZIP code
+        format_name: Format to remove
+
+    Returns:
+        list: Updated list of formats for this ZIP
+    """
+    if format_name == DEFAULT_FORMAT:
+        raise ValueError(f"Cannot remove default format {DEFAULT_FORMAT}")
+
+    formats = await get_formats_for_zip(env, zip_code)
+    if format_name in formats:
+        formats.remove(format_name)
+        kv_key = f"formats:{zip_code}"
+        await env.CONFIG.put(kv_key, json.dumps(formats))
+        print(f"✅ Removed format {format_name} from {zip_code}")
     return formats
 
 
@@ -478,10 +550,6 @@ class Default(WorkerEntrypoint):
         active_zips = await get_active_zips(self.env)
         print(f"📋 Processing {len(active_zips)} ZIP code(s): {', '.join(active_zips)}")
 
-        # Get enabled formats
-        enabled_formats = get_enabled_formats(self.env)
-        print(f"🎨 Generating {len(enabled_formats)} format(s): {', '.join(enabled_formats)}")
-
         success_count = 0
         error_count = 0
         errors = []
@@ -490,6 +558,10 @@ class Default(WorkerEntrypoint):
         for zip_code in active_zips:
             try:
                 print(f"\n🔄 Processing ZIP {zip_code}...")
+
+                # Get formats configured for this ZIP from KV
+                enabled_formats = await get_formats_for_zip(self.env, zip_code)
+                print(f"🎨 Generating {len(enabled_formats)} format(s) for {zip_code}: {', '.join(enabled_formats)}")
 
                 # Geocode the ZIP (uses cache if available)
                 geo_data = await geocode_zip(self.env, zip_code, config.OWM_KEY)
@@ -552,13 +624,14 @@ class Default(WorkerEntrypoint):
 
         Routes:
         - GET / - Returns HTML info page with links to all ZIPs in R2
-        - GET /{zip} - Returns latest weather image for ZIP
-        - GET /{zip}/ - Returns latest weather image for ZIP
-        - GET /{zip}/latest.png - Returns latest weather image for ZIP
-        - GET /{zip}/* - Returns latest weather image for ZIP (any path with ZIP)
+        - GET /{zip} - Returns latest weather image for ZIP (default format)
+        - GET /{zip}?{format} - Returns image in specified format
         - GET /status - Returns generation status and metadata for all ZIPs
+        - GET /formats?zip={zip} - Get configured formats for a ZIP
         - POST /activate?zip={zip} - Add ZIP to active regeneration list
         - POST /deactivate?zip={zip} - Remove ZIP from active regeneration list
+        - POST /formats/add?zip={zip}&format={format} - Add format to a ZIP
+        - POST /formats/remove?zip={zip}&format={format} - Remove format from a ZIP
         - POST /generate?zip={zip} - Manually trigger generation for a ZIP
         """
         url = request.url
@@ -917,6 +990,130 @@ class Default(WorkerEntrypoint):
                     }
                 )
 
+        # Route: POST /formats/add - Add a format to a ZIP
+        elif method == 'POST' and path == 'add' and 'formats' in path_parts:
+            try:
+                zip_code = query_params.get('zip')
+                format_name = query_params.get('format', '').lower().replace('-', '_')
+
+                if not zip_code or not (zip_code.isdigit() and len(zip_code) == 5):
+                    return Response.new(
+                        json.dumps({'error': 'Invalid ZIP code. Must be 5 digits.'}),
+                        {
+                            'status': 400,
+                            'headers': {'Content-Type': 'application/json'}
+                        }
+                    )
+
+                if not format_name or format_name not in FORMAT_CONFIGS:
+                    return Response.new(
+                        json.dumps({
+                            'error': f'Invalid format. Available formats: {", ".join(FORMAT_CONFIGS.keys())}'
+                        }),
+                        {
+                            'status': 400,
+                            'headers': {'Content-Type': 'application/json'}
+                        }
+                    )
+
+                formats = await add_format_to_zip(self.env, zip_code, format_name)
+
+                return Response.new(
+                    json.dumps({
+                        'success': True,
+                        'zip': zip_code,
+                        'format': format_name,
+                        'formats': formats,
+                        'message': f'Added {format_name} to {zip_code}'
+                    }),
+                    headers=to_js({'Content-Type': 'application/json'})
+                )
+            except Exception as e:
+                return Response.new(
+                    json.dumps({'error': f'Failed to add format: {str(e)}'}),
+                    {
+                        'status': 500,
+                        'headers': {'Content-Type': 'application/json'}
+                    }
+                )
+
+        # Route: POST /formats/remove - Remove a format from a ZIP
+        elif method == 'POST' and path == 'remove' and 'formats' in path_parts:
+            try:
+                zip_code = query_params.get('zip')
+                format_name = query_params.get('format', '').lower().replace('-', '_')
+
+                if not zip_code or not (zip_code.isdigit() and len(zip_code) == 5):
+                    return Response.new(
+                        json.dumps({'error': 'Invalid ZIP code. Must be 5 digits.'}),
+                        {
+                            'status': 400,
+                            'headers': {'Content-Type': 'application/json'}
+                        }
+                    )
+
+                if not format_name:
+                    return Response.new(
+                        json.dumps({'error': 'Missing format parameter'}),
+                        {
+                            'status': 400,
+                            'headers': {'Content-Type': 'application/json'}
+                        }
+                    )
+
+                formats = await remove_format_from_zip(self.env, zip_code, format_name)
+
+                return Response.new(
+                    json.dumps({
+                        'success': True,
+                        'zip': zip_code,
+                        'format': format_name,
+                        'formats': formats,
+                        'message': f'Removed {format_name} from {zip_code}'
+                    }),
+                    headers=to_js({'Content-Type': 'application/json'})
+                )
+            except Exception as e:
+                return Response.new(
+                    json.dumps({'error': f'Failed to remove format: {str(e)}'}),
+                    {
+                        'status': 500,
+                        'headers': {'Content-Type': 'application/json'}
+                    }
+                )
+
+        # Route: GET /formats - Get formats for a ZIP
+        elif method == 'GET' and path == 'formats':
+            try:
+                zip_code = query_params.get('zip')
+                if not zip_code or not (zip_code.isdigit() and len(zip_code) == 5):
+                    return Response.new(
+                        json.dumps({'error': 'Invalid ZIP code. Must be 5 digits.'}),
+                        {
+                            'status': 400,
+                            'headers': {'Content-Type': 'application/json'}
+                        }
+                    )
+
+                formats = await get_formats_for_zip(self.env, zip_code)
+
+                return Response.new(
+                    json.dumps({
+                        'zip': zip_code,
+                        'formats': formats,
+                        'available': list(FORMAT_CONFIGS.keys())
+                    }),
+                    headers=to_js({'Content-Type': 'application/json'})
+                )
+            except Exception as e:
+                return Response.new(
+                    json.dumps({'error': f'Failed to get formats: {str(e)}'}),
+                    {
+                        'status': 500,
+                        'headers': {'Content-Type': 'application/json'}
+                    }
+                )
+
         # Route: POST /generate - Manually trigger generation for a ZIP
         elif method == 'POST' and path == 'generate':
             try:
@@ -944,10 +1141,10 @@ class Default(WorkerEntrypoint):
                 # Geocode the ZIP (uses cache if available)
                 geo_data = await geocode_zip(self.env, zip_code, config.OWM_KEY)
 
-                # Get enabled formats
-                enabled_formats = get_enabled_formats(self.env)
+                # Get formats configured for this ZIP from KV
+                enabled_formats = await get_formats_for_zip(self.env, zip_code)
 
-                # Generate images for all enabled formats
+                # Generate images for all configured formats
                 generated_formats = []
                 all_metadata = {}
                 for format_name in enabled_formats:
