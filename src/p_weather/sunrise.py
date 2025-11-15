@@ -106,7 +106,7 @@ class sun:
   
   hourangle= deg(acos(cos(rad(90.833))/(cos(rad(latitude))*cos(rad(declination)))-tan(rad(latitude))*tan(rad(declination))))  
   
-  self.solarnoon_t=(720-4*longitude-eqtime+timezone*60)/1440  
+  self.solarnoon_t=(720-4*longitude-eqtime-timezone*60)/1440  
   self.sunrise_t  =self.solarnoon_t-hourangle*4/1440  
   self.sunset_t   =self.solarnoon_t+hourangle*4/1440  
   
