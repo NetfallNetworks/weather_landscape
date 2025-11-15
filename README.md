@@ -158,7 +158,7 @@ wrangler secret put OWM_API_KEY
 
 Your weather landscape will be available at:
 - Root: `https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/`
-- Specific ZIP: `https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/78729/latest.png`
+- Specific ZIP: `https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/78729`
 
 **📚 Full deployment guide:** See [DEPLOYMENT.md](DEPLOYMENT.md)
 
@@ -201,7 +201,6 @@ https://your-worker.workers.dev/78729?rgb_black
 # Request via path
 https://your-worker.workers.dev/78729/bw
 https://your-worker.workers.dev/78729/rgb_black
-https://your-worker.workers.dev/78729/latest-rgb-black
 
 # Both work with either underscores or hyphens
 https://your-worker.workers.dev/78729/rgb_black
@@ -213,16 +212,18 @@ https://your-worker.workers.dev/78729/rgb-black  # same result
 - If an invalid format is requested, the default format is returned
 - Format names can use hyphens or underscores (e.g., `rgb_white` or `rgb-black`)
 - Query parameters and path-based access work identically
+- Controller routing handles format selection - only one file stored per format
 
 **Storage:**
 
-Images are stored in R2 with multiple filename patterns:
+One file per format is stored in R2:
 - `{zip}/rgb_white.png` (default format)
 - `{zip}/bw.bmp`
 - `{zip}/eink.bmp`
 - `{zip}/rgb_black.png`
-- `{zip}/latest-{format}.{ext}` (kebab-case aliases, e.g., `latest-rgb-black.png`)
-- `{zip}/latest.png` (backwards compatible, same as default format)
+- `{zip}/bwi.bmp`
+
+The routing layer serves the appropriate format based on the request. No duplicate files or aliases.
 
 
 ## E-Ink module

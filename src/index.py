@@ -357,8 +357,7 @@ async def upload_to_r2(env, image_bytes, metadata, zip_code, format_name=None):
         if not format_info:
             raise ValueError(f"Unknown format: {format_name}")
 
-        # Create the key for this format's image with zip code folder
-        # Format: {zip}/{format}{ext} (e.g., "78729/rgb_black.png")
+        # Store ONE file per format: {zip}/{format}{ext}
         extension = format_info['extension']
         key = f"{zip_code}/{format_name}{extension}"
 
@@ -378,7 +377,7 @@ async def upload_to_r2(env, image_bytes, metadata, zip_code, format_name=None):
         for i, byte in enumerate(image_bytes):
             js_array[i] = byte
 
-        # Upload to R2 with format name as filename
+        # Upload to R2
         await env.WEATHER_IMAGES.put(
             key,
             js_array,
@@ -391,36 +390,6 @@ async def upload_to_r2(env, image_bytes, metadata, zip_code, format_name=None):
         )
 
         print(f"✅ Uploaded {key} to R2 ({len(image_bytes)} bytes)")
-
-        # Also upload as latest-{format} with kebab-case for alternative access
-        kebab_key = f"{zip_code}/latest-{format_name.replace('_', '-')}{extension}"
-        if kebab_key != key:  # Only if different
-            await env.WEATHER_IMAGES.put(
-                kebab_key,
-                js_array,
-                {
-                    'httpMetadata': {
-                        'contentType': format_info['mime_type'],
-                    },
-                    'customMetadata': custom_metadata
-                }
-            )
-            print(f"✅ Uploaded {kebab_key} to R2 (kebab-case alias)")
-
-        # Also upload as latest.png for backwards compatibility (only for default format)
-        if format_name == DEFAULT_FORMAT:
-            legacy_key = f"{zip_code}/latest.png"
-            await env.WEATHER_IMAGES.put(
-                legacy_key,
-                js_array,
-                {
-                    'httpMetadata': {
-                        'contentType': format_info['mime_type'],
-                    },
-                    'customMetadata': custom_metadata
-                }
-            )
-            print(f"✅ Uploaded {legacy_key} to R2 (backwards compatibility)")
 
         # Save metadata to KV (per-ZIP-format)
         await env.CONFIG.put(
@@ -682,15 +651,12 @@ class Default(WorkerEntrypoint):
                         requested_format = normalized
                         break
 
-                # Check path for format name (e.g., /78729/bw, /78729/rgb_black, /78729/latest-rgb-black)
-                # Path parts after ZIP: could be "bw", "rgb_black", "latest-rgb-black.png", etc.
+                # Check path for format name (e.g., /78729/bw, /78729/rgb_black)
+                # Path parts after ZIP: could be "bw", "rgb_black", etc.
                 for part in path_parts:
                     if part and part != zip_code:
                         # Remove extension if present
                         path_part = part.replace('.png', '').replace('.bmp', '')
-                        # Remove 'latest-' prefix if present
-                        if path_part.startswith('latest-'):
-                            path_part = path_part[7:]  # Remove 'latest-'
                         # Normalize: convert kebab-case to snake_case
                         normalized = path_part.lower().replace('-', '_')
                         if normalized in FORMAT_CONFIGS:
@@ -707,35 +673,19 @@ class Default(WorkerEntrypoint):
                 extension = format_info['extension']
                 mime_type = format_info['mime_type']
 
-                # Try multiple R2 key patterns for the requested format
-                # Pattern 1: {zip}/{format}{ext} (e.g., "78729/rgb_black.png")
-                format_key_1 = f"{zip_code}/{requested_format}{extension}"
-                # Pattern 2: {zip}/latest-{format}{ext} (e.g., "78729/latest-rgb-black.png")
-                format_key_2 = f"{zip_code}/latest-{requested_format.replace('_', '-')}{extension}"
+                # Try to fetch: {zip}/{format}{ext}
+                key = f"{zip_code}/{requested_format}{extension}"
+                r2_object = await self.env.WEATHER_IMAGES.get(key)
 
-                # Try to fetch the requested format
-                r2_object = await self.env.WEATHER_IMAGES.get(format_key_1)
-                if r2_object is None:
-                    r2_object = await self.env.WEATHER_IMAGES.get(format_key_2)
-
-                # If not found and not default format, try default format
+                # If not found and not default format, fallback to default
                 if r2_object is None and requested_format != DEFAULT_FORMAT:
-                    print(f"⚠️  Format '{requested_format}' not found for {zip_code}, trying default")
+                    print(f"⚠️  Format '{requested_format}' not found for {zip_code}, using default")
                     requested_format = DEFAULT_FORMAT
                     format_info = FORMAT_CONFIGS.get(DEFAULT_FORMAT)
                     extension = format_info['extension']
                     mime_type = format_info['mime_type']
-                    format_key_1 = f"{zip_code}/{requested_format}{extension}"
-                    format_key_2 = f"{zip_code}/latest-{requested_format.replace('_', '-')}{extension}"
-                    r2_object = await self.env.WEATHER_IMAGES.get(format_key_1)
-                    if r2_object is None:
-                        r2_object = await self.env.WEATHER_IMAGES.get(format_key_2)
-
-                # If still not found, try legacy latest.png
-                if r2_object is None:
-                    print(f"⚠️  Format file not found, trying legacy latest.png")
-                    r2_object = await self.env.WEATHER_IMAGES.get(f'{zip_code}/latest.png')
-                    mime_type = 'image/png'
+                    key = f"{zip_code}/{requested_format}{extension}"
+                    r2_object = await self.env.WEATHER_IMAGES.get(key)
 
                 if r2_object is None:
                     return Response.new(
