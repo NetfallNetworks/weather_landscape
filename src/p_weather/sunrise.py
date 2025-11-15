@@ -17,10 +17,11 @@ class sun:
  s = sun(lat=49,long=3) 
  print('sunrise at ',s.sunrise(when=datetime.datetime.now()) 
  """  
- def __init__(self,lat=50.4546600,long=30.5238000): # default Kyiv  
-  self.lat=lat  
+ def __init__(self,lat=50.4546600,long=30.5238000): # default Kyiv
+  self.lat=lat
   self.long=long
   self.tzoffset = ( datetime.now() - datetime.utcnow() ).total_seconds()/(60*60)
+  print(f"🕐 Sunrise calc: lat={lat}, lon={long}, tzoffset={self.tzoffset}h")
     
  def sunrise(self,when=None):  
   """ 
@@ -106,7 +107,7 @@ class sun:
   
   hourangle= deg(acos(cos(rad(90.833))/(cos(rad(latitude))*cos(rad(declination)))-tan(rad(latitude))*tan(rad(declination))))  
   
-  self.solarnoon_t=(720-4*longitude-eqtime-timezone*60)/1440  
+  self.solarnoon_t=(720-4*longitude-eqtime+timezone*60)/1440  
   self.sunrise_t  =self.solarnoon_t-hourangle*4/1440  
   self.sunset_t   =self.solarnoon_t+hourangle*4/1440  
   
