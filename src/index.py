@@ -428,7 +428,18 @@ async def generate_weather_image(env, zip_code, lat, lon, format_name=None):
             raise ValueError(f"Unknown format: {format_name}")
 
         # Generate the image with provided lat/lon and format
-        wl = WeatherLandscape(config.to_weather_config(lat=lat, lon=lon, format_name=format_name))
+        weather_config = config.to_weather_config(lat=lat, lon=lon, format_name=format_name)
+
+        # Debug: Log which config class and colors are being used
+        print(f"🎨 Config for {format_name}: {weather_config.__class__.__name__}")
+        if hasattr(weather_config, 'COLOR_BG'):
+            print(f"   COLOR_BG: {weather_config.COLOR_BG}")
+        if hasattr(weather_config, 'COLOR_FG'):
+            print(f"   COLOR_FG: {weather_config.COLOR_FG}")
+        print(f"   TEMPLATE: {weather_config.TEMPLATE_FILENAME}")
+        print(f"   SPRITES_MODE: {weather_config.SPRITES_MODE}")
+
+        wl = WeatherLandscape(weather_config)
         img = await wl.MakeImage()
 
         # Convert PIL Image to bytes

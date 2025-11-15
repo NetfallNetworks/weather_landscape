@@ -19,9 +19,10 @@ class SpritesRGB(Sprites):
     def __init__(self,config:WLBaseSettings,canvas:Image):
         super().__init__(config.SPRITES_DIR,canvas)
         self.cfg = config
-        w, h = self.img.size 
+        w, h = self.img.size
+        print(f"🎨 SpritesRGB: Filling {w}x{h} canvas with COLOR_BG={self.cfg.COLOR_BG}")
         self.img.paste( self.cfg.COLOR_BG, (0, 0, w, h) )
-        
+
 
 
 
