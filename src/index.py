@@ -658,6 +658,9 @@ class Default(WorkerEntrypoint):
                 if '=' in param:
                     key, value = param.split('=', 1)
                     query_params[key] = value
+                else:
+                    # Handle standalone parameters like ?rgb_dark (no value)
+                    query_params[param] = ''
 
         # Extract ZIP from path - matches /78729, /78729/, /78729/anything
         # Path parts: ['', '78729', 'latest.png'] or ['', '78729', ''] etc.
