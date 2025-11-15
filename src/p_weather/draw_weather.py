@@ -210,6 +210,7 @@ class DrawWeather():
             # Debug first few iterations and when we detect events
             if i < 5:
                 print(f"   [{i}] Range: {tf.strftime('%m/%d %H:%M')} to {(tf+dt).strftime('%m/%d %H:%M')}")
+                print(f"       Sunrise: {t_sunrise.strftime('%m/%d %H:%M')}, Sunset: {t_sunset.strftime('%m/%d %H:%M')}")
                 print(f"       Noon: {t_noon.strftime('%m/%d %H:%M')}, Midnight: {t_midn.strftime('%m/%d %H:%M')}")
 
             ymoon = ypos-ystep*5/8
