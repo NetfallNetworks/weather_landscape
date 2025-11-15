@@ -158,11 +158,77 @@ wrangler secret put OWM_API_KEY
 
 Your weather landscape will be available at:
 - Root: `https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/`
-- Specific ZIP: `https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/78729/latest.png`
+- Specific ZIP: `https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/78729`
 
 **📚 Full deployment guide:** See [DEPLOYMENT.md](DEPLOYMENT.md)
 
 **📍 Multi-ZIP guide:** See [MULTI-ZIP-GUIDE.md](MULTI-ZIP-GUIDE.md) for managing multiple locations
+
+### Multi-Format Generation 🎨
+
+Generate images in multiple formats per ZIP code! Each ZIP can have its own format configuration stored in KV. By default, only the `rgb_light` format is generated.
+
+**Available Formats:**
+- `rgb_light` (default, always generated) - Color image with light theme (.png)
+- `rgb_dark` - Color image with dark theme (.png)
+- `bw` - Black & White for E-Ink displays (.bmp)
+- `eink` - Black & White with 90° rotation for E-Ink (.bmp)
+- `bwi` - Black & White inverted (.bmp)
+
+**Managing Formats via API:**
+
+```bash
+# Add RGB Dark format to ZIP 78729
+curl -X POST "https://your-worker.workers.dev/formats/add?zip=78729&format=rgb_dark"
+
+# Add Black & White format
+curl -X POST "https://your-worker.workers.dev/formats/add?zip=78729&format=bw"
+
+# Remove a format (cannot remove default rgb_light)
+curl -X POST "https://your-worker.workers.dev/formats/remove?zip=78729&format=bw"
+
+# Get current formats for a ZIP
+curl "https://your-worker.workers.dev/formats?zip=78729"
+# Returns: {"zip": "78729", "formats": ["rgb_light", "rgb_dark"], "available": [...]}
+
+# Generate all configured formats for a ZIP
+curl -X POST "https://your-worker.workers.dev/generate?zip=78729"
+```
+
+**Accessing Different Formats:**
+
+Request specific formats using query parameters:
+
+```
+# Default format (rgb_light)
+https://your-worker.workers.dev/78729
+
+# Request via query parameter
+https://your-worker.workers.dev/78729?bw
+https://your-worker.workers.dev/78729?eink
+https://your-worker.workers.dev/78729?rgb_dark
+
+# Format names can use hyphens or underscores
+https://your-worker.workers.dev/78729?rgb_dark
+https://your-worker.workers.dev/78729?rgb-dark  # same result
+```
+
+**Format Request Behavior:**
+- If the requested format doesn't exist, the default format is returned
+- If an invalid format is requested, the default format is returned
+- Format names can use hyphens or underscores (e.g., `rgb_light` or `rgb-dark`)
+- Each ZIP has its own format configuration stored in KV (`formats:{zip}`)
+
+**Storage:**
+
+One file per format is stored in R2:
+- `{zip}/rgb_light.png` (default format)
+- `{zip}/bw.bmp`
+- `{zip}/eink.bmp`
+- `{zip}/rgb_dark.png`
+- `{zip}/bwi.bmp`
+
+The routing layer serves the appropriate format based on the request.
 
 
 ## E-Ink module

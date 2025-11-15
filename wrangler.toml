@@ -29,6 +29,12 @@ id = "YOUR_KV_NAMESPACE_ID"
 [vars]
 DEFAULT_ZIP = "78729"
 
+# Note: Image formats are configured per-ZIP via the API:
+# POST /formats/add?zip=78729&format=rgb_dark
+# POST /formats/remove?zip=78729&format=bw
+# GET /formats?zip=78729
+# Format config is stored in KV under 'formats:{zip}'
+
 # Note: Sensitive variables should be set using wrangler secrets:
 # wrangler secret put OWM_API_KEY
 # These will be available in env but not visible in wrangler.toml
