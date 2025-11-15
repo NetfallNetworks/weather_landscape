@@ -30,9 +30,9 @@ id = "YOUR_KV_NAMESPACE_ID"
 DEFAULT_ZIP = "78729"
 
 # ADDITIONAL_FORMATS: Configure additional image formats to generate (optional)
-# Default format 'rgb_white' is always generated
-# Available formats: bw, eink, bwi, rgb_black
-# Example: ADDITIONAL_FORMATS = "bw,eink"
+# Default format 'rgb_light' is always generated
+# Available formats: bw, eink, bwi, rgb_dark
+# Example: ADDITIONAL_FORMATS = "bw,eink,rgb_dark"
 # Uncomment to enable additional formats:
 # ADDITIONAL_FORMATS = "bw,eink"
 

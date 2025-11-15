@@ -166,11 +166,11 @@ Your weather landscape will be available at:
 
 ### Multi-Format Generation 🎨
 
-Generate images in multiple formats simultaneously! By default, only the `rgb_white` format is generated, but you can configure additional formats.
+Generate images in multiple formats simultaneously! By default, only the `rgb_light` format is generated, but you can configure additional formats.
 
 **Available Formats:**
-- `rgb_white` (default) - Color image with white background (.png)
-- `rgb_black` - Color image with black background (.png)
+- `rgb_light` (default) - Color image with light theme (.png)
+- `rgb_dark` - Color image with dark theme (.png)
 - `bw` - Black & White for E-Ink displays (.bmp)
 - `eink` - Black & White with 90° rotation for E-Ink (.bmp)
 - `bwi` - Black & White inverted (.bmp)
@@ -182,7 +182,7 @@ Add the `ADDITIONAL_FORMATS` environment variable in `wrangler.toml`:
 ```toml
 [vars]
 DEFAULT_ZIP = "78729"
-ADDITIONAL_FORMATS = "bw,eink,rgb_black"  # Generate additional formats
+ADDITIONAL_FORMATS = "bw,eink,rgb_dark"  # Generate additional formats
 ```
 
 **Accessing Different Formats:**
@@ -190,37 +190,37 @@ ADDITIONAL_FORMATS = "bw,eink,rgb_black"  # Generate additional formats
 Request specific formats using either query parameters or paths:
 
 ```
-# Default format (rgb_white)
+# Default format (rgb_light)
 https://your-worker.workers.dev/78729
 
 # Request via query parameter
 https://your-worker.workers.dev/78729?bw
 https://your-worker.workers.dev/78729?eink
-https://your-worker.workers.dev/78729?rgb_black
+https://your-worker.workers.dev/78729?rgb_dark
 
 # Request via path
 https://your-worker.workers.dev/78729/bw
-https://your-worker.workers.dev/78729/rgb_black
+https://your-worker.workers.dev/78729/rgb_dark
 
 # Both work with either underscores or hyphens
-https://your-worker.workers.dev/78729/rgb_black
-https://your-worker.workers.dev/78729/rgb-black  # same result
+https://your-worker.workers.dev/78729/rgb_dark
+https://your-worker.workers.dev/78729/rgb-dark  # same result
 ```
 
 **Format Request Behavior:**
 - If the requested format doesn't exist, the default format is returned
 - If an invalid format is requested, the default format is returned
-- Format names can use hyphens or underscores (e.g., `rgb_white` or `rgb-black`)
+- Format names can use hyphens or underscores (e.g., `rgb_light` or `rgb-dark`)
 - Query parameters and path-based access work identically
 - Controller routing handles format selection - only one file stored per format
 
 **Storage:**
 
 One file per format is stored in R2:
-- `{zip}/rgb_white.png` (default format)
+- `{zip}/rgb_light.png` (default format)
 - `{zip}/bw.bmp`
 - `{zip}/eink.bmp`
-- `{zip}/rgb_black.png`
+- `{zip}/rgb_dark.png`
 - `{zip}/bwi.bmp`
 
 The routing layer serves the appropriate format based on the request. No duplicate files or aliases.

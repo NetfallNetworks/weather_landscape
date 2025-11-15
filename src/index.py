@@ -18,17 +18,17 @@ def to_js(obj):
 
 # Format configuration mapping
 FORMAT_CONFIGS = {
-    'rgb_white': {
+    'rgb_light': {
         'class_name': 'WLConfig_RGB_White',
         'extension': '.png',
         'mime_type': 'image/png',
-        'title': 'RGB White Background'
+        'title': 'RGB Light Theme'
     },
-    'rgb_black': {
+    'rgb_dark': {
         'class_name': 'WLConfig_RGB_Black',
         'extension': '.png',
         'mime_type': 'image/png',
-        'title': 'RGB Black Background'
+        'title': 'RGB Dark Theme'
     },
     'bw': {
         'class_name': 'WLConfig_BW',
@@ -51,7 +51,7 @@ FORMAT_CONFIGS = {
 }
 
 # Default format (always generated)
-DEFAULT_FORMAT = 'rgb_white'
+DEFAULT_FORMAT = 'rgb_light'
 
 
 def get_enabled_formats(env):
