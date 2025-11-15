@@ -197,15 +197,24 @@ class DrawWeather():
             t_sunrise = s.sunrise(tf)
             t_sunset = s.sunset(tf)
 
-            # Flowers use simple clock time (12:00 and 00:00)
-            # Always find the NEXT occurrence from tf
-            t_noon = datetime.datetime(tf.year, tf.month, tf.day, 12, 0, 0, 0)
-            if tf >= t_noon:
-                t_noon += datetime.timedelta(days=1)
+            # Flowers use local clock time (12:00 and 00:00 in the location's timezone)
+            # Convert current UTC time to local time
+            tz_offset_delta = datetime.timedelta(seconds=owm.timezone_offset)
+            local_time = tf + tz_offset_delta
 
-            t_midn = datetime.datetime(tf.year, tf.month, tf.day, 0, 0, 0, 0)
-            if tf >= t_midn:
-                t_midn += datetime.timedelta(days=1)
+            # Find next local noon
+            local_noon = datetime.datetime(local_time.year, local_time.month, local_time.day, 12, 0, 0, 0)
+            if local_time >= local_noon:
+                local_noon += datetime.timedelta(days=1)
+            # Convert back to UTC for timeline positioning
+            t_noon = local_noon - tz_offset_delta
+
+            # Find next local midnight
+            local_midn = datetime.datetime(local_time.year, local_time.month, local_time.day, 0, 0, 0, 0)
+            if local_time >= local_midn:
+                local_midn += datetime.timedelta(days=1)
+            # Convert back to UTC for timeline positioning
+            t_midn = local_midn - tz_offset_delta
 
             # Debug first few iterations and when we detect events
             if i < 5:

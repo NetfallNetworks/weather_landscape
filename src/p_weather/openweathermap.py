@@ -223,6 +223,11 @@ class OpenWeatherMap():
     def FromJSON(self,data_curr,data_fcst):
         self.f = []
         cdata = data_curr
+
+        # Capture timezone offset from API (in seconds from UTC)
+        self.timezone_offset = cdata.get('timezone', 0)
+        print(f"🌍 Location timezone offset: {self.timezone_offset}s ({self.timezone_offset/3600}h from UTC)")
+
         f = WeatherInfo(cdata,self.cfg)
         self.f.append(f)
         if not ('list' in data_fcst):
