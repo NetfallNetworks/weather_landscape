@@ -196,14 +196,13 @@ class DrawWeather():
             # Calculate time markers (don't depend on forecast data)
             t_sunrise = s.sunrise(tf)
             t_sunset = s.sunset(tf)
-            # Calculate next noon/midnight from current iteration time (clock time for easy interpretation)
-            t_noon = datetime.datetime(tf.year,tf.month,tf.day,12,0,0,0)
-            if tf > t_noon:  # If we've passed noon today, use tomorrow's noon
-                t_noon += datetime.timedelta(days=1)
 
-            t_midn = datetime.datetime(tf.year,tf.month,tf.day,0,0,0,0)
-            if tf >= t_midn:  # If we've passed midnight today, use tomorrow's midnight
-                t_midn += datetime.timedelta(days=1)
+            # Calculate midday as halfway between sunrise and sunset
+            t_noon = t_sunrise + (t_sunset - t_sunrise) / 2
+
+            # Calculate midnight as halfway between sunset and next sunrise
+            t_next_sunrise = s.sunrise(tf + datetime.timedelta(days=1))
+            t_midn = t_sunset + (t_next_sunrise - t_sunset) / 2
 
             # Debug first few iterations and when we detect events
             if i < 5:
