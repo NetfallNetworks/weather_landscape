@@ -134,6 +134,60 @@ async def get_active_zips(env):
         return ['78729']  # Fallback to default
 
 
+async def get_all_zips_from_r2(env):
+    """
+    Scan R2 bucket to find all ZIP codes that have images
+
+    Returns:
+        list: List of ZIP code strings found in R2
+    """
+    try:
+        zip_codes = set()
+
+        # List all objects in the R2 bucket
+        # R2 list() returns objects with keys like "78729/latest.png"
+        listed = await env.WEATHER_IMAGES.list()
+
+        # Extract ZIP codes from object keys
+        if hasattr(listed, 'objects'):
+            for obj in listed.objects:
+                # Object key format: "78729/latest.png"
+                key = obj.key
+                if '/' in key:
+                    zip_code = key.split('/')[0]
+                    # Validate it looks like a ZIP code (5 digits)
+                    if zip_code.isdigit() and len(zip_code) == 5:
+                        zip_codes.add(zip_code)
+
+        return sorted(list(zip_codes))
+    except Exception as e:
+        print(f"Warning: Failed to list R2 objects: {e}")
+        return []
+
+
+async def add_zip_to_active(env, zip_code):
+    """
+    Add a ZIP code to the active_zips list
+
+    Args:
+        env: Worker environment
+        zip_code: ZIP code to add
+
+    Returns:
+        list: Updated list of active ZIP codes
+    """
+    try:
+        active_zips = await get_active_zips(env)
+        if zip_code not in active_zips:
+            active_zips.append(zip_code)
+            await env.CONFIG.put('active_zips', json.dumps(active_zips))
+            print(f"✅ Added {zip_code} to active_zips")
+        return active_zips
+    except Exception as e:
+        print(f"Error adding {zip_code} to active_zips: {e}")
+        raise
+
+
 async def generate_weather_image(env, zip_code, lat, lon):
     """
     Generate a weather landscape image using current weather data
@@ -326,16 +380,29 @@ class Default(WorkerEntrypoint):
         HTTP request handler - serves images from R2
 
         Routes:
-        - GET / - Returns HTML info page with links to all active ZIPs
+        - GET / - Returns HTML info page with links to all ZIPs in R2
         - GET /{zip} - Returns latest weather image for ZIP
         - GET /{zip}/ - Returns latest weather image for ZIP
         - GET /{zip}/latest.png - Returns latest weather image for ZIP
         - GET /{zip}/* - Returns latest weather image for ZIP (any path with ZIP)
         - GET /status - Returns generation status and metadata for all ZIPs
+        - POST /activate?zip={zip} - Add ZIP to active regeneration list
+        - POST /deactivate?zip={zip} - Remove ZIP from active regeneration list
+        - POST /generate?zip={zip} - Manually trigger generation for a ZIP
         """
         url = request.url
+        method = request.method
         path_parts = url.split('?')[0].split('/')
         path = path_parts[-1] if len(path_parts) > 0 else ''
+
+        # Extract query parameters
+        query_params = {}
+        if '?' in url:
+            query_string = url.split('?')[1]
+            for param in query_string.split('&'):
+                if '=' in param:
+                    key, value = param.split('=', 1)
+                    query_params[key] = value
 
         # Extract ZIP from path - matches /78729, /78729/, /78729/anything
         # Path parts: ['', '78729', 'latest.png'] or ['', '78729', ''] etc.
@@ -349,13 +416,20 @@ class Default(WorkerEntrypoint):
         # Route: Info page (root) - only if no ZIP in path
         if path == '' and not zip_from_path:
             try:
-                # Get active ZIPs to show links
+                # Get all ZIPs from R2 and active ZIPs from KV
+                all_zips = await get_all_zips_from_r2(self.env)
                 active_zips = await get_active_zips(self.env)
 
-                zip_links = '\n'.join([
-                    f'<li><a href="/{zip}">ZIP {zip}</a></li>'
-                    for zip in active_zips
-                ])
+                # Build ZIP links with active/inactive status dots
+                zip_items = []
+                for zip_code in all_zips:
+                    is_active = zip_code in active_zips
+                    dot_class = 'dot active' if is_active else 'dot inactive'
+                    zip_items.append(
+                        f'<li><span class="{dot_class}"></span><a href="/{zip_code}">ZIP {zip_code}</a></li>'
+                    )
+
+                zip_links = '\n'.join(zip_items) if zip_items else '<li><em>No ZIP codes found in R2</em></li>'
 
                 html = f"""
                 <!DOCTYPE html>
@@ -365,14 +439,20 @@ class Default(WorkerEntrypoint):
                     <style>
                         body {{
                             font-family: system-ui, -apple-system, sans-serif;
-                            max-width: 600px;
+                            max-width: 700px;
                             margin: 2rem auto;
                             padding: 2rem;
                             background: #f5f5f5;
                         }}
                         h1 {{ color: #333; }}
+                        h2 {{ color: #555; margin-top: 2rem; }}
                         ul {{ list-style: none; padding: 0; }}
-                        li {{ margin: 0.5rem 0; }}
+                        li {{
+                            margin: 0.5rem 0;
+                            display: flex;
+                            align-items: center;
+                            gap: 0.75rem;
+                        }}
                         a {{
                             color: #0066cc;
                             text-decoration: none;
@@ -382,12 +462,48 @@ class Default(WorkerEntrypoint):
                             display: inline-block;
                         }}
                         a:hover {{ background: #e6f2ff; }}
+                        .dot {{
+                            width: 8px;
+                            height: 8px;
+                            border-radius: 50%;
+                            flex-shrink: 0;
+                        }}
+                        .dot.active {{
+                            background: #22c55e;
+                        }}
+                        .dot.inactive {{
+                            background: #e5e7eb;
+                        }}
+                        .key {{
+                            margin-top: 2rem;
+                            padding-top: 1rem;
+                            border-top: 1px solid #ddd;
+                            font-size: 0.85rem;
+                            color: #666;
+                            display: flex;
+                            gap: 1.5rem;
+                        }}
+                        .key-item {{
+                            display: flex;
+                            align-items: center;
+                            gap: 0.5rem;
+                        }}
                     </style>
                 </head>
                 <body>
                     <h1>🌤️ Weather Landscape</h1>
-                    <h2>Active ZIP Codes</h2>
+                    <h2>Available ZIP Codes ({len(all_zips)})</h2>
                     <ul>{zip_links}</ul>
+                    <div class="key">
+                        <div class="key-item">
+                            <span class="dot active"></span>
+                            <span>Up to date</span>
+                        </div>
+                        <div class="key-item">
+                            <span class="dot inactive"></span>
+                            <span>Not updating</span>
+                        </div>
+                    </div>
                 </body>
                 </html>
                 """
@@ -476,6 +592,132 @@ class Default(WorkerEntrypoint):
             except Exception as e:
                 return Response.new(
                     json.dumps({'error': f'Failed to fetch status: {str(e)}'}),
+                    {
+                        'status': 500,
+                        'headers': {'Content-Type': 'application/json'}
+                    }
+                )
+
+        # Route: POST /activate - Add ZIP to active regeneration list
+        elif method == 'POST' and path == 'activate':
+            try:
+                zip_code = query_params.get('zip')
+                if not zip_code or not (zip_code.isdigit() and len(zip_code) == 5):
+                    return Response.new(
+                        json.dumps({'error': 'Invalid ZIP code. Must be 5 digits.'}),
+                        {
+                            'status': 400,
+                            'headers': {'Content-Type': 'application/json'}
+                        }
+                    )
+
+                active_zips = await add_zip_to_active(self.env, zip_code)
+
+                return Response.new(
+                    json.dumps({
+                        'success': True,
+                        'zip': zip_code,
+                        'message': f'ZIP {zip_code} added to active regeneration list',
+                        'activeZips': active_zips
+                    }),
+                    headers=to_js({'Content-Type': 'application/json'})
+                )
+            except Exception as e:
+                return Response.new(
+                    json.dumps({'error': f'Failed to activate ZIP: {str(e)}'}),
+                    {
+                        'status': 500,
+                        'headers': {'Content-Type': 'application/json'}
+                    }
+                )
+
+        # Route: POST /deactivate - Remove ZIP from active regeneration list
+        elif method == 'POST' and path == 'deactivate':
+            try:
+                zip_code = query_params.get('zip')
+                if not zip_code:
+                    return Response.new(
+                        json.dumps({'error': 'Missing ZIP code parameter'}),
+                        {
+                            'status': 400,
+                            'headers': {'Content-Type': 'application/json'}
+                        }
+                    )
+
+                active_zips = await get_active_zips(self.env)
+                if zip_code in active_zips:
+                    active_zips.remove(zip_code)
+                    await self.env.CONFIG.put('active_zips', json.dumps(active_zips))
+                    print(f"✅ Removed {zip_code} from active_zips")
+
+                return Response.new(
+                    json.dumps({
+                        'success': True,
+                        'zip': zip_code,
+                        'message': f'ZIP {zip_code} removed from active regeneration list',
+                        'activeZips': active_zips
+                    }),
+                    headers=to_js({'Content-Type': 'application/json'})
+                )
+            except Exception as e:
+                return Response.new(
+                    json.dumps({'error': f'Failed to deactivate ZIP: {str(e)}'}),
+                    {
+                        'status': 500,
+                        'headers': {'Content-Type': 'application/json'}
+                    }
+                )
+
+        # Route: POST /generate - Manually trigger generation for a ZIP
+        elif method == 'POST' and path == 'generate':
+            try:
+                zip_code = query_params.get('zip')
+                if not zip_code or not (zip_code.isdigit() and len(zip_code) == 5):
+                    return Response.new(
+                        json.dumps({'error': 'Invalid ZIP code. Must be 5 digits.'}),
+                        {
+                            'status': 400,
+                            'headers': {'Content-Type': 'application/json'}
+                        }
+                    )
+
+                # Get configuration
+                config = WorkerConfig(self.env)
+                if not config.OWM_KEY:
+                    return Response.new(
+                        json.dumps({'error': 'OWM_API_KEY not configured'}),
+                        {
+                            'status': 500,
+                            'headers': {'Content-Type': 'application/json'}
+                        }
+                    )
+
+                # Geocode the ZIP (uses cache if available)
+                geo_data = await geocode_zip(self.env, zip_code, config.OWM_KEY)
+
+                # Generate the weather image
+                image_bytes, metadata, _ = await generate_weather_image(
+                    self.env,
+                    zip_code,
+                    geo_data['lat'],
+                    geo_data['lon']
+                )
+
+                # Upload to R2
+                await upload_to_r2(self.env, image_bytes, metadata, zip_code)
+
+                return Response.new(
+                    json.dumps({
+                        'success': True,
+                        'zip': zip_code,
+                        'metadata': metadata,
+                        'message': f'Generated and uploaded image for ZIP {zip_code}'
+                    }),
+                    headers=to_js({'Content-Type': 'application/json'})
+                )
+            except Exception as e:
+                return Response.new(
+                    json.dumps({'error': f'Failed to generate image: {str(e)}'}),
                     {
                         'status': 500,
                         'headers': {'Content-Type': 'application/json'}
