@@ -29,10 +29,14 @@ class WeatherLandscape:
         # Load the template image using the asset loader
         try:
             loader = get_global_loader()
-            buffer_path = 'p_weather/template_rgb.bmp'
+            # Use template from config (handles different formats)
+            # Strip leading path components for asset loader
+            template_path = self.cfg.TEMPLATE_FILENAME
+            if template_path.startswith('src/'):
+                template_path = template_path[4:]
 
             # Get the buffer data using asset loader
-            buffer_data = loader.load_asset(buffer_path)
+            buffer_data = loader.load_asset(template_path)
 
             img = Image.open(io.BytesIO(buffer_data))
         except Exception as e:
