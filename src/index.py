@@ -222,13 +222,13 @@ async def get_all_zips_from_r2(env):
         zip_codes = set()
 
         # List all objects in the R2 bucket
-        # R2 list() returns objects with keys like "78729/latest.png"
+        # R2 list() returns objects with keys like "78729/rgb_light.png"
         listed = await env.WEATHER_IMAGES.list()
 
         # Extract ZIP codes from object keys
         if hasattr(listed, 'objects'):
             for obj in listed.objects:
-                # Object key format: "78729/latest.png"
+                # Object key format: "78729/rgb_light.png"
                 key = obj.key
                 if '/' in key:
                     zip_code = key.split('/')[0]
@@ -240,6 +240,57 @@ async def get_all_zips_from_r2(env):
     except Exception as e:
         print(f"Warning: Failed to list R2 objects: {e}")
         return []
+
+
+async def get_formats_per_zip(env):
+    """
+    Scan R2 bucket to find which formats are available for each ZIP
+
+    Returns:
+        dict: {zip_code: [format_names]}
+    """
+    try:
+        zip_formats = {}
+
+        # List all objects in the R2 bucket
+        listed = await env.WEATHER_IMAGES.list()
+
+        # Extract ZIP codes and formats from object keys
+        if hasattr(listed, 'objects'):
+            for obj in listed.objects:
+                # Object key format: "78729/rgb_light.png" or "78729/bw.bmp"
+                key = obj.key
+                if '/' in key:
+                    parts = key.split('/')
+                    zip_code = parts[0]
+                    if zip_code.isdigit() and len(zip_code) == 5 and len(parts) > 1:
+                        # Extract format from filename (remove extension)
+                        filename = parts[1]
+                        format_name = filename.rsplit('.', 1)[0] if '.' in filename else filename
+
+                        # Check if it's a valid format
+                        if format_name in FORMAT_CONFIGS:
+                            if zip_code not in zip_formats:
+                                zip_formats[zip_code] = []
+                            if format_name not in zip_formats[zip_code]:
+                                zip_formats[zip_code].append(format_name)
+
+        # Sort formats for each ZIP (default first, then alphabetical)
+        for zip_code in zip_formats:
+            formats = zip_formats[zip_code]
+            # Sort with default format first
+            sorted_formats = []
+            if DEFAULT_FORMAT in formats:
+                sorted_formats.append(DEFAULT_FORMAT)
+            for fmt in sorted(formats):
+                if fmt != DEFAULT_FORMAT:
+                    sorted_formats.append(fmt)
+            zip_formats[zip_code] = sorted_formats
+
+        return zip_formats
+    except Exception as e:
+        print(f"Warning: Failed to get formats per zip: {e}")
+        return {}
 
 
 async def add_zip_to_active(env, zip_code):
@@ -539,14 +590,30 @@ class Default(WorkerEntrypoint):
                 # Get all ZIPs from R2 and active ZIPs from KV
                 all_zips = await get_all_zips_from_r2(self.env)
                 active_zips = await get_active_zips(self.env)
+                zip_formats = await get_formats_per_zip(self.env)
 
-                # Build ZIP links with active/inactive status dots
+                # Build ZIP links with active/inactive status dots and format links
                 zip_items = []
                 for zip_code in all_zips:
                     is_active = zip_code in active_zips
                     dot_class = 'dot active' if is_active else 'dot inactive'
+
+                    # Build format links for this ZIP
+                    formats = zip_formats.get(zip_code, [])
+                    if formats:
+                        format_links = []
+                        for fmt in formats:
+                            # Default format gets no query param, others use ?format
+                            if fmt == DEFAULT_FORMAT:
+                                format_links.append(f'<a href="/{zip_code}" class="format-link">{fmt}</a>')
+                            else:
+                                format_links.append(f'<a href="/{zip_code}?{fmt}" class="format-link">{fmt}</a>')
+                        formats_html = '<span class="formats">' + ' '.join(format_links) + '</span>'
+                    else:
+                        formats_html = '<span class="formats"><em>no formats</em></span>'
+
                     zip_items.append(
-                        f'<li><span class="{dot_class}"></span><a href="/{zip_code}">ZIP {zip_code}</a></li>'
+                        f'<li><span class="{dot_class}"></span><span class="zip-label">ZIP {zip_code}</span>{formats_html}</li>'
                     )
 
                 zip_links = '\n'.join(zip_items) if zip_items else '<li><em>No ZIP codes found in R2</em></li>'
@@ -559,7 +626,7 @@ class Default(WorkerEntrypoint):
                     <style>
                         body {{
                             font-family: system-ui, -apple-system, sans-serif;
-                            max-width: 700px;
+                            max-width: 800px;
                             margin: 2rem auto;
                             padding: 2rem;
                             background: #f5f5f5;
@@ -568,20 +635,34 @@ class Default(WorkerEntrypoint):
                         h2 {{ color: #555; margin-top: 2rem; }}
                         ul {{ list-style: none; padding: 0; }}
                         li {{
-                            margin: 0.5rem 0;
+                            margin: 0.75rem 0;
                             display: flex;
                             align-items: center;
                             gap: 0.75rem;
+                            flex-wrap: wrap;
                         }}
-                        a {{
+                        .zip-label {{
+                            font-weight: 600;
+                            min-width: 90px;
+                        }}
+                        .formats {{
+                            display: flex;
+                            gap: 0.5rem;
+                            flex-wrap: wrap;
+                        }}
+                        .format-link {{
                             color: #0066cc;
                             text-decoration: none;
-                            padding: 0.5rem 1rem;
+                            padding: 0.25rem 0.5rem;
                             background: white;
-                            border-radius: 4px;
-                            display: inline-block;
+                            border-radius: 3px;
+                            font-size: 0.85rem;
+                            border: 1px solid #ddd;
                         }}
-                        a:hover {{ background: #e6f2ff; }}
+                        .format-link:hover {{
+                            background: #e6f2ff;
+                            border-color: #0066cc;
+                        }}
                         .dot {{
                             width: 8px;
                             height: 8px;
