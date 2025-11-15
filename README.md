@@ -187,34 +187,41 @@ ADDITIONAL_FORMATS = "bw,eink,rgb_black"  # Generate additional formats
 
 **Accessing Different Formats:**
 
-Use the `format` query parameter to request specific formats:
+Request specific formats using either query parameters or paths:
 
 ```
 # Default format (rgb_white)
 https://your-worker.workers.dev/78729
 
-# Request black & white format
-https://your-worker.workers.dev/78729?format=bw
+# Request via query parameter
+https://your-worker.workers.dev/78729?bw
+https://your-worker.workers.dev/78729?eink
+https://your-worker.workers.dev/78729?rgb_black
 
-# Request E-Ink format
-https://your-worker.workers.dev/78729?format=eink
+# Request via path
+https://your-worker.workers.dev/78729/bw
+https://your-worker.workers.dev/78729/rgb_black
+https://your-worker.workers.dev/78729/latest-rgb-black
 
-# Request RGB with black background
-https://your-worker.workers.dev/78729?format=rgb_black
+# Both work with either underscores or hyphens
+https://your-worker.workers.dev/78729/rgb_black
+https://your-worker.workers.dev/78729/rgb-black  # same result
 ```
 
-**Format Query Parameter Behavior:**
+**Format Request Behavior:**
 - If the requested format doesn't exist, the default format is returned
 - If an invalid format is requested, the default format is returned
-- Format names can use hyphens or underscores (e.g., `rgb_white` or `rgb-white`)
+- Format names can use hyphens or underscores (e.g., `rgb_white` or `rgb-black`)
+- Query parameters and path-based access work identically
 
 **Storage:**
 
-Images are stored in R2 with format-specific filenames:
-- `{zip}/latest-rgb-white.png` (default format)
-- `{zip}/latest-bw.bmp`
-- `{zip}/latest-eink.bmp`
-- `{zip}/latest-rgb-black.png`
+Images are stored in R2 with multiple filename patterns:
+- `{zip}/rgb_white.png` (default format)
+- `{zip}/bw.bmp`
+- `{zip}/eink.bmp`
+- `{zip}/rgb_black.png`
+- `{zip}/latest-{format}.{ext}` (kebab-case aliases, e.g., `latest-rgb-black.png`)
 - `{zip}/latest.png` (backwards compatible, same as default format)
 
 
