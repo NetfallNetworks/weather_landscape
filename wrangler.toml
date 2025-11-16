@@ -3,6 +3,11 @@ main = "src/index.py"
 compatibility_date = "2025-01-10"
 compatibility_flags = ["python_workers"]
 
+# Workers Logs - enables log collection for visibility during runs
+# Free tier: 200,000 events/day, 3 day retention
+[observability]
+enabled = true
+
 # Bundle image files as Data modules so Python can access them
 [[rules]]
 type = "Data"
