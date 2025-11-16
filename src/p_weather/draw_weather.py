@@ -104,11 +104,7 @@ class DrawWeather():
         self.picwidth = self.IMGEWIDTH
         self.ypos = ypos
 
-        # Account for the offset where temperature labels are drawn (xpos+n)
-        # n = (xstep-xflat)/2, so we need space for xstart + (nforecasrt * xstep) + n
-        # to fit within picwidth
-        n_offset = int((xstep - xflat) / 2)
-        nforecasrt = ( (self.picwidth - xstart - n_offset) / xstep )
+        nforecasrt = ( (self.picwidth-xstart)/xstep )
         maxtime = datetime.datetime.now() + datetime.timedelta(hours=WeatherInfo.FORECAST_PERIOD_HOURS*nforecasrt)
 
         (self.tmin,self.tmax) = owm.GetTempRange(maxtime)
@@ -299,18 +295,22 @@ class DrawWeather():
 
             if (f.temp==self.tmin) and (not istminprinted):
                 temp_x = xpos+n
+                # Estimate temperature label width (~20px for 2-3 digits + sign)
+                temp_label_width = 20
+                if temp_x + temp_label_width > self.picwidth:
+                    temp_x = self.picwidth - temp_label_width
                 print(f"   🔵 MIN TEMP at iteration {i}: xpos={xpos}, temp_x={temp_x}, canvas_width={self.picwidth}")
-                if temp_x >= self.picwidth:
-                    print(f"   ⚠️ WARNING: Min temp x={temp_x} is OFF CANVAS (width={self.picwidth})")
-                self.DrawTemperature(f,xpos+n,tline0[xpos+n])
+                self.DrawTemperature(f,temp_x,tline0[min(temp_x, len(tline0)-1)])
                 istminprinted = True
 
             if (f.temp==self.tmax) and (not istmaxprinted):
                 temp_x = xpos+n
+                # Estimate temperature label width (~20px for 2-3 digits + sign)
+                temp_label_width = 20
+                if temp_x + temp_label_width > self.picwidth:
+                    temp_x = self.picwidth - temp_label_width
                 print(f"   🔴 MAX TEMP at iteration {i}: xpos={xpos}, temp_x={temp_x}, canvas_width={self.picwidth}")
-                if temp_x >= self.picwidth:
-                    print(f"   ⚠️ WARNING: Max temp x={temp_x} is OFF CANVAS (width={self.picwidth})")
-                self.DrawTemperature(f,xpos+n,tline0[xpos+n])
+                self.DrawTemperature(f,temp_x,tline0[min(temp_x, len(tline0)-1)])
                 istmaxprinted = True
 
 
