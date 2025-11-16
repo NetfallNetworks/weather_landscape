@@ -53,6 +53,9 @@ FORMAT_CONFIGS = {
 # Default format (always generated)
 DEFAULT_FORMAT = 'rgb_light'
 
+# Path prefix for image serving routes (allows specific zero trust rules)
+IMAGE_PATH_PREFIX = 'w'  # e.g., /w/78729
+
 
 def get_enabled_formats(env):
     """
@@ -635,8 +638,9 @@ class Default(WorkerEntrypoint):
 
         Routes:
         - GET / - Returns HTML info page with links to all ZIPs in R2
-        - GET /{zip} - Returns latest weather image for ZIP (default format)
-        - GET /{zip}?{format} - Returns image in specified format
+        - GET /w/{zip} - Returns latest weather image for ZIP (default format)
+        - GET /w/{zip}?{format} - Returns image in specified format
+        - GET /admin - Admin dashboard for managing ZIPs and formats
         - GET /status - Returns generation status and metadata for all ZIPs
         - GET /formats?zip={zip} - Get configured formats for a ZIP
         - POST /activate?zip={zip} - Add ZIP to active regeneration list
@@ -662,14 +666,17 @@ class Default(WorkerEntrypoint):
                     # Handle standalone parameters like ?rgb_dark (no value)
                     query_params[param] = ''
 
-        # Extract ZIP from path - matches /78729, /78729/, /78729/anything
-        # Path parts: ['', '78729', 'latest.png'] or ['', '78729', ''] etc.
+        # Extract ZIP from path - only matches /w/{zip} pattern
+        # Path parts: ['', 'w', '78729'] or ['', 'w', '78729', 'rgb_dark'] etc.
         zip_from_path = None
-        for part in path_parts:
-            # Check if this part looks like a 5-digit ZIP code
-            if part and part.isdigit() and len(part) == 5:
-                zip_from_path = part
-                break
+        has_image_prefix = IMAGE_PATH_PREFIX in path_parts
+        if has_image_prefix:
+            prefix_idx = path_parts.index(IMAGE_PATH_PREFIX)
+            # ZIP should be immediately after the prefix
+            if prefix_idx + 1 < len(path_parts):
+                potential_zip = path_parts[prefix_idx + 1]
+                if potential_zip and potential_zip.isdigit() and len(potential_zip) == 5:
+                    zip_from_path = potential_zip
 
         # Route: Admin page
         if path == 'admin':
@@ -1108,9 +1115,9 @@ class Default(WorkerEntrypoint):
                             fmt_title = FORMAT_CONFIGS.get(fmt, {}).get('title', fmt)
                             # Default format gets no query param, others use ?format
                             if fmt == DEFAULT_FORMAT:
-                                format_links.append(f'<a href="/{zip_code}" class="format-link">{fmt_title}</a>')
+                                format_links.append(f'<a href="/{IMAGE_PATH_PREFIX}/{zip_code}" class="format-link">{fmt_title}</a>')
                             else:
-                                format_links.append(f'<a href="/{zip_code}?{fmt}" class="format-link">{fmt_title}</a>')
+                                format_links.append(f'<a href="/{IMAGE_PATH_PREFIX}/{zip_code}?{fmt}" class="format-link">{fmt_title}</a>')
                         formats_html = '<span class="formats">' + ' '.join(format_links) + '</span>'
                     else:
                         formats_html = '<span class="formats"><em>no formats</em></span>'
