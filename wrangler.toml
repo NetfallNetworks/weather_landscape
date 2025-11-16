@@ -3,6 +3,12 @@ main = "src/index.py"
 compatibility_date = "2025-01-10"
 compatibility_flags = ["python_workers"]
 
+# Disable workers.dev subdomain - only accessible via custom domain with zero trust
+workers_dev = false
+
+# Disable preview URLs - requires custom domain with zero trust
+preview_urls = false
+
 # Workers Logs - enables log collection for visibility during runs
 # Free tier: 200,000 events/day, 3 day retention
 [observability]
