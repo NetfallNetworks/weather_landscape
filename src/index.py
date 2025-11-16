@@ -634,16 +634,20 @@ class Default(WorkerEntrypoint):
         HTTP request handler - serves images from R2
 
         Routes:
+        Public (allow-listed):
         - GET / - Returns HTML info page with links to all ZIPs in R2
         - GET /{zip} - Returns latest weather image for ZIP (default format)
         - GET /{zip}?{format} - Returns image in specified format
-        - GET /status - Returns generation status and metadata for all ZIPs
-        - GET /formats?zip={zip} - Get configured formats for a ZIP
-        - POST /activate?zip={zip} - Add ZIP to active regeneration list
-        - POST /deactivate?zip={zip} - Remove ZIP from active regeneration list
-        - POST /formats/add?zip={zip}&format={format} - Add format to a ZIP
-        - POST /formats/remove?zip={zip}&format={format} - Remove format from a ZIP
-        - POST /generate?zip={zip} - Manually trigger generation for a ZIP
+
+        Admin (protected under /admin/*):
+        - GET /admin - Admin dashboard for managing ZIPs and formats
+        - GET /admin/status - Returns generation status and metadata for all ZIPs
+        - GET /admin/formats?zip={zip} - Get configured formats for a ZIP
+        - POST /admin/activate?zip={zip} - Add ZIP to active regeneration list
+        - POST /admin/deactivate?zip={zip} - Remove ZIP from active regeneration list
+        - POST /admin/formats/add?zip={zip}&format={format} - Add format to a ZIP
+        - POST /admin/formats/remove?zip={zip}&format={format} - Remove format from a ZIP
+        - POST /admin/generate?zip={zip} - Manually trigger generation for a ZIP
         """
         url = request.url
         method = request.method
@@ -662,14 +666,428 @@ class Default(WorkerEntrypoint):
                     # Handle standalone parameters like ?rgb_dark (no value)
                     query_params[param] = ''
 
-        # Extract ZIP from path - matches /78729, /78729/, /78729/anything
-        # Path parts: ['', '78729', 'latest.png'] or ['', '78729', ''] etc.
+        # Extract ZIP from path - matches /{zip} pattern
+        # Path parts: ['', '78729'] or ['', '78729', 'rgb_dark'] etc.
         zip_from_path = None
         for part in path_parts:
             # Check if this part looks like a 5-digit ZIP code
             if part and part.isdigit() and len(part) == 5:
                 zip_from_path = part
                 break
+
+        # Route: Admin page
+        if path == 'admin':
+            try:
+                # Get all ZIPs from R2 and active ZIPs from KV
+                all_zips = await get_all_zips_from_r2(self.env)
+                active_zips = await get_active_zips(self.env)
+                zip_formats = await get_formats_per_zip(self.env)
+
+                # Also get configured formats from KV (what WILL be generated)
+                zip_configured_formats = {}
+                for zip_code in all_zips:
+                    zip_configured_formats[zip_code] = await get_formats_for_zip(self.env, zip_code)
+
+                # Build ZIP management rows
+                zip_rows = []
+                for zip_code in all_zips:
+                    is_active = zip_code in active_zips
+                    active_checked = 'checked' if is_active else ''
+
+                    # Build format checkboxes
+                    configured = zip_configured_formats.get(zip_code, [DEFAULT_FORMAT])
+                    format_checkboxes = []
+                    for fmt, fmt_info in FORMAT_CONFIGS.items():
+                        is_checked = fmt in configured
+                        checked_attr = 'checked' if is_checked else ''
+                        disabled_attr = 'disabled' if fmt == DEFAULT_FORMAT else ''
+                        format_checkboxes.append(
+                            f'''<label class="format-checkbox">
+                                <input type="checkbox" {checked_attr} {disabled_attr}
+                                    onchange="toggleFormat('{zip_code}', '{fmt}', this.checked)"
+                                    data-zip="{zip_code}" data-format="{fmt}">
+                                {fmt_info['title']}
+                            </label>'''
+                        )
+
+                    formats_html = '<div class="format-list">' + ''.join(format_checkboxes) + '</div>'
+
+                    # Build available formats display (what's in R2)
+                    available = zip_formats.get(zip_code, [])
+                    available_html = ', '.join(available) if available else '<em>none</em>'
+
+                    zip_rows.append(f'''
+                        <tr data-zip="{zip_code}">
+                            <td class="zip-cell">{zip_code}</td>
+                            <td class="active-cell">
+                                <label class="switch">
+                                    <input type="checkbox" {active_checked}
+                                        onchange="toggleActive('{zip_code}', this.checked)">
+                                    <span class="slider"></span>
+                                </label>
+                            </td>
+                            <td class="formats-cell">{formats_html}</td>
+                            <td class="available-cell">{available_html}</td>
+                            <td class="actions-cell">
+                                <button class="btn btn-generate" onclick="generateZip('{zip_code}')"
+                                    id="gen-{zip_code}">Generate Now</button>
+                            </td>
+                        </tr>
+                    ''')
+
+                zip_table_rows = '\n'.join(zip_rows) if zip_rows else '<tr><td colspan="5"><em>No ZIP codes found</em></td></tr>'
+
+                html = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Weather Landscape Admin</title>
+                    <style>
+                        body {{
+                            font-family: system-ui, -apple-system, sans-serif;
+                            max-width: 1200px;
+                            margin: 2rem auto;
+                            padding: 1rem;
+                            background: #f5f5f5;
+                        }}
+                        h1 {{ color: #333; margin-bottom: 0.5rem; }}
+                        .subtitle {{ color: #666; margin-bottom: 2rem; }}
+                        table {{
+                            width: 100%;
+                            border-collapse: collapse;
+                            background: white;
+                            border-radius: 8px;
+                            overflow: hidden;
+                            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                        }}
+                        th, td {{
+                            padding: 1rem;
+                            text-align: left;
+                            border-bottom: 1px solid #e5e7eb;
+                        }}
+                        th {{
+                            background: #f9fafb;
+                            font-weight: 600;
+                            color: #374151;
+                        }}
+                        tr:last-child td {{ border-bottom: none; }}
+                        .zip-cell {{ font-weight: 600; font-family: monospace; font-size: 1.1rem; }}
+                        .format-list {{ display: flex; flex-wrap: wrap; gap: 0.5rem; }}
+                        .format-checkbox {{
+                            display: flex;
+                            align-items: center;
+                            gap: 0.25rem;
+                            font-size: 0.85rem;
+                            background: #f3f4f6;
+                            padding: 0.25rem 0.5rem;
+                            border-radius: 4px;
+                        }}
+                        .format-checkbox input {{ cursor: pointer; }}
+                        .format-checkbox input:disabled {{ cursor: not-allowed; }}
+                        .available-cell {{ font-size: 0.85rem; color: #6b7280; }}
+
+                        /* Toggle Switch */
+                        .switch {{
+                            position: relative;
+                            display: inline-block;
+                            width: 48px;
+                            height: 24px;
+                        }}
+                        .switch input {{ opacity: 0; width: 0; height: 0; }}
+                        .slider {{
+                            position: absolute;
+                            cursor: pointer;
+                            top: 0; left: 0; right: 0; bottom: 0;
+                            background-color: #cbd5e1;
+                            transition: 0.3s;
+                            border-radius: 24px;
+                        }}
+                        .slider:before {{
+                            position: absolute;
+                            content: "";
+                            height: 18px;
+                            width: 18px;
+                            left: 3px;
+                            bottom: 3px;
+                            background-color: white;
+                            transition: 0.3s;
+                            border-radius: 50%;
+                        }}
+                        input:checked + .slider {{ background-color: #22c55e; }}
+                        input:checked + .slider:before {{ transform: translateX(24px); }}
+
+                        /* Buttons */
+                        .btn {{
+                            padding: 0.5rem 1rem;
+                            border: none;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-weight: 500;
+                            transition: all 0.2s;
+                        }}
+                        .btn-generate {{
+                            background: #3b82f6;
+                            color: white;
+                        }}
+                        .btn-generate:hover {{ background: #2563eb; }}
+                        .btn-generate:disabled {{
+                            background: #94a3b8;
+                            cursor: not-allowed;
+                        }}
+                        .btn-generate.loading {{
+                            background: #f59e0b;
+                        }}
+                        .btn-generate.success {{
+                            background: #22c55e;
+                        }}
+                        .btn-generate.error {{
+                            background: #ef4444;
+                        }}
+
+                        /* Status Messages */
+                        .toast {{
+                            position: fixed;
+                            bottom: 2rem;
+                            right: 2rem;
+                            padding: 1rem 1.5rem;
+                            border-radius: 8px;
+                            color: white;
+                            font-weight: 500;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                            transform: translateY(100px);
+                            opacity: 0;
+                            transition: all 0.3s;
+                            z-index: 1000;
+                        }}
+                        .toast.show {{ transform: translateY(0); opacity: 1; }}
+                        .toast.success {{ background: #22c55e; }}
+                        .toast.error {{ background: #ef4444; }}
+                        .toast.info {{ background: #3b82f6; }}
+
+                        /* Back link */
+                        .back-link {{
+                            display: inline-block;
+                            margin-bottom: 1rem;
+                            color: #3b82f6;
+                            text-decoration: none;
+                        }}
+                        .back-link:hover {{ text-decoration: underline; }}
+
+                        /* Add ZIP form */
+                        .add-zip-section {{
+                            background: white;
+                            padding: 1.5rem;
+                            border-radius: 8px;
+                            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                            margin-bottom: 2rem;
+                        }}
+                        .add-zip-section h2 {{
+                            margin: 0 0 1rem 0;
+                            font-size: 1.1rem;
+                            color: #374151;
+                        }}
+                        .add-zip-form {{
+                            display: flex;
+                            gap: 0.75rem;
+                            align-items: center;
+                        }}
+                        .add-zip-input {{
+                            padding: 0.5rem 0.75rem;
+                            border: 1px solid #d1d5db;
+                            border-radius: 4px;
+                            font-size: 1rem;
+                            font-family: monospace;
+                            width: 120px;
+                        }}
+                        .add-zip-input:focus {{
+                            outline: none;
+                            border-color: #3b82f6;
+                            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+                        }}
+                        .btn-add {{
+                            background: #10b981;
+                            color: white;
+                        }}
+                        .btn-add:hover {{ background: #059669; }}
+                        .btn-add:disabled {{
+                            background: #94a3b8;
+                            cursor: not-allowed;
+                        }}
+                    </style>
+                </head>
+                <body>
+                    <a href="/" class="back-link">← Back to Public View</a>
+                    <h1>Weather Landscape Admin</h1>
+                    <p class="subtitle">Manage ZIP codes, formats, and trigger generation</p>
+
+                    <div class="add-zip-section">
+                        <h2>Add New ZIP Code</h2>
+                        <div class="add-zip-form">
+                            <input type="text" id="new-zip-input" class="add-zip-input"
+                                placeholder="12345" maxlength="5" pattern="[0-9]{{5}}">
+                            <button class="btn btn-add" onclick="addNewZip()" id="add-zip-btn">Add ZIP</button>
+                        </div>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ZIP Code</th>
+                                <th>Active</th>
+                                <th>Configured Formats</th>
+                                <th>Available in R2</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {zip_table_rows}
+                        </tbody>
+                    </table>
+
+                    <div id="toast" class="toast"></div>
+
+                    <script>
+                        function showToast(message, type = 'info') {{
+                            const toast = document.getElementById('toast');
+                            toast.textContent = message;
+                            toast.className = 'toast ' + type + ' show';
+                            setTimeout(() => {{ toast.className = 'toast'; }}, 3000);
+                        }}
+
+                        async function toggleActive(zip, isActive) {{
+                            const endpoint = isActive ? '/admin/activate' : '/admin/deactivate';
+                            try {{
+                                const resp = await fetch(endpoint + '?zip=' + zip, {{ method: 'POST' }});
+                                const data = await resp.json();
+                                if (data.success) {{
+                                    showToast('ZIP ' + zip + (isActive ? ' activated' : ' deactivated'), 'success');
+                                }} else {{
+                                    showToast('Error: ' + (data.error || 'Unknown error'), 'error');
+                                }}
+                            }} catch (e) {{
+                                showToast('Network error: ' + e.message, 'error');
+                            }}
+                        }}
+
+                        async function toggleFormat(zip, format, isEnabled) {{
+                            const endpoint = isEnabled ? '/admin/formats/add' : '/admin/formats/remove';
+                            try {{
+                                const resp = await fetch(endpoint + '?zip=' + zip + '&format=' + format, {{ method: 'POST' }});
+                                const data = await resp.json();
+                                if (data.success) {{
+                                    showToast(format + (isEnabled ? ' enabled' : ' disabled') + ' for ' + zip, 'success');
+                                }} else {{
+                                    showToast('Error: ' + (data.error || 'Unknown error'), 'error');
+                                    // Revert checkbox on error
+                                    const checkbox = document.querySelector('input[data-zip="' + zip + '"][data-format="' + format + '"]');
+                                    if (checkbox) checkbox.checked = !isEnabled;
+                                }}
+                            }} catch (e) {{
+                                showToast('Network error: ' + e.message, 'error');
+                                // Revert checkbox on error
+                                const checkbox = document.querySelector('input[data-zip="' + zip + '"][data-format="' + format + '"]');
+                                if (checkbox) checkbox.checked = !isEnabled;
+                            }}
+                        }}
+
+                        async function generateZip(zip) {{
+                            const btn = document.getElementById('gen-' + zip);
+                            const originalText = btn.textContent;
+
+                            btn.disabled = true;
+                            btn.textContent = 'Generating...';
+                            btn.className = 'btn btn-generate loading';
+
+                            try {{
+                                const resp = await fetch('/admin/generate?zip=' + zip, {{ method: 'POST' }});
+                                const data = await resp.json();
+                                if (data.success) {{
+                                    btn.textContent = 'Success!';
+                                    btn.className = 'btn btn-generate success';
+                                    showToast('Generated ' + data.formats.length + ' format(s) for ' + zip, 'success');
+                                    // Reload after short delay to update R2 available column
+                                    setTimeout(() => location.reload(), 1500);
+                                }} else {{
+                                    btn.textContent = 'Error';
+                                    btn.className = 'btn btn-generate error';
+                                    showToast('Error: ' + (data.error || 'Unknown error'), 'error');
+                                }}
+                            }} catch (e) {{
+                                btn.textContent = 'Error';
+                                btn.className = 'btn btn-generate error';
+                                showToast('Network error: ' + e.message, 'error');
+                            }}
+
+                            setTimeout(() => {{
+                                btn.disabled = false;
+                                btn.textContent = originalText;
+                                btn.className = 'btn btn-generate';
+                            }}, 2000);
+                        }}
+
+                        async function addNewZip() {{
+                            const input = document.getElementById('new-zip-input');
+                            const btn = document.getElementById('add-zip-btn');
+                            const zip = input.value.trim();
+
+                            // Validate ZIP code
+                            if (!/^\\d{{5}}$/.test(zip)) {{
+                                showToast('Please enter a valid 5-digit ZIP code', 'error');
+                                input.focus();
+                                return;
+                            }}
+
+                            btn.disabled = true;
+                            btn.textContent = 'Adding...';
+
+                            try {{
+                                // First activate the ZIP
+                                showToast('Activating ZIP ' + zip + '...', 'info');
+                                const activateResp = await fetch('/admin/activate?zip=' + zip, {{ method: 'POST' }});
+                                const activateData = await activateResp.json();
+
+                                if (!activateData.success) {{
+                                    throw new Error(activateData.error || 'Failed to activate ZIP');
+                                }}
+
+                                // Then generate initial images
+                                showToast('Generating images for ' + zip + '...', 'info');
+                                const generateResp = await fetch('/admin/generate?zip=' + zip, {{ method: 'POST' }});
+                                const generateData = await generateResp.json();
+
+                                if (generateData.success) {{
+                                    showToast('Added ZIP ' + zip + ' with ' + generateData.formats.length + ' format(s)', 'success');
+                                    input.value = '';
+                                    // Reload to show new ZIP
+                                    setTimeout(() => location.reload(), 1500);
+                                }} else {{
+                                    throw new Error(generateData.error || 'Failed to generate images');
+                                }}
+                            }} catch (e) {{
+                                showToast('Error: ' + e.message, 'error');
+                            }}
+
+                            btn.disabled = false;
+                            btn.textContent = 'Add ZIP';
+                        }}
+
+                        // Allow Enter key to add ZIP
+                        document.getElementById('new-zip-input').addEventListener('keypress', function(e) {{
+                            if (e.key === 'Enter') addNewZip();
+                        }});
+                    </script>
+                </body>
+                </html>
+                """
+                return Response.new(html, headers=to_js({"content-type": "text/html;charset=UTF-8"}))
+            except Exception as e:
+                return Response.new(
+                    json.dumps({'error': f'Failed to load admin page: {str(e)}'}),
+                    {
+                        'status': 500,
+                        'headers': {'Content-Type': 'application/json'}
+                    }
+                )
 
         # Route: Info page (root) - only if no ZIP in path
         if path == '' and not zip_from_path:
@@ -894,8 +1312,8 @@ class Default(WorkerEntrypoint):
                     }
                 )
 
-        # Route: Status endpoint
-        elif path == 'status':
+        # Route: Status endpoint - /admin/status
+        elif path == 'status' and 'admin' in path_parts:
             try:
                 # Get overall status from KV
                 status_json = await self.env.CONFIG.get('status')
@@ -934,8 +1352,8 @@ class Default(WorkerEntrypoint):
                     }
                 )
 
-        # Route: POST /activate - Add ZIP to active regeneration list
-        elif method == 'POST' and path == 'activate':
+        # Route: POST /admin/activate - Add ZIP to active regeneration list
+        elif method == 'POST' and path == 'activate' and 'admin' in path_parts:
             try:
                 zip_code = query_params.get('zip')
                 if not zip_code or not (zip_code.isdigit() and len(zip_code) == 5):
@@ -967,8 +1385,8 @@ class Default(WorkerEntrypoint):
                     }
                 )
 
-        # Route: POST /deactivate - Remove ZIP from active regeneration list
-        elif method == 'POST' and path == 'deactivate':
+        # Route: POST /admin/deactivate - Remove ZIP from active regeneration list
+        elif method == 'POST' and path == 'deactivate' and 'admin' in path_parts:
             try:
                 zip_code = query_params.get('zip')
                 if not zip_code:
@@ -1004,8 +1422,8 @@ class Default(WorkerEntrypoint):
                     }
                 )
 
-        # Route: POST /formats/add - Add a format to a ZIP
-        elif method == 'POST' and path == 'add' and 'formats' in path_parts:
+        # Route: POST /admin/formats/add - Add a format to a ZIP
+        elif method == 'POST' and path == 'add' and 'formats' in path_parts and 'admin' in path_parts:
             try:
                 zip_code = query_params.get('zip')
                 format_name = query_params.get('format', '').lower().replace('-', '_')
@@ -1051,8 +1469,8 @@ class Default(WorkerEntrypoint):
                     }
                 )
 
-        # Route: POST /formats/remove - Remove a format from a ZIP
-        elif method == 'POST' and path == 'remove' and 'formats' in path_parts:
+        # Route: POST /admin/formats/remove - Remove a format from a ZIP
+        elif method == 'POST' and path == 'remove' and 'formats' in path_parts and 'admin' in path_parts:
             try:
                 zip_code = query_params.get('zip')
                 format_name = query_params.get('format', '').lower().replace('-', '_')
@@ -1096,8 +1514,8 @@ class Default(WorkerEntrypoint):
                     }
                 )
 
-        # Route: GET /formats - Get formats for a ZIP
-        elif method == 'GET' and path == 'formats':
+        # Route: GET /admin/formats - Get formats for a ZIP
+        elif method == 'GET' and path == 'formats' and 'admin' in path_parts:
             try:
                 zip_code = query_params.get('zip')
                 if not zip_code or not (zip_code.isdigit() and len(zip_code) == 5):
@@ -1128,8 +1546,8 @@ class Default(WorkerEntrypoint):
                     }
                 )
 
-        # Route: POST /generate - Manually trigger generation for a ZIP
-        elif method == 'POST' and path == 'generate':
+        # Route: POST /admin/generate - Manually trigger generation for a ZIP
+        elif method == 'POST' and path == 'generate' and 'admin' in path_parts:
             try:
                 zip_code = query_params.get('zip')
                 if not zip_code or not (zip_code.isdigit() and len(zip_code) == 5):
