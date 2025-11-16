@@ -53,9 +53,6 @@ FORMAT_CONFIGS = {
 # Default format (always generated)
 DEFAULT_FORMAT = 'rgb_light'
 
-# Path prefix for image serving routes (allows specific zero trust rules)
-IMAGE_PATH_PREFIX = 'w'  # e.g., /w/78729
-
 
 def get_enabled_formats(env):
     """
@@ -637,17 +634,20 @@ class Default(WorkerEntrypoint):
         HTTP request handler - serves images from R2
 
         Routes:
+        Public (allow-listed):
         - GET / - Returns HTML info page with links to all ZIPs in R2
-        - GET /w/{zip} - Returns latest weather image for ZIP (default format)
-        - GET /w/{zip}?{format} - Returns image in specified format
+        - GET /{zip} - Returns latest weather image for ZIP (default format)
+        - GET /{zip}?{format} - Returns image in specified format
+
+        Admin (protected under /admin/*):
         - GET /admin - Admin dashboard for managing ZIPs and formats
-        - GET /status - Returns generation status and metadata for all ZIPs
-        - GET /formats?zip={zip} - Get configured formats for a ZIP
-        - POST /activate?zip={zip} - Add ZIP to active regeneration list
-        - POST /deactivate?zip={zip} - Remove ZIP from active regeneration list
-        - POST /formats/add?zip={zip}&format={format} - Add format to a ZIP
-        - POST /formats/remove?zip={zip}&format={format} - Remove format from a ZIP
-        - POST /generate?zip={zip} - Manually trigger generation for a ZIP
+        - GET /admin/status - Returns generation status and metadata for all ZIPs
+        - GET /admin/formats?zip={zip} - Get configured formats for a ZIP
+        - POST /admin/activate?zip={zip} - Add ZIP to active regeneration list
+        - POST /admin/deactivate?zip={zip} - Remove ZIP from active regeneration list
+        - POST /admin/formats/add?zip={zip}&format={format} - Add format to a ZIP
+        - POST /admin/formats/remove?zip={zip}&format={format} - Remove format from a ZIP
+        - POST /admin/generate?zip={zip} - Manually trigger generation for a ZIP
         """
         url = request.url
         method = request.method
@@ -666,17 +666,14 @@ class Default(WorkerEntrypoint):
                     # Handle standalone parameters like ?rgb_dark (no value)
                     query_params[param] = ''
 
-        # Extract ZIP from path - only matches /w/{zip} pattern
-        # Path parts: ['', 'w', '78729'] or ['', 'w', '78729', 'rgb_dark'] etc.
+        # Extract ZIP from path - matches /{zip} pattern
+        # Path parts: ['', '78729'] or ['', '78729', 'rgb_dark'] etc.
         zip_from_path = None
-        has_image_prefix = IMAGE_PATH_PREFIX in path_parts
-        if has_image_prefix:
-            prefix_idx = path_parts.index(IMAGE_PATH_PREFIX)
-            # ZIP should be immediately after the prefix
-            if prefix_idx + 1 < len(path_parts):
-                potential_zip = path_parts[prefix_idx + 1]
-                if potential_zip and potential_zip.isdigit() and len(potential_zip) == 5:
-                    zip_from_path = potential_zip
+        for part in path_parts:
+            # Check if this part looks like a 5-digit ZIP code
+            if part and part.isdigit() and len(part) == 5:
+                zip_from_path = part
+                break
 
         # Route: Admin page
         if path == 'admin':
@@ -958,7 +955,7 @@ class Default(WorkerEntrypoint):
                         }}
 
                         async function toggleActive(zip, isActive) {{
-                            const endpoint = isActive ? '/activate' : '/deactivate';
+                            const endpoint = isActive ? '/admin/activate' : '/admin/deactivate';
                             try {{
                                 const resp = await fetch(endpoint + '?zip=' + zip, {{ method: 'POST' }});
                                 const data = await resp.json();
@@ -973,7 +970,7 @@ class Default(WorkerEntrypoint):
                         }}
 
                         async function toggleFormat(zip, format, isEnabled) {{
-                            const endpoint = isEnabled ? '/formats/add' : '/formats/remove';
+                            const endpoint = isEnabled ? '/admin/formats/add' : '/admin/formats/remove';
                             try {{
                                 const resp = await fetch(endpoint + '?zip=' + zip + '&format=' + format, {{ method: 'POST' }});
                                 const data = await resp.json();
@@ -1002,7 +999,7 @@ class Default(WorkerEntrypoint):
                             btn.className = 'btn btn-generate loading';
 
                             try {{
-                                const resp = await fetch('/generate?zip=' + zip, {{ method: 'POST' }});
+                                const resp = await fetch('/admin/generate?zip=' + zip, {{ method: 'POST' }});
                                 const data = await resp.json();
                                 if (data.success) {{
                                     btn.textContent = 'Success!';
@@ -1046,7 +1043,7 @@ class Default(WorkerEntrypoint):
                             try {{
                                 // First activate the ZIP
                                 showToast('Activating ZIP ' + zip + '...', 'info');
-                                const activateResp = await fetch('/activate?zip=' + zip, {{ method: 'POST' }});
+                                const activateResp = await fetch('/admin/activate?zip=' + zip, {{ method: 'POST' }});
                                 const activateData = await activateResp.json();
 
                                 if (!activateData.success) {{
@@ -1055,7 +1052,7 @@ class Default(WorkerEntrypoint):
 
                                 // Then generate initial images
                                 showToast('Generating images for ' + zip + '...', 'info');
-                                const generateResp = await fetch('/generate?zip=' + zip, {{ method: 'POST' }});
+                                const generateResp = await fetch('/admin/generate?zip=' + zip, {{ method: 'POST' }});
                                 const generateData = await generateResp.json();
 
                                 if (generateData.success) {{
@@ -1115,9 +1112,9 @@ class Default(WorkerEntrypoint):
                             fmt_title = FORMAT_CONFIGS.get(fmt, {}).get('title', fmt)
                             # Default format gets no query param, others use ?format
                             if fmt == DEFAULT_FORMAT:
-                                format_links.append(f'<a href="/{IMAGE_PATH_PREFIX}/{zip_code}" class="format-link">{fmt_title}</a>')
+                                format_links.append(f'<a href="/{zip_code}" class="format-link">{fmt_title}</a>')
                             else:
-                                format_links.append(f'<a href="/{IMAGE_PATH_PREFIX}/{zip_code}?{fmt}" class="format-link">{fmt_title}</a>')
+                                format_links.append(f'<a href="/{zip_code}?{fmt}" class="format-link">{fmt_title}</a>')
                         formats_html = '<span class="formats">' + ' '.join(format_links) + '</span>'
                     else:
                         formats_html = '<span class="formats"><em>no formats</em></span>'
@@ -1315,8 +1312,8 @@ class Default(WorkerEntrypoint):
                     }
                 )
 
-        # Route: Status endpoint
-        elif path == 'status':
+        # Route: Status endpoint - /admin/status
+        elif path == 'status' and 'admin' in path_parts:
             try:
                 # Get overall status from KV
                 status_json = await self.env.CONFIG.get('status')
@@ -1355,8 +1352,8 @@ class Default(WorkerEntrypoint):
                     }
                 )
 
-        # Route: POST /activate - Add ZIP to active regeneration list
-        elif method == 'POST' and path == 'activate':
+        # Route: POST /admin/activate - Add ZIP to active regeneration list
+        elif method == 'POST' and path == 'activate' and 'admin' in path_parts:
             try:
                 zip_code = query_params.get('zip')
                 if not zip_code or not (zip_code.isdigit() and len(zip_code) == 5):
@@ -1388,8 +1385,8 @@ class Default(WorkerEntrypoint):
                     }
                 )
 
-        # Route: POST /deactivate - Remove ZIP from active regeneration list
-        elif method == 'POST' and path == 'deactivate':
+        # Route: POST /admin/deactivate - Remove ZIP from active regeneration list
+        elif method == 'POST' and path == 'deactivate' and 'admin' in path_parts:
             try:
                 zip_code = query_params.get('zip')
                 if not zip_code:
@@ -1425,8 +1422,8 @@ class Default(WorkerEntrypoint):
                     }
                 )
 
-        # Route: POST /formats/add - Add a format to a ZIP
-        elif method == 'POST' and path == 'add' and 'formats' in path_parts:
+        # Route: POST /admin/formats/add - Add a format to a ZIP
+        elif method == 'POST' and path == 'add' and 'formats' in path_parts and 'admin' in path_parts:
             try:
                 zip_code = query_params.get('zip')
                 format_name = query_params.get('format', '').lower().replace('-', '_')
@@ -1472,8 +1469,8 @@ class Default(WorkerEntrypoint):
                     }
                 )
 
-        # Route: POST /formats/remove - Remove a format from a ZIP
-        elif method == 'POST' and path == 'remove' and 'formats' in path_parts:
+        # Route: POST /admin/formats/remove - Remove a format from a ZIP
+        elif method == 'POST' and path == 'remove' and 'formats' in path_parts and 'admin' in path_parts:
             try:
                 zip_code = query_params.get('zip')
                 format_name = query_params.get('format', '').lower().replace('-', '_')
@@ -1517,8 +1514,8 @@ class Default(WorkerEntrypoint):
                     }
                 )
 
-        # Route: GET /formats - Get formats for a ZIP
-        elif method == 'GET' and path == 'formats':
+        # Route: GET /admin/formats - Get formats for a ZIP
+        elif method == 'GET' and path == 'formats' and 'admin' in path_parts:
             try:
                 zip_code = query_params.get('zip')
                 if not zip_code or not (zip_code.isdigit() and len(zip_code) == 5):
@@ -1549,8 +1546,8 @@ class Default(WorkerEntrypoint):
                     }
                 )
 
-        # Route: POST /generate - Manually trigger generation for a ZIP
-        elif method == 'POST' and path == 'generate':
+        # Route: POST /admin/generate - Manually trigger generation for a ZIP
+        elif method == 'POST' and path == 'generate' and 'admin' in path_parts:
             try:
                 zip_code = query_params.get('zip')
                 if not zip_code or not (zip_code.isdigit() and len(zip_code) == 5):
