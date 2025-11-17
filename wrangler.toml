@@ -20,6 +20,12 @@ type = "Data"
 globs = ["**/*.bmp", "**/*.png", "**/*.jpg", "**/*.jpeg"]
 fallthrough = true
 
+# Bundle HTML templates as Text modules
+[[rules]]
+type = "Text"
+globs = ["src/templates/*.html"]
+fallthrough = true
+
 # Cron Trigger - runs every 15 minutes to regenerate weather images
 [triggers]
 crons = ["*/15 * * * *"]
