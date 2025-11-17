@@ -12,7 +12,7 @@ import secrets
 
 import socket
 
-from jinja2 import Environment, FileSystemLoader
+from string import Template
 
 # Import from src/ directory
 sys.path.insert(0, 'src')
@@ -23,9 +23,6 @@ SERV_IPADDR = "0.0.0.0"
 SERV_PORT = 3355
 FAVICON = "favicon.ico"
 FILETOOOLD_SEC = 60*10
-
-# Initialize Jinja2 environment
-jinja_env = Environment(loader=FileSystemLoader('templates'), autoescape=True)
 
 WEATHERS = [    WeatherLandscape(WLConfig_BW())          ,
                 WeatherLandscape(WLConfig_BWI())         ,
@@ -111,16 +108,19 @@ class WeatherLandscapeServer(BaseHTTPRequestHandler):
 
 
     def IndexHtml(self):
-        # Build weather data for template
-        weathers = []
+        # Build weather items HTML
+        weather_items = []
         for w in WEATHERS:
-            weathers.append({
-                'title': w.cfg.TITLE,
-                'filename': w.cfg.OUT_FILENAME
-            })
+            weather_items.append(f'''
+    <h2>{w.cfg.TITLE}</h2>
+    <p><img src="{w.cfg.OUT_FILENAME}" alt="{w.cfg.TITLE}"></p>
+    <h4>URL: <span id="id_{w.cfg.OUT_FILENAME}"></span></h4>
+    <script>document.getElementById("id_{w.cfg.OUT_FILENAME}").innerHTML = window.location + "{w.cfg.OUT_FILENAME}";</script>
+    <p>&nbsp;</p>''')
 
-        template = jinja_env.get_template('dev_index.html')
-        return template.render(weathers=weathers)
+        with open('templates/dev_index.html', 'r') as f:
+            template = Template(f.read())
+        return template.substitute(weather_items=''.join(weather_items))
 
         
     

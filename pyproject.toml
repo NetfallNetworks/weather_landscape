@@ -11,7 +11,6 @@ dependencies = [
 dev = [
     "workers-py>=1.7.0",
     "aiohttp",  # Only needed for local test_local_generation.py
-    "jinja2",  # Template rendering for local dev server
 ]
 
 [tool.pywrangler]

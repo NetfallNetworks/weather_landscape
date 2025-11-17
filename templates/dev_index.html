@@ -6,12 +6,6 @@
 </head>
 <body>
     <h1>Weather as Landscape</h1>
-    {% for weather in weathers %}
-    <h2>{{ weather.title }}</h2>
-    <p><img src="{{ weather.filename }}" alt="{{ weather.title }}"></p>
-    <h4>URL: <span id="id_{{ weather.filename }}"></span></h4>
-    <script>document.getElementById("id_{{ weather.filename }}").innerHTML = window.location + "{{ weather.filename }}";</script>
-    <p>&nbsp;</p>
-    {% endfor %}
+    $weather_items
 </body>
 </html>
