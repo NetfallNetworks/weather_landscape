@@ -167,9 +167,84 @@
             margin-top: 1rem;
             font-size: 0.9rem;
         }
+
+        /* Hamburger Menu */
+        .hamburger-menu {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1000;
+        }
+        .hamburger-btn {
+            background: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            font-size: 1.5rem;
+            line-height: 1;
+        }
+        .hamburger-btn:hover {
+            background: #f0f0f0;
+        }
+        .menu-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 0.5rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 200px;
+            overflow: hidden;
+        }
+        .menu-dropdown.show {
+            display: block;
+        }
+        .menu-dropdown a {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: #333;
+            text-decoration: none;
+            border-bottom: 1px solid #e5e7eb;
+            transition: background 0.2s;
+        }
+        .menu-dropdown a:last-child {
+            border-bottom: none;
+        }
+        .menu-dropdown a:hover {
+            background: #f3f4f6;
+        }
+        .menu-dropdown a.active {
+            background: #dbeafe;
+            color: #1e40af;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
+    <div class="hamburger-menu">
+        <button class="hamburger-btn" onclick="toggleMenu()">☰</button>
+        <div class="menu-dropdown" id="menu">
+            <a href="/" class="active">🏠 Home</a>
+            <a href="/forecasts">📍 Forecasts</a>
+            <a href="/guide">📖 Reading Guide</a>
+            <a href="/admin">⚙️ Admin</a>
+        </div>
+    </div>
+    <script>
+        function toggleMenu() {
+            document.getElementById('menu').classList.toggle('show');
+        }
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.hamburger-menu')) {
+                document.getElementById('menu').classList.remove('show');
+            }
+        });
+    </script>
+
     <div class="container">
         <header>
             <h1>🌤️ Weather Landscape</h1>
