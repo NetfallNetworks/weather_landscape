@@ -763,6 +763,49 @@ class Default(WorkerEntrypoint):
                     }
                 )
 
+        # Route: Guide page - How to read your weather landscape
+        if path == 'guide' and 'diagram' not in path_parts:
+            try:
+                html = load_template('guide.html')
+                return Response.new(html, headers=to_js({"content-type": "text/html;charset=UTF-8"}))
+            except Exception as e:
+                return Response.new(
+                    json.dumps({'error': f'Failed to load guide page: {str(e)}'}),
+                    {
+                        'status': 500,
+                        'headers': {'Content-Type': 'application/json'}
+                    }
+                )
+
+        # Route: Guide diagram image
+        if 'guide' in path_parts and path == 'diagram':
+            try:
+                # Load the encode.png from the pic directory
+                pic_dir = os.path.join(os.path.dirname(__file__), '..', 'pic')
+                encode_path = os.path.join(pic_dir, 'encode.png')
+
+                with open(encode_path, 'rb') as f:
+                    image_bytes = f.read()
+
+                # Convert to JS array
+                from js import Uint8Array
+                js_array = Uint8Array.new(len(image_bytes))
+                for i, byte in enumerate(image_bytes):
+                    js_array[i] = byte
+
+                return Response.new(js_array, headers=to_js({
+                    "content-type": "image/png",
+                    "cache-control": "public, max-age=86400"
+                }))
+            except Exception as e:
+                return Response.new(
+                    json.dumps({'error': f'Failed to load diagram: {str(e)}'}),
+                    {
+                        'status': 500,
+                        'headers': {'Content-Type': 'application/json'}
+                    }
+                )
+
         # Route: Info page (root) - only if no ZIP in path
         if path == '' and not zip_from_path:
             try:

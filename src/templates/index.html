@@ -68,10 +68,26 @@
             align-items: center;
             gap: 0.5rem;
         }
+        .guide-link {
+            display: inline-block;
+            margin-bottom: 1.5rem;
+            padding: 0.75rem 1.25rem;
+            background: #dbeafe;
+            color: #1e40af;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .guide-link:hover {
+            background: #bfdbfe;
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body>
-    <h1>Weather Landscape</h1>
+    <h1>🌤️ Weather Landscape</h1>
+    <a href="/guide" class="guide-link">🎨 How do I read these cute pictures?</a>
     <h2>Available ZIP Codes ($zip_count)</h2>
     <ul>
         $zip_links
