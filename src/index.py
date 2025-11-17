@@ -793,11 +793,11 @@ class Default(WorkerEntrypoint):
         # Route: Serve diagram image from bundled assets
         if 'assets' in path_parts and path == 'diagram.png':
             try:
-                # Load the encode.png from the pic directory
-                pic_dir = os.path.join(os.path.dirname(__file__), '..', 'pic')
-                encode_path = os.path.join(pic_dir, 'encode.png')
+                # Load the diagram.png from src/assets directory
+                assets_dir = os.path.join(os.path.dirname(__file__), 'assets')
+                diagram_path = os.path.join(assets_dir, 'diagram.png')
 
-                with open(encode_path, 'rb') as f:
+                with open(diagram_path, 'rb') as f:
                     image_bytes = f.read()
 
                 # Convert to JS array
