@@ -9,7 +9,7 @@ from workers import WorkerEntrypoint
 from pyodide.ffi import to_js as _to_js
 import json
 from datetime import datetime
-from jinja2 import Environment, BaseLoader, TemplateNotFound
+from string import Template
 import os
 
 
@@ -18,30 +18,19 @@ def to_js(obj):
     return _to_js(obj, dict_converter=Object.fromEntries)
 
 
-class WorkerTemplateLoader(BaseLoader):
-    """Custom Jinja2 template loader for Cloudflare Workers"""
-
-    def __init__(self, template_dir):
-        self.template_dir = template_dir
-
-    def get_source(self, environment, template):
-        path = os.path.join(self.template_dir, template)
-        if not os.path.exists(path):
-            raise TemplateNotFound(template)
-        with open(path, 'r') as f:
-            source = f.read()
-        return source, path, lambda: True
-
-
-# Initialize Jinja2 environment
-_template_dir = os.path.join(os.path.dirname(__file__), 'templates')
-jinja_env = Environment(loader=WorkerTemplateLoader(_template_dir), autoescape=True)
+def load_template(template_name):
+    """Load an HTML template file"""
+    template_dir = os.path.join(os.path.dirname(__file__), 'templates')
+    path = os.path.join(template_dir, template_name)
+    with open(path, 'r') as f:
+        return f.read()
 
 
 def render_template(template_name, **context):
-    """Render a Jinja2 template with the given context"""
-    template = jinja_env.get_template(template_name)
-    return template.render(**context)
+    """Render a template with $variable substitution (string.Template)"""
+    template_str = load_template(template_name)
+    template = Template(template_str)
+    return template.substitute(**context)
 
 
 # Format configuration mapping
@@ -716,30 +705,54 @@ class Default(WorkerEntrypoint):
                 for zip_code in all_zips:
                     zip_configured_formats[zip_code] = await get_formats_for_zip(self.env, zip_code)
 
-                # Build ZIP management rows data
-                zip_rows = []
+                # Build ZIP management rows HTML
+                zip_rows_html = []
                 for zip_code in all_zips:
                     is_active = zip_code in active_zips
+                    active_checked = 'checked' if is_active else ''
                     configured = zip_configured_formats.get(zip_code, [DEFAULT_FORMAT])
 
-                    # Build format config list
-                    format_configs = []
+                    # Build format checkboxes HTML
+                    format_checkboxes = []
                     for fmt, fmt_info in FORMAT_CONFIGS.items():
-                        format_configs.append({
-                            'name': fmt,
-                            'title': fmt_info['title'],
-                            'is_checked': fmt in configured,
-                            'is_default': fmt == DEFAULT_FORMAT
-                        })
+                        checked_attr = 'checked' if fmt in configured else ''
+                        disabled_attr = 'disabled' if fmt == DEFAULT_FORMAT else ''
+                        format_checkboxes.append(
+                            f'''<label class="format-checkbox">
+                                <input type="checkbox" {checked_attr} {disabled_attr}
+                                    onchange="toggleFormat('{zip_code}', '{fmt}', this.checked)"
+                                    data-zip="{zip_code}" data-format="{fmt}">
+                                {fmt_info['title']}
+                            </label>'''
+                        )
+                    formats_html = '<div class="format-list">' + ''.join(format_checkboxes) + '</div>'
 
-                    zip_rows.append({
-                        'zip_code': zip_code,
-                        'is_active': is_active,
-                        'format_configs': format_configs,
-                        'available_formats': zip_formats.get(zip_code, [])
-                    })
+                    # Build available formats display
+                    available = zip_formats.get(zip_code, [])
+                    available_html = ', '.join(available) if available else '<em>none</em>'
 
-                html = render_template('admin.html', zip_rows=zip_rows)
+                    zip_rows_html.append(f'''
+                        <tr data-zip="{zip_code}">
+                            <td class="zip-cell">{zip_code}</td>
+                            <td class="active-cell">
+                                <label class="switch">
+                                    <input type="checkbox" {active_checked}
+                                        onchange="toggleActive('{zip_code}', this.checked)">
+                                    <span class="slider"></span>
+                                </label>
+                            </td>
+                            <td class="formats-cell">{formats_html}</td>
+                            <td class="available-cell">{available_html}</td>
+                            <td class="actions-cell">
+                                <button class="btn btn-generate" onclick="generateZip('{zip_code}')"
+                                    id="gen-{zip_code}">Generate Now</button>
+                            </td>
+                        </tr>
+                    ''')
+
+                zip_table_rows = '\n'.join(zip_rows_html) if zip_rows_html else '<tr><td colspan="5"><em>No ZIP codes found</em></td></tr>'
+
+                html = render_template('admin.html', zip_table_rows=zip_table_rows)
                 return Response.new(html, headers=to_js({"content-type": "text/html;charset=UTF-8"}))
             except Exception as e:
                 return Response.new(
@@ -758,29 +771,33 @@ class Default(WorkerEntrypoint):
                 active_zips = await get_active_zips(self.env)
                 zip_formats = await get_formats_per_zip(self.env)
 
-                # Build ZIP items data
-                zip_items = []
+                # Build ZIP items HTML
+                zip_items_html = []
                 for zip_code in all_zips:
                     is_active = zip_code in active_zips
+                    dot_class = 'dot active' if is_active else 'dot inactive'
                     formats = zip_formats.get(zip_code, [])
 
                     # Build format links for this ZIP
-                    format_list = []
-                    for fmt in formats:
-                        fmt_title = FORMAT_CONFIGS.get(fmt, {}).get('title', fmt)
-                        if fmt == DEFAULT_FORMAT:
-                            url = f'/{zip_code}'
-                        else:
-                            url = f'/{zip_code}?{fmt}'
-                        format_list.append({'title': fmt_title, 'url': url})
+                    if formats:
+                        format_links = []
+                        for fmt in formats:
+                            fmt_title = FORMAT_CONFIGS.get(fmt, {}).get('title', fmt)
+                            if fmt == DEFAULT_FORMAT:
+                                format_links.append(f'<a href="/{zip_code}" class="format-link">{fmt_title}</a>')
+                            else:
+                                format_links.append(f'<a href="/{zip_code}?{fmt}" class="format-link">{fmt_title}</a>')
+                        formats_html = '<span class="formats">' + ' '.join(format_links) + '</span>'
+                    else:
+                        formats_html = '<span class="formats"><em>no formats</em></span>'
 
-                    zip_items.append({
-                        'zip_code': zip_code,
-                        'is_active': is_active,
-                        'formats': format_list
-                    })
+                    zip_items_html.append(
+                        f'<li><span class="{dot_class}"></span><span class="zip-label">ZIP {zip_code}</span>{formats_html}</li>'
+                    )
 
-                html = render_template('index.html', zip_items=zip_items, zip_count=len(all_zips))
+                zip_links = '\n'.join(zip_items_html) if zip_items_html else '<li><em>No ZIP codes found in R2</em></li>'
+
+                html = render_template('index.html', zip_links=zip_links, zip_count=len(all_zips))
                 return Response.new(html, headers=to_js({"content-type": "text/html;charset=UTF-8"}))
             except Exception as e:
                 return Response.new(

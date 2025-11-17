@@ -72,27 +72,9 @@
 </head>
 <body>
     <h1>Weather Landscape</h1>
-    <h2>Available ZIP Codes ({{ zip_count }})</h2>
+    <h2>Available ZIP Codes ($zip_count)</h2>
     <ul>
-        {% if zip_items %}
-        {% for item in zip_items %}
-        <li>
-            <span class="dot {{ 'active' if item.is_active else 'inactive' }}"></span>
-            <span class="zip-label">ZIP {{ item.zip_code }}</span>
-            <span class="formats">
-                {% if item.formats %}
-                {% for fmt in item.formats %}
-                <a href="{{ fmt.url }}" class="format-link">{{ fmt.title }}</a>
-                {% endfor %}
-                {% else %}
-                <em>no formats</em>
-                {% endif %}
-            </span>
-        </li>
-        {% endfor %}
-        {% else %}
-        <li><em>No ZIP codes found in R2</em></li>
-        {% endif %}
+        $zip_links
     </ul>
     <div class="key">
         <div class="key-item">

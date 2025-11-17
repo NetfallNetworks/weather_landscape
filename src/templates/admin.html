@@ -200,39 +200,7 @@
             </tr>
         </thead>
         <tbody>
-            {% if zip_rows %}
-            {% for row in zip_rows %}
-            <tr data-zip="{{ row.zip_code }}">
-                <td class="zip-cell">{{ row.zip_code }}</td>
-                <td class="active-cell">
-                    <label class="switch">
-                        <input type="checkbox" {% if row.is_active %}checked{% endif %}
-                            onchange="toggleActive('{{ row.zip_code }}', this.checked)">
-                        <span class="slider"></span>
-                    </label>
-                </td>
-                <td class="formats-cell">
-                    <div class="format-list">
-                        {% for fmt in row.format_configs %}
-                        <label class="format-checkbox">
-                            <input type="checkbox" {% if fmt.is_checked %}checked{% endif %} {% if fmt.is_default %}disabled{% endif %}
-                                onchange="toggleFormat('{{ row.zip_code }}', '{{ fmt.name }}', this.checked)"
-                                data-zip="{{ row.zip_code }}" data-format="{{ fmt.name }}">
-                            {{ fmt.title }}
-                        </label>
-                        {% endfor %}
-                    </div>
-                </td>
-                <td class="available-cell">{{ row.available_formats|join(', ') if row.available_formats else '<em>none</em>'|safe }}</td>
-                <td class="actions-cell">
-                    <button class="btn btn-generate" onclick="generateZip('{{ row.zip_code }}')"
-                        id="gen-{{ row.zip_code }}">Generate Now</button>
-                </td>
-            </tr>
-            {% endfor %}
-            {% else %}
-            <tr><td colspan="5"><em>No ZIP codes found</em></td></tr>
-            {% endif %}
+            $zip_table_rows
         </tbody>
     </table>
 
@@ -323,7 +291,7 @@
             const zip = input.value.trim();
 
             // Validate ZIP code
-            if (!/^\d{5}$/.test(zip)) {
+            if (!/^\d{5}$$/.test(zip)) {
                 showToast('Please enter a valid 5-digit ZIP code', 'error');
                 input.focus();
                 return;
