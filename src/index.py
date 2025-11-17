@@ -777,8 +777,8 @@ class Default(WorkerEntrypoint):
                     }
                 )
 
-        # Route: Guide diagram image
-        if 'guide' in path_parts and path == 'diagram':
+        # Route: Serve diagram image from bundled assets
+        if 'assets' in path_parts and path == 'diagram.png':
             try:
                 # Load the encode.png from the pic directory
                 pic_dir = os.path.join(os.path.dirname(__file__), '..', 'pic')
@@ -806,8 +806,59 @@ class Default(WorkerEntrypoint):
                     }
                 )
 
-        # Route: Info page (root) - only if no ZIP in path
+        # Route: Serve example weather landscape image
+        if path == 'example' and not zip_from_path:
+            try:
+                # Get first available ZIP from R2 to show as example
+                all_zips = await get_all_zips_from_r2(self.env)
+                if all_zips:
+                    example_zip = all_zips[0]
+                    format_info = FORMAT_CONFIGS.get(DEFAULT_FORMAT)
+                    extension = format_info['extension']
+                    mime_type = format_info['mime_type']
+                    key = f"{example_zip}/{DEFAULT_FORMAT}{extension}"
+                    r2_object = await self.env.WEATHER_IMAGES.get(key)
+
+                    if r2_object:
+                        image_data = await r2_object.arrayBuffer()
+                        return Response.new(image_data, headers=to_js({
+                            "content-type": mime_type,
+                            "cache-control": "public, max-age=900"
+                        }))
+
+                # Fallback: return a simple placeholder message
+                return Response.new(
+                    json.dumps({'message': 'No example images available yet'}),
+                    {
+                        'status': 404,
+                        'headers': {'Content-Type': 'application/json'}
+                    }
+                )
+            except Exception as e:
+                return Response.new(
+                    json.dumps({'error': f'Failed to load example: {str(e)}'}),
+                    {
+                        'status': 500,
+                        'headers': {'Content-Type': 'application/json'}
+                    }
+                )
+
+        # Route: Landing page (root) - only if no ZIP in path
         if path == '' and not zip_from_path:
+            try:
+                html = load_template('landing.html')
+                return Response.new(html, headers=to_js({"content-type": "text/html;charset=UTF-8"}))
+            except Exception as e:
+                return Response.new(
+                    json.dumps({'error': f'Failed to load page: {str(e)}'}),
+                    {
+                        'status': 500,
+                        'headers': {'Content-Type': 'application/json'}
+                    }
+                )
+
+        # Route: Forecasts page - list of available ZIP codes
+        if path == 'forecasts' and not zip_from_path:
             try:
                 # Get all ZIPs from R2 and active ZIPs from KV
                 all_zips = await get_all_zips_from_r2(self.env)
@@ -840,11 +891,11 @@ class Default(WorkerEntrypoint):
 
                 zip_links = '\n'.join(zip_items_html) if zip_items_html else '<li><em>No ZIP codes found in R2</em></li>'
 
-                html = render_template('index.html', zip_links=zip_links, zip_count=len(all_zips))
+                html = render_template('forecasts.html', zip_links=zip_links, zip_count=len(all_zips))
                 return Response.new(html, headers=to_js({"content-type": "text/html;charset=UTF-8"}))
             except Exception as e:
                 return Response.new(
-                    json.dumps({'error': f'Failed to load page: {str(e)}'}),
+                    json.dumps({'error': f'Failed to load forecasts page: {str(e)}'}),
                     {
                         'status': 500,
                         'headers': {'Content-Type': 'application/json'}
