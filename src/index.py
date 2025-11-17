@@ -692,6 +692,19 @@ class Default(WorkerEntrypoint):
                 zip_from_path = part
                 break
 
+        # Route: Serve favicon
+        if path == 'favicon.ico' or path == 'favicon.svg':
+            try:
+                favicon_path = os.path.join(os.path.dirname(__file__), 'assets', 'favicon.svg')
+                with open(favicon_path, 'r') as f:
+                    svg_content = f.read()
+                return Response.new(svg_content, headers=to_js({
+                    "content-type": "image/svg+xml",
+                    "cache-control": "public, max-age=86400"
+                }))
+            except Exception as e:
+                return Response.new('', {'status': 404})
+
         # Route: Admin page
         if path == 'admin':
             try:
