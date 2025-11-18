@@ -242,3 +242,493 @@ footer a:hover {
     color: #1e40af;
     font-weight: 600;
 }
+
+/* ===========================================
+   LANDING PAGE STYLES
+   =========================================== */
+
+.quick-guide {
+    background: linear-gradient(90deg, #fef3c7 0%, #dbeafe 100%);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.quick-guide h2 {
+    color: #92400e;
+    margin-top: 0;
+}
+
+.guide-item {
+    background: white;
+    padding: 1rem;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.guide-emoji {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.guide-item strong {
+    display: block;
+    color: #1e40af;
+    margin-bottom: 0.25rem;
+}
+
+.intro-text p {
+    font-size: 1.1rem;
+    margin: 1rem 0;
+}
+
+/* ===========================================
+   FORECASTS PAGE STYLES
+   =========================================== */
+
+.forecasts-page h2 {
+    border-bottom: 2px solid #93c5fd;
+    padding-bottom: 0.5rem;
+}
+
+.zip-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 640px) {
+    .zip-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.zip-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.zip-card:hover {
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.15);
+    border-color: #93c5fd;
+    transform: translateY(-2px);
+}
+
+.zip-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.zip-code {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1e40af;
+    font-family: monospace;
+}
+
+.status-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.status-badge.active {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-badge.inactive {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.zip-card-formats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.format-btn {
+    display: block;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #1e40af;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    text-align: center;
+    transition: all 0.2s ease;
+    border: 1px solid #93c5fd;
+}
+
+.format-btn:hover {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.format-btn:active {
+    transform: scale(0.98);
+}
+
+.no-formats {
+    color: #9ca3af;
+    font-style: italic;
+    text-align: center;
+    padding: 1rem;
+}
+
+.no-zips {
+    text-align: center;
+    padding: 3rem;
+    color: #6b7280;
+    font-style: italic;
+    background: white;
+    border-radius: 12px;
+}
+
+/* ===========================================
+   GUIDE PAGE STYLES
+   =========================================== */
+
+.guide-page h2 {
+    margin-top: 2rem;
+    border-bottom: 2px solid #93c5fd;
+    padding-bottom: 0.5rem;
+}
+
+.intro-box {
+    border-left: 4px solid #fbbf24;
+}
+
+.intro-box p {
+    margin: 0.5rem 0;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.feature-card {
+    padding: 1.25rem;
+}
+
+.feature-card h3 {
+    margin: 0 0 0.75rem 0;
+    color: #1e40af;
+    font-size: 1.1rem;
+}
+
+.feature-card p {
+    margin: 0;
+    color: #475569;
+}
+
+.feature-emoji {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.timeline-explanation {
+    background: linear-gradient(90deg, #fef3c7 0%, #dbeafe 100%);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin: 1.5rem 0;
+}
+
+.timeline-explanation h3 {
+    margin-top: 0;
+    color: #92400e;
+}
+
+.symbol-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.symbol-table th {
+    background: #dbeafe;
+    padding: 1rem;
+    text-align: left;
+    color: #1e40af;
+}
+
+.symbol-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.symbol-table tr:last-child td {
+    border-bottom: none;
+}
+
+.symbol-table tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+.symbol-name {
+    font-weight: 600;
+    color: #334155;
+}
+
+.fun-fact {
+    background: #fef3c7;
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    margin: 1.5rem 0;
+    border-left: 4px solid #f59e0b;
+}
+
+.fun-fact strong {
+    color: #92400e;
+}
+
+/* ===========================================
+   ADMIN PAGE STYLES
+   =========================================== */
+
+.table-wrapper {
+    overflow-x: auto;
+    margin-bottom: 2rem;
+}
+
+.admin-page table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.admin-page th,
+.admin-page td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.admin-page th {
+    background: #dbeafe;
+    font-weight: 600;
+    color: #1e40af;
+}
+
+.admin-page tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-page tr:hover td {
+    background: #f0f8ff;
+}
+
+.zip-cell {
+    font-weight: 600;
+    font-family: monospace;
+    font-size: 1.1rem;
+    color: #1e40af;
+}
+
+.format-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.format-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.85rem;
+    background: #f3f4f6;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.format-checkbox input {
+    cursor: pointer;
+}
+
+.format-checkbox input:disabled {
+    cursor: not-allowed;
+}
+
+.available-cell {
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+/* Toggle Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #cbd5e1;
+    transition: 0.3s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #22c55e;
+}
+
+input:checked + .slider:before {
+    transform: translateX(24px);
+}
+
+/* Admin Buttons */
+.btn-generate {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-generate:hover {
+    background: #2563eb;
+}
+
+.btn-generate:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+}
+
+.btn-generate.loading {
+    background: #f59e0b;
+}
+
+.btn-generate.success {
+    background: #22c55e;
+}
+
+.btn-generate.error {
+    background: #ef4444;
+}
+
+/* Toast Messages */
+.toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 1000;
+}
+
+.toast.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.toast.success {
+    background: #22c55e;
+}
+
+.toast.error {
+    background: #ef4444;
+}
+
+.toast.info {
+    background: #3b82f6;
+}
+
+/* Add ZIP Form */
+.add-zip-section {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.add-zip-section h2 {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    color: #374151;
+}
+
+.add-zip-form {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.add-zip-input {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-family: monospace;
+    width: 120px;
+}
+
+.add-zip-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.btn-add {
+    background: #10b981;
+    color: white;
+}
+
+.btn-add:hover {
+    background: #059669;
+}
+
+.btn-add:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+}

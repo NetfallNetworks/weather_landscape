@@ -26,12 +26,6 @@ type = "Text"
 globs = ["src/templates/*.html"]
 fallthrough = true
 
-# Bundle SVG files as Text modules
-[[rules]]
-type = "Text"
-globs = ["src/assets/*.svg"]
-fallthrough = true
-
 # Bundle CSS files as Text modules
 [[rules]]
 type = "Text"
