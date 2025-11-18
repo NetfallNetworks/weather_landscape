@@ -13,15 +13,19 @@
             min-height: 100vh;
             box-sizing: border-box;
         }
+        header {
+            text-align: center;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
         h1 {
             color: #1e40af;
             margin-bottom: 0.5rem;
-            text-align: center;
         }
         .subtitle {
+            font-size: 1.2rem;
             color: #64748b;
-            margin-bottom: 2rem;
-            text-align: center;
+            margin: 0;
         }
         .table-wrapper {
             overflow-x: auto;
@@ -283,8 +287,10 @@
         });
     </script>
 
-    <h1>🌤️ Weather Landscape Admin</h1>
-    <p class="subtitle">Manage ZIP codes, formats, and trigger generation</p>
+    <header>
+        <h1>🌤️ Weather Landscape Admin</h1>
+        <p class="subtitle">Manage ZIP codes, formats, and trigger generation</p>
+    </header>
 
     <div class="add-zip-section">
         <h2>Add New ZIP Code</h2>
