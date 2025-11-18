@@ -798,11 +798,9 @@ class Default(WorkerEntrypoint):
                 )
 
         # Route: Serve CSS file from bundled assets
-        if 'assets' in path_parts and path == 'styles.css':
+        if 'assets' in path_parts and 'styles.css' in path:
             try:
-                assets_dir = os.path.join(os.path.dirname(__file__), 'assets')
-                css_path = os.path.join(assets_dir, 'styles.css')
-
+                css_path = os.path.join(os.path.dirname(__file__), 'assets', 'styles.css')
                 with open(css_path, 'r') as f:
                     css_content = f.read()
 
@@ -812,7 +810,7 @@ class Default(WorkerEntrypoint):
                 }))
             except Exception as e:
                 # Return error details for debugging
-                return Response.new(f'Error loading CSS: {str(e)}', {
+                return Response.new(f'Error loading CSS: {str(e)}\nPath attempted: {os.path.join(os.path.dirname(__file__), "assets", "styles.css")}\n__file__: {__file__}', {
                     'status': 500,
                     'headers': {'Content-Type': 'text/plain'}
                 })
