@@ -693,13 +693,20 @@ class Default(WorkerEntrypoint):
                 break
 
         # Route: Serve favicon
-        if path == 'favicon.ico' or path == 'favicon.svg':
+        if path == 'favicon.ico' or path == 'favicon.png':
             try:
-                favicon_path = os.path.join(os.path.dirname(__file__), 'assets', 'favicon.svg')
-                with open(favicon_path, 'r') as f:
-                    svg_content = f.read()
-                return Response.new(svg_content, headers=to_js({
-                    "content-type": "image/svg+xml",
+                favicon_path = os.path.join(os.path.dirname(__file__), 'assets', 'favicon.png')
+                with open(favicon_path, 'rb') as f:
+                    image_bytes = f.read()
+
+                # Convert to JS array
+                from js import Uint8Array
+                js_array = Uint8Array.new(len(image_bytes))
+                for i, byte in enumerate(image_bytes):
+                    js_array[i] = byte
+
+                return Response.new(js_array, headers=to_js({
+                    "content-type": "image/png",
                     "cache-control": "public, max-age=86400"
                 }))
             except Exception as e:
