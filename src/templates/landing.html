@@ -5,43 +5,7 @@
     <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="stylesheet" href="/assets/styles.css">
     <style>
-        /* Page-specific: landing page content */
-        .hero-section {
-            background: white;
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
-            text-align: center;
-        }
-        .hero-image {
-            max-width: 100%;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-            margin: 1rem 0;
-        }
-        .hero-caption {
-            color: #64748b;
-            font-style: italic;
-            margin-top: 0.5rem;
-        }
-
-        .intro-text {
-            background: white;
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
-        }
-        .intro-text h2 {
-            color: #3b82f6;
-            margin-top: 0;
-        }
-        .intro-text p {
-            font-size: 1.1rem;
-            margin: 1rem 0;
-        }
-
+        /* Page-specific: landing page unique styles */
         .quick-guide {
             background: linear-gradient(90deg, #fef3c7 0%, #dbeafe 100%);
             border-radius: 16px;
@@ -51,20 +15,6 @@
         .quick-guide h2 {
             color: #92400e;
             margin-top: 0;
-        }
-        .guide-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
-            max-width: 900px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        @media (min-width: 1000px) {
-            .guide-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
         }
         .guide-item {
             background: white;
@@ -81,53 +31,8 @@
             color: #1e40af;
             margin-bottom: 0.25rem;
         }
-
-        .cta-section {
-            text-align: center;
-            margin: 2rem 0;
-        }
-        .cta-button {
-            display: inline-block;
-            padding: 1rem 2rem;
-            background: #3b82f6;
-            color: white;
-            text-decoration: none;
-            border-radius: 10px;
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin: 0.5rem;
-            transition: all 0.3s;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-        }
-        .cta-button:hover {
-            background: #2563eb;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
-        }
-        .cta-button.secondary {
-            background: #f59e0b;
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-        }
-        .cta-button.secondary:hover {
-            background: #d97706;
-            box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
-        }
-
-        .diagram-section {
-            background: white;
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
-            text-align: center;
-        }
-        .diagram-section h2 {
-            color: #3b82f6;
-            margin-top: 0;
-        }
-        .diagram-image {
-            max-width: 100%;
-            border-radius: 8px;
+        .intro-text p {
+            font-size: 1.1rem;
             margin: 1rem 0;
         }
     </style>
@@ -159,29 +64,29 @@
             <p class="subtitle">Your 24-hour weather forecast as a peaceful little picture</p>
         </header>
 
-        <div class="hero-section">
+        <div class="card text-center">
             <h2>See Your Weather at a Glance</h2>
             <p>No more confusing numbers or cluttered dashboards. Just a calm landscape that tells you everything you need to know.</p>
-            <img src="/example" class="hero-image" alt="Example Weather Landscape">
-            <p class="hero-caption">A cozy house in the woods, where every detail has meaning ✨</p>
+            <img src="/example" class="img-rounded img-shadow" alt="Example Weather Landscape" style="margin: 1rem 0;">
+            <p class="caption">A cozy house in the woods, where every detail has meaning ✨</p>
         </div>
 
-        <div class="intro-text">
+        <div class="card intro-text">
             <h2>🏠 What Am I Looking At?</h2>
             <p>Imagine looking out your window at a peaceful forest scene. That little house on the left? <strong>That's right now.</strong> As your eyes move to the right, you're peeking into the future &mdash; all the way to tomorrow!</p>
             <p>The trees, clouds, flowers, and hills all have secret meanings. Once you know the code, you'll read weather like a pro &mdash; no numbers needed!</p>
         </div>
 
-        <div class="diagram-section">
+        <div class="card text-center">
             <h2>🔍 The Big Picture</h2>
             <p>Here's how all the pieces fit together:</p>
-            <img src="/assets/diagram.png" class="diagram-image" alt="Weather Landscape Diagram">
+            <img src="/assets/diagram.png" class="img-rounded" alt="Weather Landscape Diagram" style="margin: 1rem 0;">
             <p>Time flows left to right. Events appear where they'll happen in your day!</p>
         </div>
 
         <div class="quick-guide">
             <h2>🎨 Quick Decoder Ring</h2>
-            <div class="guide-grid">
+            <div class="grid-3">
                 <div class="guide-item">
                     <div class="guide-emoji">🏠➡️</div>
                     <strong>Left to Right</strong>
@@ -215,9 +120,9 @@
             </div>
         </div>
 
-        <div class="cta-section">
-            <a href="/forecasts" class="cta-button">📍 View Available Forecasts</a>
-            <a href="/guide" class="cta-button secondary">📖 Full Reading Guide</a>
+        <div class="text-center" style="margin: 2rem 0;">
+            <a href="/forecasts" class="btn btn-primary" style="font-size: 1.2rem; padding: 1rem 2rem; margin: 0.5rem;">📍 View Available Forecasts</a>
+            <a href="/guide" class="btn btn-secondary" style="font-size: 1.2rem; padding: 1rem 2rem; margin: 0.5rem;">📖 Full Reading Guide</a>
         </div>
 
         <footer>

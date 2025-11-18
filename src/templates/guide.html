@@ -11,71 +11,12 @@
             border-bottom: 2px solid #93c5fd;
             padding-bottom: 0.5rem;
         }
-        .back-link {
-            display: inline-block;
-            margin-bottom: 1rem;
-            color: #3b82f6;
-            text-decoration: none;
-        }
-        .back-link:hover { text-decoration: underline; }
-
         .intro-box {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
             border-left: 4px solid #fbbf24;
         }
         .intro-box p {
             margin: 0.5rem 0;
         }
-
-        .diagram {
-            background: white;
-            padding: 1rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            text-align: center;
-            margin: 2rem 0;
-        }
-        .diagram h3 {
-            margin: 0 0 1rem 0;
-            color: #3b82f6;
-        }
-        .diagram img {
-            max-width: 100%;
-            height: auto;
-        }
-        .diagram-caption {
-            color: #64748b;
-            font-style: italic;
-            margin-top: 0.5rem;
-        }
-
-        .live-example {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin: 1.5rem 0;
-            text-align: center;
-        }
-        .live-example h3 {
-            margin: 0 0 1rem 0;
-            color: #3b82f6;
-        }
-        .live-example img {
-            max-width: 100%;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-        }
-        .live-example-caption {
-            color: #64748b;
-            font-style: italic;
-            margin-top: 0.75rem;
-        }
-
         .feature-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -83,10 +24,7 @@
             margin: 1.5rem 0;
         }
         .feature-card {
-            background: white;
-            padding: 1.25rem;
-            border-radius: 10px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            padding: 1.25rem; /* Override default card padding */
         }
         .feature-card h3 {
             margin: 0 0 0.75rem 0;
@@ -101,7 +39,6 @@
             font-size: 2rem;
             margin-bottom: 0.5rem;
         }
-
         .timeline-explanation {
             background: linear-gradient(90deg, #fef3c7 0%, #dbeafe 100%);
             padding: 1.5rem;
@@ -181,21 +118,21 @@
             <p class="subtitle">A friendly guide to understanding your weather at a glance</p>
         </header>
 
-        <div class="intro-box">
+        <div class="card intro-box">
         <p><strong>🌟 The Big Idea:</strong> Instead of staring at confusing numbers and charts, imagine looking out your window at a peaceful landscape. That's what Weather Landscape does!</p>
         <p>It turns your 24-hour weather forecast into a cute picture of a little house in the woods. Everything you see has meaning &mdash; and once you know the secret, you'll read the weather like a pro!</p>
     </div>
 
-    <div class="live-example">
-        <h3>🖼️ Here's a Real One!</h3>
-        <img src="/example" alt="Live Weather Landscape Example">
-        <p class="live-example-caption">This is a real, live weather landscape. Can you spot the house? The trees? The clouds? Let's learn what they all mean!</p>
+    <div class="card text-center" style="margin: 1.5rem 0;">
+        <h3 style="margin: 0 0 1rem 0; color: #3b82f6;">🖼️ Here's a Real One!</h3>
+        <img src="/example" alt="Live Weather Landscape Example" class="img-rounded img-shadow">
+        <p class="caption" style="margin-top: 0.75rem;">This is a real, live weather landscape. Can you spot the house? The trees? The clouds? Let's learn what they all mean!</p>
     </div>
 
-    <div class="diagram">
-        <h3>🗺️ The Master Decoder</h3>
+    <div class="card text-center" style="margin: 2rem 0;">
+        <h3 style="margin: 0 0 1rem 0; color: #3b82f6;">🗺️ The Master Decoder</h3>
         <img src="/assets/diagram.png" alt="Weather Landscape Diagram">
-        <p class="diagram-caption">The landscape tells your weather story from left to right, like reading a book!</p>
+        <p class="caption" style="margin-top: 0.5rem;">The landscape tells your weather story from left to right, like reading a book!</p>
     </div>
 
     <h2>📖 Reading Left to Right = Now to Tomorrow</h2>
@@ -209,13 +146,13 @@
     <h2>🌸 What Everything Means</h2>
 
     <div class="feature-grid">
-        <div class="feature-card">
+        <div class="card feature-card">
             <div class="feature-emoji">🌅</div>
             <h3>Sun & Moon</h3>
             <p>The <strong>sun icon</strong> shows when the sun rises. The <strong>moon</strong> appears where sunset happens. Easy peasy!</p>
         </div>
 
-        <div class="feature-card">
+        <div class="card feature-card">
             <div class="feature-emoji">🌸</div>
             <h3>Flowers Mark Time</h3>
             <p><strong>Blue flower</strong> = midnight (12:00 AM)<br>
@@ -223,7 +160,7 @@
             Like little time markers in your garden!</p>
         </div>
 
-        <div class="feature-card">
+        <div class="card feature-card">
             <div class="feature-emoji">🌳</div>
             <h3>Trees Tell Wind Stories</h3>
             <p>The <strong>taller the trees</strong>, the stronger the wind.</p>
@@ -236,19 +173,19 @@
             </ul>
         </div>
 
-        <div class="feature-card">
+        <div class="card feature-card">
             <div class="feature-emoji">☁️</div>
             <h3>Clouds in the Sky</h3>
             <p>More clouds = cloudier weather. No clouds = clear skies! They float above the landscape just like real clouds.</p>
         </div>
 
-        <div class="feature-card">
+        <div class="card feature-card">
             <div class="feature-emoji">🌡️</div>
             <h3>Temperature = Ground Level</h3>
             <p>The <strong>higher the ground curves up</strong>, the warmer it is. When the hill dips down, it's getting cooler. The peaks and valleys are your temperature journey!</p>
         </div>
 
-        <div class="feature-card">
+        <div class="card feature-card">
             <div class="feature-emoji">🌧️</div>
             <h3>Rain & Snow</h3>
             <p><strong>Raindrops</strong> appear when rain is expected. <strong>Snowflakes</strong> show up for snowy weather. Right where they'll happen in your timeline!</p>
