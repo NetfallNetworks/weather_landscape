@@ -797,6 +797,22 @@ class Default(WorkerEntrypoint):
                     }
                 )
 
+        # Route: Serve CSS file from bundled assets
+        if 'assets' in path_parts and path == 'styles.css':
+            try:
+                assets_dir = os.path.join(os.path.dirname(__file__), 'assets')
+                css_path = os.path.join(assets_dir, 'styles.css')
+
+                with open(css_path, 'r') as f:
+                    css_content = f.read()
+
+                return Response.new(css_content, headers=to_js({
+                    "content-type": "text/css",
+                    "cache-control": "public, max-age=86400"
+                }))
+            except Exception as e:
+                return Response.new('', {'status': 404})
+
         # Route: Serve diagram image from bundled assets
         if 'assets' in path_parts and path == 'diagram.png':
             try:

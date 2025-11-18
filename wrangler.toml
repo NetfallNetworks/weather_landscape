@@ -32,6 +32,12 @@ type = "Text"
 globs = ["src/assets/*.svg"]
 fallthrough = true
 
+# Bundle CSS files as Text modules
+[[rules]]
+type = "Text"
+globs = ["src/assets/*.css"]
+fallthrough = true
+
 # Cron Trigger - runs every 15 minutes to regenerate weather images
 [triggers]
 crons = ["*/15 * * * *"]
