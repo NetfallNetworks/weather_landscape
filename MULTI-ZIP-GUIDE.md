@@ -41,18 +41,50 @@ metadata:78729       → {"generatedAt": "...", "latitude": 30.4515, ...}
 status               → {"lastRun": "...", "successCount": 3, ...}
 ```
 
-## HTTP Endpoints
+## Web Interface
+
+### Public Pages
+
+**`GET /`** - Landing Page
+Welcome page with project explanation, examples, and quick decoder
+
+**`GET /forecasts`** - Forecasts Page
+Card-based interface showing all configured ZIP codes with:
+- Status badges (✓ Up to date / ○ Not updating)
+- Clickable format buttons for each available format
+- Responsive grid layout
+
+**`GET /guide`** - Reading Guide
+Comprehensive guide with live examples and detailed explanations
+
+**`GET /admin`** - Admin Dashboard
+Web interface for managing ZIP codes:
+- View all ZIP codes (both active and in R2)
+- Toggle active/inactive status with switches
+- Manage formats with checkboxes
+- Add new ZIP codes via form
+- Manually trigger generation with "Generate Now" button
 
 ### Image Access
 
-**`GET /{zip}/latest.png`** - Get latest image for specific ZIP
+**`GET /{zip}`** - Get latest image for specific ZIP (default format)
 
 ```bash
-curl https://your-worker.workers.dev/78729/latest.png > austin.png
+curl https://your-worker.workers.dev/78729 > austin.png
+```
+
+**`GET /{zip}?{format}`** - Get specific format
+
+```bash
+# Get dark theme
+curl https://your-worker.workers.dev/78729?rgb_dark > austin_dark.png
+
+# Get E-Ink version
+curl https://your-worker.workers.dev/78729?eink > austin_eink.bmp
 ```
 
 Response headers:
-- `Content-Type: image/png`
+- `Content-Type: image/png` (or `image/bmp` for BW formats)
 - `X-Generated-At: 2025-11-14T12:00:00Z`
 - `X-Zip-Code: 78729`
 - `Cache-Control: public, max-age=900`
@@ -108,36 +140,46 @@ Shows clickable links to all active ZIP codes and API documentation.
 
 ## Managing Active ZIP Codes
 
+### Via Admin Dashboard (Recommended)
+
+The easiest way to manage ZIP codes is through the web UI at `/admin`:
+
+1. **View all ZIPs**: See both active (in KV) and available (in R2)
+2. **Toggle active status**: Click the switch next to any ZIP to activate/deactivate
+3. **Add new ZIP**: Use the "Add New ZIP Code" form at the top
+4. **Manage formats**: Check/uncheck format boxes for each ZIP
+5. **Generate now**: Click button to immediately trigger generation
+
+### Via API
+
+```bash
+# Activate a ZIP (adds to active_zips in KV)
+curl -X POST https://your-worker.workers.dev/admin/activate?zip=78729
+
+# Deactivate a ZIP (removes from active_zips)
+curl -X POST https://your-worker.workers.dev/admin/deactivate?zip=78729
+
+# Trigger generation for a ZIP (also adds to geocoding cache)
+curl -X POST https://your-worker.workers.dev/admin/generate?zip=02134
+```
+
 ### Via Wrangler CLI
 
 ```bash
-# View current ZIPs
+# View current active ZIPs
 wrangler kv:key get --binding=CONFIG "active_zips"
 
 # Set ZIPs (replaces entire list)
 wrangler kv:key put --binding=CONFIG "active_zips" '["78729","90210","10001","02134"]'
-
-# Add a single ZIP (requires reading first)
-# 1. Get current list
-CURRENT=$(wrangler kv:key get --binding=CONFIG "active_zips")
-# 2. Add new ZIP and update
-echo '["78729","90210","10001","02134"]' | wrangler kv:key put --binding=CONFIG "active_zips"
 ```
 
 ### Via Cloudflare Dashboard
 
 1. Navigate to **Workers & Pages** → **KV**
-2. Select your `weather-config` namespace
+2. Select your `CONFIG` namespace
 3. Find the `active_zips` key
 4. Edit value: `["78729","90210","10001"]`
 5. Save
-
-### Via Manual Trigger
-
-```bash
-# Trigger generation for a new ZIP (also adds to geocoding cache)
-curl -X POST https://your-worker.workers.dev/generate?zip=02134
-```
 
 ## Geocoding with KV Caching
 

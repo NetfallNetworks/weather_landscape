@@ -12,6 +12,8 @@ import secrets
 
 import socket
 
+from string import Template
+
 # Import from src/ directory
 sys.path.insert(0, 'src')
 from weather_landscape import WeatherLandscape
@@ -22,14 +24,13 @@ SERV_PORT = 3355
 FAVICON = "favicon.ico"
 FILETOOOLD_SEC = 60*10
 
-
 WEATHERS = [    WeatherLandscape(WLConfig_BW())          ,
                 WeatherLandscape(WLConfig_BWI())         ,
                 WeatherLandscape(WLConfig_EINK())        ,
                 WeatherLandscape(WLConfig_RGB_Black())   ,
                 WeatherLandscape(WLConfig_RGB_White())   ,
                 ]
-                
+
 
 
 class WeatherLandscapeServer(BaseHTTPRequestHandler):
@@ -107,29 +108,19 @@ class WeatherLandscapeServer(BaseHTTPRequestHandler):
 
 
     def IndexHtml(self):
-    
-   
-        body = '<h1>Weather as Landscape</h1>'
-        
+        # Build weather items HTML
+        weather_items = []
         for w in WEATHERS:
-            id = 'id_'+w.cfg.OUT_FILENAME
-            body+='<h2>'+w.cfg.TITLE+'</h2>'  
-            #body+='<p>Place: '+("%.4f" % w.cfg.OWM_LAT) +' , '+("%.4f" % w.cfg.OWM_LON)+'</p>'
-            body+='<p><img src="'+w.cfg.OUT_FILENAME+'" alt="'+w.cfg.TITLE+'" "></p>'
-            body+='<h4>URL: <span id="'+id+'"></span></h4>'
-            body+='<script> document.getElementById("'+id+'").innerHTML = window.location+"'+w.cfg.OUT_FILENAME+'" ;</script>'
-            body+='<p>&nbsp;</p>'
-            
-        return """
-            <!DOCTYPE html>
-            <html lang="en">
-              <head>
-                <meta charset="utf-8">
-                <title>Weather as Landscape</title>
-              </head>
-              <body> """ + body + """
-              </body>
-            </html>"""
+            weather_items.append(f'''
+    <h2>{w.cfg.TITLE}</h2>
+    <p><img src="{w.cfg.OUT_FILENAME}" alt="{w.cfg.TITLE}"></p>
+    <h4>URL: <span id="id_{w.cfg.OUT_FILENAME}"></span></h4>
+    <script>document.getElementById("id_{w.cfg.OUT_FILENAME}").innerHTML = window.location + "{w.cfg.OUT_FILENAME}";</script>
+    <p>&nbsp;</p>''')
+
+        with open('templates/dev_index.html', 'r') as f:
+            template = Template(f.read())
+        return template.substitute(weather_items=''.join(weather_items))
 
         
     
