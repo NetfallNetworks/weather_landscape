@@ -80,9 +80,17 @@
         }
         .guide-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 1rem;
             margin-top: 1rem;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        @media (min-width: 1000px) {
+            .guide-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
         }
         .guide-item {
             background: white;
