@@ -6,7 +6,7 @@
     <style>
         body {
             font-family: system-ui, -apple-system, sans-serif;
-            max-width: 1200px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 2rem;
             background: linear-gradient(135deg, #f0f8ff 0%, #e6f2ff 100%);
@@ -22,6 +22,10 @@
             color: #64748b;
             margin-bottom: 2rem;
             text-align: center;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 2rem;
         }
         table {
             width: 100%;
@@ -291,20 +295,22 @@
         </div>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>ZIP Code</th>
-                <th>Active</th>
-                <th>Configured Formats</th>
-                <th>Available in R2</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            $zip_table_rows
-        </tbody>
-    </table>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>ZIP Code</th>
+                    <th>Active</th>
+                    <th>Configured Formats</th>
+                    <th>Available in R2</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                $zip_table_rows
+            </tbody>
+        </table>
+    </div>
 
     <div id="toast" class="toast"></div>
 
