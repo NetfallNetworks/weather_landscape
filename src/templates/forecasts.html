@@ -5,99 +5,12 @@
     <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="stylesheet" href="/assets/styles.css">
     <style>
-        /* Page-specific: Forecast list styles */
+        /* Page-specific: Forecast cards styles */
         h2 {
             border-bottom: 2px solid #93c5fd;
             padding-bottom: 0.5rem;
         }
-        ul {
-            list-style: none;
-            padding: 0;
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        li {
-            margin: 0.75rem 0;
-            display: grid;
-            grid-template-columns: auto auto 1fr;
-            align-items: start;
-            gap: 0.75rem;
-            padding: 0.5rem;
-            border-radius: 8px;
-            transition: background 0.2s;
-        }
-        @media (max-width: 600px) {
-            li {
-                grid-template-columns: auto 1fr;
-            }
-            li .dot {
-                grid-row: 1;
-            }
-            li .zip-label {
-                grid-row: 1;
-            }
-            li .formats {
-                grid-column: 1 / -1;
-            }
-        }
-        li:hover {
-            background: #f0f8ff;
-        }
-        .zip-label {
-            font-weight: 600;
-            color: #1e40af;
-            white-space: nowrap;
-        }
-        .formats {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .format-link {
-            color: #0066cc;
-            text-decoration: none;
-            padding: 0.25rem 0.5rem;
-            background: white;
-            border-radius: 3px;
-            font-size: 0.85rem;
-            border: 1px solid #ddd;
-        }
-        .format-link:hover {
-            background: #e6f2ff;
-            border-color: #0066cc;
-        }
-        .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-        .dot.active {
-            background: #22c55e;
-        }
-        .dot.inactive {
-            background: #e5e7eb;
-        }
-        .key {
-            margin-top: 1.5rem;
-            padding: 1rem;
-            background: white;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            color: #64748b;
-            display: flex;
-            gap: 2rem;
-            justify-content: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-        .key-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+
         .guide-link {
             display: inline-block;
             margin-bottom: 1.5rem;
@@ -115,7 +28,117 @@
         }
         .center-links {
             text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Card Grid */
+        .zip-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 640px) {
+            .zip-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ZIP Card */
+        .zip-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .zip-card:hover {
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.15);
+            border-color: #93c5fd;
+            transform: translateY(-2px);
+        }
+
+        .zip-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .zip-code {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1e40af;
+            font-family: monospace;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.625rem;
+            border-radius: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .status-badge.active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge.inactive {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .zip-card-formats {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .format-btn {
+            display: block;
+            padding: 0.75rem 1rem;
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #1e40af;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.2s ease;
+            border: 1px solid #93c5fd;
+        }
+
+        .format-btn:hover {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .format-btn:active {
+            transform: scale(0.98);
+        }
+
+        .no-formats {
+            color: #9ca3af;
+            font-style: italic;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .no-zips {
+            text-align: center;
+            padding: 3rem;
+            color: #6b7280;
+            font-style: italic;
+            background: white;
+            border-radius: 12px;
         }
     </style>
 </head>
@@ -147,28 +170,21 @@
         </header>
 
         <div class="center-links">
-        <a href="/guide" class="guide-link">🎨 How do I read these cute pictures?</a>
-    </div>
-    <h2>Available Forecasts ($zip_count)</h2>
-    <ul>
-        $zip_links
-    </ul>
-    <div class="key">
-        <div class="key-item">
-            <span class="dot active"></span>
-            <span>Up to date</span>
+            <a href="/guide" class="guide-link">🎨 How do I read these cute pictures?</a>
         </div>
-        <div class="key-item">
-            <span class="dot inactive"></span>
-            <span>Not updating</span>
+
+        <h2>Available Forecasts ($zip_count)</h2>
+
+        <div class="zip-grid">
+            $zip_links
         </div>
-    </div>
-    <footer>
-        <p>Made with ❤️ for weather lovers who prefer pictures over spreadsheets</p>
-        <p style="margin-top: 0.5rem; font-size: 0.9rem;">
-            Based on the original <a href="https://github.com/lds133/weather_landscape" target="_blank">Weather Landscape</a> project by lds133
-        </p>
-    </footer>
+
+        <footer>
+            <p>Made with ❤️ for weather lovers who prefer pictures over spreadsheets</p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem;">
+                Based on the original <a href="https://github.com/lds133/weather_landscape" target="_blank">Weather Landscape</a> project by lds133
+            </p>
+        </footer>
     </div>
 </body>
 </html>

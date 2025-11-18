@@ -907,7 +907,7 @@ class Default(WorkerEntrypoint):
                 zip_items_html = []
                 for zip_code in all_zips:
                     is_active = zip_code in active_zips
-                    dot_class = 'dot active' if is_active else 'dot inactive'
+                    status_badge = '<span class="status-badge active">✓ Up to date</span>' if is_active else '<span class="status-badge inactive">○ Not updating</span>'
                     formats = zip_formats.get(zip_code, [])
 
                     # Build format links for this ZIP
@@ -916,20 +916,28 @@ class Default(WorkerEntrypoint):
                         for fmt in formats:
                             fmt_title = FORMAT_CONFIGS.get(fmt, {}).get('title', fmt)
                             if fmt == DEFAULT_FORMAT:
-                                format_links.append(f'<a href="/{zip_code}" class="format-link">{fmt_title}</a>')
+                                format_links.append(f'<a href="/{zip_code}" class="format-btn">{fmt_title}</a>')
                             else:
-                                format_links.append(f'<a href="/{zip_code}?{fmt}" class="format-link">{fmt_title}</a>')
-                        formats_html = '<span class="formats">' + ' '.join(format_links) + '</span>'
+                                format_links.append(f'<a href="/{zip_code}?{fmt}" class="format-btn">{fmt_title}</a>')
+                        formats_html = ''.join(format_links)
                     else:
-                        formats_html = '<span class="formats"><em>no formats</em></span>'
+                        formats_html = '<span class="no-formats">No formats available</span>'
 
-                    zip_items_html.append(
-                        f'<li><span class="{dot_class}"></span><span class="zip-label">ZIP {zip_code}</span>{formats_html}</li>'
-                    )
+                    zip_items_html.append(f'''
+                        <div class="zip-card">
+                            <div class="zip-card-header">
+                                <div class="zip-code">📍 {zip_code}</div>
+                                {status_badge}
+                            </div>
+                            <div class="zip-card-formats">
+                                {formats_html}
+                            </div>
+                        </div>
+                    ''')
 
-                zip_links = '\n'.join(zip_items_html) if zip_items_html else '<li><em>No ZIP codes found in R2</em></li>'
+                zip_cards = '\n'.join(zip_items_html) if zip_items_html else '<div class="no-zips">No ZIP codes found in R2</div>'
 
-                html = render_template('forecasts.html', zip_links=zip_links, zip_count=len(all_zips))
+                html = render_template('forecasts.html', zip_links=zip_cards, zip_count=len(all_zips))
                 return Response.new(html, headers=to_js({"content-type": "text/html;charset=UTF-8"}))
             except Exception as e:
                 return Response.new(
