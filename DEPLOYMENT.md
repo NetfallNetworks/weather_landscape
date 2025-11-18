@@ -107,48 +107,114 @@ Available variants:
 - `bw_inverted` - Inverted black and white
 - `eink` - E-Ink optimized
 
-## 📡 API Endpoints
+## 🌐 Web Interface & Routes
 
-Once deployed, your worker exposes these endpoints:
+Once deployed, your worker provides a complete web interface:
 
-### `GET /` or `GET /current.png`
-Returns the current weather landscape image
+### Public Web Pages
 
+**`GET /`** - Landing Page
+Beautiful homepage with:
+- Project explanation and "Big Picture" diagram
+- Quick decoder ring for understanding landscapes
+- Live example weather landscape
+- Links to forecasts and reading guide
+
+**`GET /forecasts`** - Forecasts Page
+Card-based interface showing:
+- All configured ZIP codes
+- Status badges (active/inactive)
+- Available formats as clickable buttons
+- Responsive grid layout
+
+**`GET /guide`** - Reading Guide
+Comprehensive guide including:
+- Live weather landscape example
+- Annotated diagram explaining all elements
+- Feature cards for each weather element
+- Complete reference table
+
+**`GET /{zip}`** - Weather Image (Default Format)
 ```bash
-curl https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/current.png > weather.png
+# Returns latest RGB Light image for ZIP 78729
+curl https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/78729 > weather.png
 ```
 
-### `GET /status`
-Returns generation status and metadata
-
+**`GET /{zip}?{format}`** - Weather Image (Specific Format)
 ```bash
-curl https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/status
+# Get dark theme version
+curl https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/78729?rgb_dark > weather_dark.png
+
+# Get E-Ink version
+curl https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/78729?eink > weather_eink.bmp
 ```
 
-Example response:
+### Admin Dashboard
+
+**`GET /admin`** - Admin Dashboard
+Web-based management interface for:
+- Viewing all ZIP codes (from R2 and KV)
+- Toggling active/inactive status per ZIP
+- Managing formats per ZIP (checkboxes)
+- Manually triggering generation
+- Adding new ZIP codes
+
+### API Endpoints
+
+**`GET /admin/status`** - Status & Metadata
+```bash
+curl https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/admin/status
+```
+
+Returns:
 ```json
 {
   "status": {
-    "lastSuccess": "2025-01-10T12:00:00Z",
-    "lastError": null,
+    "lastRun": "2025-01-10T12:00:00Z",
+    "totalZips": 3,
+    "successCount": 3,
     "errorCount": 0
   },
-  "metadata": {
-    "generatedAt": "2025-01-10T12:00:00Z",
-    "latitude": 52.196136,
-    "longitude": 21.007963,
-    "fileSize": 45678,
-    "format": "PNG",
-    "variant": "rgb_white"
+  "activeZips": ["78729", "90210"],
+  "zipMetadata": {
+    "78729": {
+      "generatedAt": "2025-01-10T12:00:00Z",
+      "latitude": 30.4515,
+      "longitude": -97.7676,
+      "zipCode": "78729"
+    }
   }
 }
 ```
 
-### `POST /generate`
-Manually trigger image generation (for testing)
-
+**`POST /admin/generate?zip={zip}`** - Manual Generation
 ```bash
-curl -X POST https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/generate
+curl -X POST "https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/admin/generate?zip=78729"
+```
+
+**`POST /admin/activate?zip={zip}`** - Activate ZIP
+```bash
+curl -X POST "https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/admin/activate?zip=78729"
+```
+
+**`POST /admin/deactivate?zip={zip}`** - Deactivate ZIP
+```bash
+curl -X POST "https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/admin/deactivate?zip=78729"
+```
+
+**`POST /admin/formats/add?zip={zip}&format={format}`** - Add Format
+```bash
+curl -X POST "https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/admin/formats/add?zip=78729&format=rgb_dark"
+```
+
+**`POST /admin/formats/remove?zip={zip}&format={format}`** - Remove Format
+```bash
+curl -X POST "https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/admin/formats/remove?zip=78729&format=bw"
+```
+
+**`GET /admin/formats?zip={zip}`** - Get Formats for ZIP
+```bash
+curl "https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/admin/formats?zip=78729"
 ```
 
 ## 🕐 Scheduled Generation

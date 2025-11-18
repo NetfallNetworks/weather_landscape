@@ -6,43 +6,152 @@ This directory contains the Cloudflare Python Worker implementation for generati
 
 ```
 src/
-├── index.py          # Main worker entry point
-├── requirements.txt  # Python package dependencies (Pillow)
-└── README.md        # This file
+├── index.py              # Main worker entry point and routing
+├── requirements.txt      # Python dependencies (Pillow, pyodide packages)
+├── templates/            # HTML templates (string.Template format)
+│   ├── landing.html      # Homepage (/)
+│   ├── forecasts.html    # ZIP code list (/forecasts)
+│   ├── guide.html        # Reading guide (/guide)
+│   └── admin.html        # Admin dashboard (/admin)
+├── assets/               # Static assets bundled with worker
+│   ├── styles.css        # Shared stylesheet
+│   ├── diagram.png       # Weather encoding diagram
+│   └── favicon.png       # Site icon (RGB house sprite)
+└── README.md             # This file
 ```
 
 ## How It Works
 
-The worker has two main functions:
+The worker provides three main functions:
 
-### 1. Scheduled Generation (Cron)
+### 1. Web Interface
+Serves a complete web UI with templating:
+- **Templating**: Uses Python's built-in `string.Template` (no external dependencies)
+- **Shared CSS**: All pages reference `/assets/styles.css`
+- **Responsive Design**: Mobile-first with hamburger menu navigation
+- **Routes**:
+  - `/` - Landing page with project explanation
+  - `/forecasts` - Card-based list of ZIP codes and formats
+  - `/guide` - Comprehensive reading guide
+  - `/admin` - Management dashboard
+  - `/assets/*` - Static assets (CSS, images)
+
+### 2. Scheduled Generation (Cron)
 - Runs every 15 minutes (configurable in `wrangler.toml`)
-- Fetches current weather from OpenWeather API
-- Generates weather landscape image using existing `weather_landscape.py` code
-- Uploads image to Cloudflare R2 storage
-- Updates metadata in KV store
+- Processes all active ZIP codes from KV (`active_zips`)
+- For each ZIP:
+  - Fetches weather from OpenWeather API
+  - Generates images in all configured formats
+  - Uploads to R2 at `{zip}/{format}.{ext}`
+  - Updates metadata in KV
+- Supports multi-format generation per ZIP
 
-### 2. HTTP Serving
-- `GET /` or `GET /current.png` - Serves the current image from R2
-- `GET /status` - Returns generation status and metadata
-- `POST /generate` - Manually triggers image generation
+### 3. Image Serving & API
+- `GET /{zip}` - Serves latest image (default format)
+- `GET /{zip}?{format}` - Serves specific format
+- `GET /admin/status` - Returns generation status and metadata
+- `POST /admin/generate?zip={zip}` - Manually triggers generation
+- `POST /admin/activate?zip={zip}` - Activates ZIP for auto-generation
+- `POST /admin/deactivate?zip={zip}` - Deactivates ZIP
+- `POST /admin/formats/add` - Adds format to ZIP
+- `POST /admin/formats/remove` - Removes format from ZIP
 
 ## Key Components
 
 ### `index.py`
 
-**Main Functions:**
-- `scheduled(event, env, ctx)` - Handles cron triggers
-- `fetch(request, env, ctx)` - Handles HTTP requests
-- `generate_weather_image(env)` - Generates the image
-- `upload_to_r2(env, image_bytes, metadata)` - Uploads to R2
+**Main Worker Class:**
+```python
+class WeatherLandscapeWorker:
+    async def on_fetch(self, request, env, ctx):
+        # Handles all HTTP requests and routing
+
+    async def scheduled(self, event, env, ctx):
+        # Handles cron-triggered generation
+```
+
+**Templating Functions:**
+```python
+def load_template(template_name):
+    # Loads HTML template from src/templates/
+
+def render_template(template_name, **context):
+    # Renders template with $variable substitution
+```
 
 **Environment Bindings:**
 - `env.WEATHER_IMAGES` - R2 bucket for images
 - `env.CONFIG` - KV namespace for configuration
 - `env.OWM_API_KEY` - OpenWeather API key (secret)
-- `env.DEFAULT_LAT` - Default latitude
-- `env.DEFAULT_LON` - Default longitude
+- `env.DEFAULT_ZIP` - Fallback ZIP code
+
+### Templating System
+
+**Why string.Template?**
+- Built-in to Python (no external dependencies)
+- Works in Cloudflare Workers' Pyodide environment
+- Lightweight and fast
+- Simple `$variable` syntax
+
+**Template Variables:**
+Templates use `$variable` syntax for substitution:
+```html
+<h1>Available Forecasts ($zip_count)</h1>
+<div class="zip-grid">
+    $zip_links
+</div>
+```
+
+**Rendering:**
+```python
+html = render_template('forecasts.html',
+    zip_links=cards_html,
+    zip_count=len(all_zips)
+)
+```
+
+**JavaScript in Templates:**
+Dollar signs in JavaScript must be escaped as `$$`:
+```javascript
+// In template:
+const regex = /^\d{5}$$/;  // Note: $$ instead of $
+```
+
+### Asset Bundling
+
+**wrangler.toml Configuration:**
+```toml
+# HTML templates as Text
+[[rules]]
+type = "Text"
+globs = ["src/templates/*.html"]
+
+# CSS as Text
+[[rules]]
+type = "Text"
+globs = ["**/*.css"]
+
+# Images as Data (binary)
+[[rules]]
+type = "Data"
+globs = ["**/*.png", "**/*.bmp"]
+```
+
+**Serving Assets:**
+Assets are served with proper content-type and caching:
+```python
+# CSS
+return Response.new(css_content, headers={
+    "content-type": "text/css; charset=UTF-8",
+    "cache-control": "public, max-age=86400"
+})
+
+# Images (binary conversion required)
+from js import Uint8Array
+js_array = Uint8Array.new(len(image_bytes))
+for i, byte in enumerate(image_bytes):
+    js_array[i] = byte
+```
 
 ## Dependencies
 

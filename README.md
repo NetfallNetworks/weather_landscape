@@ -126,7 +126,7 @@ Access the server page from a browser to see the number of generated images.
 
 ## Cloudflare Deployment ☁️
 
-Deploy your weather landscape as a globally distributed Cloudflare Worker with automatic image generation and edge caching!
+Deploy your weather landscape as a globally distributed Cloudflare Worker with automatic image generation, edge caching, and a beautiful web interface!
 
 **Features:**
 - 🕐 Automatic image generation every 15 minutes (configurable)
@@ -134,6 +134,9 @@ Deploy your weather landscape as a globally distributed Cloudflare Worker with a
 - 💾 Image storage in R2 (S3-compatible object storage)
 - 🔑 Secure configuration via KV store and Secrets
 - 📍 **Multi-ZIP support** - Generate images for multiple locations
+- 🎨 **Multi-format support** - Generate multiple image formats per ZIP
+- 🌐 **Web UI** - Beautiful interface for browsing forecasts and reading guides
+- ⚙️ **Admin dashboard** - Manage ZIP codes and formats via web interface
 - 💰 Free tier friendly (well within limits)
 
 ### Quick Deploy
@@ -149,6 +152,8 @@ wrangler login
 wrangler r2 bucket create weather-landscapes
 wrangler kv namespace create CONFIG
 
+# Update wrangler.toml with your KV namespace ID
+
 # Deploy!
 wrangler deploy
 
@@ -156,9 +161,24 @@ wrangler deploy
 wrangler secret put OWM_API_KEY
 ```
 
-Your weather landscape will be available at:
-- Root: `https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/`
-- Specific ZIP: `https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev/78729`
+### Web Interface
+
+Your weather landscape will be accessible via a clean, responsive web UI:
+
+**Public Routes:**
+- `/` - Landing page with project explanation and quick decoder
+- `/forecasts` - Card-based list of all available ZIP codes and formats
+- `/guide` - Comprehensive reading guide with live examples
+- `/{zip}` - Latest weather landscape image for specific ZIP (default format)
+- `/{zip}?{format}` - Specific format (e.g., `/78729?rgb_dark`)
+
+**Admin Routes:**
+- `/admin` - Dashboard for managing ZIP codes, formats, and triggering generation
+
+**Assets:**
+- `/assets/styles.css` - Shared stylesheet
+- `/assets/diagram.png` - Weather encoding diagram
+- `/favicon.png` - Site icon
 
 **📚 Full deployment guide:** See [DEPLOYMENT.md](DEPLOYMENT.md)
 
@@ -175,24 +195,32 @@ Generate images in multiple formats per ZIP code! Each ZIP can have its own form
 - `eink` - Black & White with 90° rotation for E-Ink (.bmp)
 - `bwi` - Black & White inverted (.bmp)
 
-**Managing Formats via API:**
+**Managing Formats:**
+
+**Via Admin Dashboard (Recommended):**
+1. Navigate to `/admin` in your deployed worker
+2. Each ZIP code shows checkboxes for available formats
+3. Check/uncheck formats to enable/disable them
+4. Click "Generate Now" to immediately create images for all enabled formats
+
+**Via API:**
 
 ```bash
 # Add RGB Dark format to ZIP 78729
-curl -X POST "https://your-worker.workers.dev/formats/add?zip=78729&format=rgb_dark"
+curl -X POST "https://your-worker.workers.dev/admin/formats/add?zip=78729&format=rgb_dark"
 
 # Add Black & White format
-curl -X POST "https://your-worker.workers.dev/formats/add?zip=78729&format=bw"
+curl -X POST "https://your-worker.workers.dev/admin/formats/add?zip=78729&format=bw"
 
 # Remove a format (cannot remove default rgb_light)
-curl -X POST "https://your-worker.workers.dev/formats/remove?zip=78729&format=bw"
+curl -X POST "https://your-worker.workers.dev/admin/formats/remove?zip=78729&format=bw"
 
 # Get current formats for a ZIP
-curl "https://your-worker.workers.dev/formats?zip=78729"
+curl "https://your-worker.workers.dev/admin/formats?zip=78729"
 # Returns: {"zip": "78729", "formats": ["rgb_light", "rgb_dark"], "available": [...]}
 
 # Generate all configured formats for a ZIP
-curl -X POST "https://your-worker.workers.dev/generate?zip=78729"
+curl -X POST "https://your-worker.workers.dev/admin/generate?zip=78729"
 ```
 
 **Accessing Different Formats:**
