@@ -35,7 +35,7 @@ fallthrough = true
 # Bundle CSS files as Text modules
 [[rules]]
 type = "Text"
-globs = ["src/assets/*.css"]
+globs = ["**/*.css"]
 fallthrough = true
 
 # Cron Trigger - runs every 15 minutes to regenerate weather images
