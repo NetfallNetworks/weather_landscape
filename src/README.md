@@ -2,6 +2,163 @@
 
 This directory contains the Cloudflare Python Worker implementation for generating and serving weather landscape images.
 
+## Architecture
+
+### Event-Driven Architecture & Image Generation Pipeline
+
+The system uses an event-driven architecture with two trigger types (Cron and HTTP) that feed into a unified image generation pipeline:
+
+```mermaid
+flowchart TB
+    subgraph Triggers["Event Triggers"]
+        CRON["⏰ Cron Trigger<br/>(Every 15 min)"]
+        HTTP["🌐 HTTP Request<br/>POST /admin/generate"]
+    end
+
+    subgraph Pipeline["Image Generation Pipeline"]
+        direction TB
+        CONFIG["📋 Load Configuration<br/>(WorkerConfig)"]
+        GEO["🗺️ Geocoding<br/>(ZIP → lat/lon)"]
+        FORMATS["🎨 Get Format Config<br/>(KV: formats:{zip})"]
+        WEATHER["🌤️ Fetch Weather Data<br/>(OpenWeatherMap API)"]
+        GENERATE["🖼️ Generate Image<br/>(DrawWeather + PIL)"]
+        SERIALIZE["💾 Serialize Image<br/>(PNG/BMP)"]
+        UPLOAD["☁️ Upload to R2<br/>({zip}/{format}.{ext})"]
+        STATUS["📊 Update Status<br/>(KV: status:{zip})"]
+    end
+
+    subgraph External["External Services"]
+        OWM["OpenWeatherMap API<br/>• Geocoding<br/>• Current Weather<br/>• 5-Day Forecast"]
+        R2["Cloudflare R2<br/>(Image Storage)"]
+        KV["Cloudflare KV<br/>(Config & Metadata)"]
+    end
+
+    subgraph Generation["Image Generation Core"]
+        WL["WeatherLandscape<br/>(Orchestrator)"]
+        DW["DrawWeather<br/>(Renderer)"]
+        SPRITES["Sprites System<br/>(RGB & B&W)"]
+    end
+
+    CRON --> CONFIG
+    HTTP --> CONFIG
+    CONFIG --> GEO
+    GEO <--> KV
+    GEO <--> OWM
+    GEO --> FORMATS
+    FORMATS <--> KV
+    FORMATS --> WEATHER
+    WEATHER <--> OWM
+    WEATHER --> GENERATE
+    GENERATE --> WL
+    WL --> DW
+    DW --> SPRITES
+    SPRITES --> SERIALIZE
+    SERIALIZE --> UPLOAD
+    UPLOAD --> R2
+    UPLOAD --> STATUS
+    STATUS --> KV
+
+    classDef trigger fill:#e1f5fe,stroke:#01579b
+    classDef pipeline fill:#f3e5f5,stroke:#4a148c
+    classDef external fill:#fff3e0,stroke:#e65100
+    classDef core fill:#e8f5e9,stroke:#1b5e20
+
+    class CRON,HTTP trigger
+    class CONFIG,GEO,FORMATS,WEATHER,GENERATE,SERIALIZE,UPLOAD,STATUS pipeline
+    class OWM,R2,KV external
+    class WL,DW,SPRITES core
+```
+
+### Secure Architecture & Route Layout
+
+The application implements Zero Trust security with Cloudflare Access protecting administrative endpoints:
+
+```mermaid
+flowchart TB
+    subgraph Internet["Internet"]
+        USER["👤 User"]
+        ADMIN["👨‍💼 Administrator"]
+    end
+
+    subgraph CloudflareEdge["Cloudflare Edge Network"]
+        direction TB
+
+        subgraph DNS["DNS & Routing"]
+            DOMAIN["Custom Domain<br/>(weather.example.com)"]
+        end
+
+        subgraph Security["Security Layer"]
+            ACCESS["🔐 Cloudflare Access<br/>(Zero Trust)"]
+        end
+
+        subgraph Worker["Cloudflare Worker"]
+            ROUTER["Request Router<br/>(index.py)"]
+
+            subgraph PublicRoutes["Public Routes (No Auth)"]
+                LANDING["/ <br/>Landing Page"]
+                FORECASTS["/forecasts<br/>ZIP Code List"]
+                GUIDE["/guide<br/>Reading Guide"]
+                ZIPIMG["/{zip}<br/>Weather Image"]
+                ZIPFMT["/{zip}?{format}<br/>Specific Format"]
+                ASSETS["/assets/*<br/>Static Assets"]
+                FAVICON["/favicon.png"]
+                EXAMPLE["/example"]
+            end
+
+            subgraph ProtectedRoutes["Protected Routes (Auth Required)"]
+                ADMINDASH["/admin<br/>Dashboard"]
+                ADMINSTATUS["/admin/status<br/>Gen Status"]
+                ADMINACT["/admin/activate<br/>Activate ZIP"]
+                ADMINDEACT["/admin/deactivate<br/>Deactivate ZIP"]
+                ADMINGEN["/admin/generate<br/>Manual Gen"]
+                ADMINFMTADD["/admin/formats/add"]
+                ADMINFMTREM["/admin/formats/remove"]
+                ADMINFMTGET["/admin/formats/get"]
+            end
+        end
+    end
+
+    subgraph Storage["Storage Layer"]
+        R2DB[("R2 Bucket<br/>weather-landscapes")]
+        KVDB[("KV Namespace<br/>CONFIG")]
+    end
+
+    USER --> DOMAIN
+    ADMIN --> DOMAIN
+    DOMAIN --> ROUTER
+
+    ROUTER --> PublicRoutes
+    ROUTER --> ACCESS
+    ACCESS -->|"✓ Authenticated"| ProtectedRoutes
+    ACCESS -->|"✗ Denied"| REJECT["403 Forbidden"]
+
+    PublicRoutes --> R2DB
+    PublicRoutes --> KVDB
+    ProtectedRoutes --> R2DB
+    ProtectedRoutes --> KVDB
+
+    classDef internet fill:#ffebee,stroke:#b71c1c
+    classDef edge fill:#e3f2fd,stroke:#0d47a1
+    classDef public fill:#e8f5e9,stroke:#1b5e20
+    classDef protected fill:#fff3e0,stroke:#e65100
+    classDef storage fill:#f3e5f5,stroke:#4a148c
+    classDef security fill:#fce4ec,stroke:#880e4f
+
+    class USER,ADMIN internet
+    class DOMAIN,ROUTER edge
+    class LANDING,FORECASTS,GUIDE,ZIPIMG,ZIPFMT,ASSETS,FAVICON,EXAMPLE public
+    class ADMINDASH,ADMINSTATUS,ADMINACT,ADMINDEACT,ADMINGEN,ADMINFMTADD,ADMINFMTREM,ADMINFMTGET protected
+    class R2DB,KVDB storage
+    class ACCESS security
+```
+
+**Security Notes:**
+- `workers_dev = false` and `preview_urls = false` disable public Cloudflare subdomains
+- All traffic routes through custom domain with Cloudflare Access
+- Zero Trust authentication occurs at edge level (before Worker code executes)
+- Admin routes require successful authentication; public routes are open
+- API keys stored securely in Cloudflare Secrets (not KV)
+
 ## Structure
 
 ```
