@@ -807,11 +807,15 @@ class Default(WorkerEntrypoint):
                     css_content = f.read()
 
                 return Response.new(css_content, headers=to_js({
-                    "content-type": "text/css",
+                    "content-type": "text/css; charset=UTF-8",
                     "cache-control": "public, max-age=86400"
                 }))
             except Exception as e:
-                return Response.new('', {'status': 404})
+                # Return error details for debugging
+                return Response.new(f'Error loading CSS: {str(e)}', {
+                    'status': 500,
+                    'headers': {'Content-Type': 'text/plain'}
+                })
 
         # Route: Serve diagram image from bundled assets
         if 'assets' in path_parts and path == 'diagram.png':
