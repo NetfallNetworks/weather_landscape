@@ -31,7 +31,7 @@ from shared import (
 )
 
 
-class WebWorker(WorkerEntrypoint):
+class Default(WorkerEntrypoint):
     """
     Web Worker for Weather Landscape
     Handles all HTTP requests
@@ -672,7 +672,3 @@ class WebWorker(WorkerEntrypoint):
                 json.dumps({'error': f'Failed to queue generation: {str(e)}'}),
                 {'status': 500, 'headers': {'Content-Type': 'application/json'}}
             )
-
-
-# Export the worker class
-export = WebWorker
