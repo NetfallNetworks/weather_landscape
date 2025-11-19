@@ -10,11 +10,8 @@ just schedules work without doing any actual processing.
 """
 
 import json
-import sys
-import os
 from datetime import datetime
 from workers import WorkerEntrypoint
-
 
 from shared import get_active_zips
 
@@ -25,7 +22,7 @@ class ZipScheduler(WorkerEntrypoint):
     Runs on cron schedule to enqueue ZIP codes for weather fetching
     """
 
-    async def scheduled(self, event, env, ctx):
+    async def scheduled(self, controller, env, ctx):
         """
         Scheduled handler - runs on cron trigger (every 15 minutes)
         Enqueues all active ZIP codes for weather fetching
