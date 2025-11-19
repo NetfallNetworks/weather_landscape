@@ -377,7 +377,7 @@ class Default(WorkerEntrypoint):
                     </div>
                 ''')
 
-            zip_cards = '\n'.join(zip_items_html) if zip_items_html else '<div class="no-zips">No ZIP codes found in R2</div>'
+            zip_cards = '\n'.join(zip_items_html) if zip_items_html else '<div class="no-zips">No forecasts available yet</div>'
 
             html = render_template('forecasts.html', zip_links=zip_cards, zip_count=len(all_zips))
             return Response.new(html, headers=to_js({"content-type": "text/html;charset=UTF-8"}))
