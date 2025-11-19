@@ -21,7 +21,7 @@ from shared import (
 )
 
 
-class Default(WorkerEntrypoint):
+class LandscapeGenerator(WorkerEntrypoint):
     """
     Landscape Generator Worker
     Consumes queue messages and generates weather landscape images
@@ -144,3 +144,6 @@ class Default(WorkerEntrypoint):
 
 
 # Export the worker class
+
+
+export = LandscapeGenerator
