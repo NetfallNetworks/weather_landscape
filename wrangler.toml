@@ -23,7 +23,7 @@ fallthrough = true
 # Bundle HTML templates as Text modules
 [[rules]]
 type = "Text"
-globs = ["src/templates/*.html"]
+globs = ["src/workers/templates/*.html"]
 fallthrough = true
 
 # Bundle CSS files as Text modules
