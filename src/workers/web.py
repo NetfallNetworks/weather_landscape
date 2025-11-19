@@ -157,8 +157,8 @@ class Default(WorkerEntrypoint):
     async def _serve_favicon(self, env):
         """Serve favicon"""
         try:
-            src_dir = os.path.dirname(os.path.dirname(__file__))
-            favicon_path = os.path.join(src_dir, 'assets', 'favicon.png')
+            workers_dir = os.path.dirname(__file__)
+            favicon_path = os.path.join(workers_dir, 'assets', 'favicon.png')
             with open(favicon_path, 'rb') as f:
                 image_bytes = f.read()
 
@@ -251,8 +251,8 @@ class Default(WorkerEntrypoint):
     async def _serve_css(self):
         """Serve CSS file"""
         try:
-            src_dir = os.path.dirname(os.path.dirname(__file__))
-            css_path = os.path.join(src_dir, 'assets', 'styles.css')
+            workers_dir = os.path.dirname(__file__)
+            css_path = os.path.join(workers_dir, 'assets', 'styles.css')
             with open(css_path, 'r') as f:
                 css_content = f.read()
 
@@ -269,8 +269,8 @@ class Default(WorkerEntrypoint):
     async def _serve_diagram(self):
         """Serve diagram image"""
         try:
-            src_dir = os.path.dirname(os.path.dirname(__file__))
-            diagram_path = os.path.join(src_dir, 'assets', 'diagram.png')
+            workers_dir = os.path.dirname(__file__)
+            diagram_path = os.path.join(workers_dir, 'assets', 'diagram.png')
             with open(diagram_path, 'rb') as f:
                 image_bytes = f.read()
 
