@@ -57,9 +57,7 @@ class Default(WorkerEntrypoint):
         - POST /admin/formats/remove?zip={zip}&format={format} - Remove format from a ZIP
         - POST /admin/generate?zip={zip} - Manually trigger generation for a ZIP
         """
-        # Try self.env if parameter is None (Python Workers may pass it this way)
-        if env is None:
-            env = getattr(self, 'env', None)
+        env = self.env
 
         url = request.url
         method = request.method

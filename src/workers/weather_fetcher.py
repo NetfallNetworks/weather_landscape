@@ -38,9 +38,7 @@ class Default(WorkerEntrypoint):
             env: Worker environment
             ctx: Execution context
         """
-        # Try self.env if parameter is None (Python Workers may pass it this way)
-        if env is None:
-            env = getattr(self, 'env', None)
+        env = self.env
 
         print(f"Weather Fetcher received {len(batch.messages)} job(s)")
 
