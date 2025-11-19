@@ -57,6 +57,11 @@ class Default(WorkerEntrypoint):
         - POST /admin/formats/remove?zip={zip}&format={format} - Remove format from a ZIP
         - POST /admin/generate?zip={zip} - Manually trigger generation for a ZIP
         """
+        # Debug: Check env at entry point
+        print(f"on_fetch called. env type: {type(env)}, env is None: {env is None}")
+        if env is not None:
+            print(f"env bindings: {[attr for attr in dir(env) if not attr.startswith('_')]}")
+
         url = request.url
         method = request.method
         path_parts = url.split('?')[0].split('/')
