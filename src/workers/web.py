@@ -308,10 +308,21 @@ class Default(WorkerEntrypoint):
                         "cache-control": "public, max-age=900"
                     }))
 
-            return Response.new(
-                json.dumps({'message': 'No example images available yet'}),
-                {'status': 404, 'headers': {'Content-Type': 'application/json'}}
-            )
+            # Serve static fallback example
+            workers_dir = os.path.dirname(__file__)
+            example_path = os.path.join(workers_dir, 'assets', 'example.bmp')
+            with open(example_path, 'rb') as f:
+                image_bytes = f.read()
+
+            from js import Uint8Array
+            js_array = Uint8Array.new(len(image_bytes))
+            for i, byte in enumerate(image_bytes):
+                js_array[i] = byte
+
+            return Response.new(js_array, headers=to_js({
+                "content-type": "image/bmp",
+                "cache-control": "public, max-age=900"
+            }))
         except Exception as e:
             return Response.new(
                 json.dumps({'error': f'Failed to load example: {str(e)}'}),
