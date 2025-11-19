@@ -107,10 +107,8 @@ class LandscapeGenerator(WorkerEntrypoint):
         # Initialize the global asset loader
         set_global_loader()
 
-        # Load configuration
+        # Load configuration (no API key needed - we use pre-fetched data)
         config = WorkerConfig(env)
-        if not config.OWM_KEY:
-            raise ValueError("OWM_API_KEY not set in environment")
 
         # Get format info
         format_info = FORMAT_CONFIGS.get(format_name)
@@ -124,8 +122,8 @@ class LandscapeGenerator(WorkerEntrypoint):
         print(f"  Config: {weather_config.__class__.__name__}")
         print(f"  Template: {weather_config.TEMPLATE_FILENAME}")
 
-        # Generate image using pre-fetched weather data
-        wl = WeatherLandscape(weather_config)
+        # Generate image using pre-fetched weather data (no API key required)
+        wl = WeatherLandscape(weather_config, require_api_key=False)
         img = await wl.MakeImageFromData(weather_data)
 
         # Convert PIL Image to bytes

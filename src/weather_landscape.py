@@ -10,9 +10,10 @@ import secrets
 class WeatherLandscape:
 
 
-    def __init__(self,configuration:WLBaseSettings):
+    def __init__(self,configuration:WLBaseSettings, require_api_key=True):
         self.cfg = WLBaseSettings.Fill( configuration, secrets )
-        assert self.cfg.OWM_KEY != "000000000000000000",  "Set OWM_KEY variable to your OpenWeather API key in secrets.py"
+        if require_api_key:
+            assert self.cfg.OWM_KEY != "000000000000000000",  "Set OWM_KEY variable to your OpenWeather API key in secrets.py"
 
 
     async def MakeImage(self):

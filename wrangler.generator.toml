@@ -54,5 +54,4 @@ dead_letter_queue = "landscape-jobs-dlq"
 [vars]
 DEFAULT_ZIP = "78729"
 
-# Note: Set OWM_API_KEY using:
-# wrangler secret put OWM_API_KEY -c wrangler.generator.toml
+# Note: No OWM_API_KEY needed - generator uses pre-fetched weather data from KV
