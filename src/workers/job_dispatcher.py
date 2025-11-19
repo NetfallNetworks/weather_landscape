@@ -11,7 +11,7 @@ import json
 from datetime import datetime
 from workers import WorkerEntrypoint
 
-from src.shared import get_formats_for_zip
+from ..shared import get_formats_for_zip
 
 
 class JobDispatcher(WorkerEntrypoint):

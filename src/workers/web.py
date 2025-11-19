@@ -14,7 +14,7 @@ from js import Response
 from workers import WorkerEntrypoint
 import os
 
-from src.shared import (
+from ..shared import (
     FORMAT_CONFIGS,
     DEFAULT_FORMAT,
     load_template,
