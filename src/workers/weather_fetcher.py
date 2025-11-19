@@ -14,9 +14,6 @@ import json
 from datetime import datetime
 from workers import WorkerEntrypoint
 
-import sys
-import os
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from shared import (
     WorkerConfig,

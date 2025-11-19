@@ -14,9 +14,6 @@ from js import Response
 from workers import WorkerEntrypoint
 import os
 
-import sys
-import os
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from shared import (
     FORMAT_CONFIGS,
