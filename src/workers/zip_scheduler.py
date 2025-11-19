@@ -10,8 +10,12 @@ just schedules work without doing any actual processing.
 """
 
 import json
+import sys
+import os
 from datetime import datetime
 from workers import WorkerEntrypoint
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from shared import get_active_zips
 
