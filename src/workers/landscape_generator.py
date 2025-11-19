@@ -12,7 +12,7 @@ import json
 from datetime import datetime
 from workers import WorkerEntrypoint
 
-from .shared import (
+from shared import (
     WorkerConfig,
     FORMAT_CONFIGS,
     get_weather_data,

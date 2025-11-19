@@ -14,7 +14,7 @@ import json
 from datetime import datetime
 from workers import WorkerEntrypoint
 
-from .shared import (
+from shared import (
     WorkerConfig,
     geocode_zip,
     store_weather_data,
