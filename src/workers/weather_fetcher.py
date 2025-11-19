@@ -1,10 +1,13 @@
 """
 Weather Fetcher Worker
 
-Cron-triggered worker that:
-1. Fetches weather data for all active ZIP codes
-2. Stores weather data in KV
-3. Enqueues "weather ready" events for downstream processing
+Queue consumer worker that:
+1. Receives ZIP code from fetch-jobs queue
+2. Fetches weather data from OpenWeatherMap
+3. Stores weather data in KV
+4. Enqueues "weather ready" event for downstream processing
+
+Processes ONE ZIP per message for true parallelism.
 """
 
 import json
@@ -18,7 +21,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from shared import (
     WorkerConfig,
     geocode_zip,
-    get_active_zips,
     store_weather_data,
     fetch_weather_from_owm
 )
@@ -27,34 +29,39 @@ from shared import (
 class WeatherFetcher(WorkerEntrypoint):
     """
     Weather Fetcher Worker
-    Runs on cron schedule to fetch weather and signal readiness
+    Consumes fetch-jobs queue and fetches weather for each ZIP
     """
 
-    async def scheduled(self, event, env, ctx):
+    async def queue(self, batch, env, ctx):
         """
-        Scheduled handler - runs on cron trigger (every 15 minutes)
-        Fetches weather for all active ZIP codes and signals readiness
+        Queue consumer handler - processes fetch jobs
+
+        Args:
+            batch: Batch of messages from the fetch-jobs queue
+            env: Worker environment
+            ctx: Execution context
         """
-        print(f"Weather Fetcher started at {datetime.utcnow().isoformat()}")
+        print(f"Weather Fetcher received {len(batch.messages)} job(s)")
 
         # Get configuration
         config = WorkerConfig(env)
         if not config.OWM_KEY:
             print("ERROR: OWM_API_KEY not set")
+            # Retry all messages
+            for message in batch.messages:
+                message.retry()
             return
-
-        # Get active ZIP codes
-        active_zips = await get_active_zips(env)
-        print(f"Processing {len(active_zips)} ZIP code(s): {', '.join(active_zips)}")
 
         success_count = 0
         error_count = 0
-        errors = []
 
-        # Process each ZIP code
-        for zip_code in active_zips:
+        for message in batch.messages:
             try:
-                print(f"\nProcessing ZIP {zip_code}...")
+                # Parse job data
+                job = message.body
+                zip_code = job['zip_code']
+
+                print(f"Fetching weather for {zip_code}")
 
                 # Geocode the ZIP (uses cache if available)
                 geo_data = await geocode_zip(env, zip_code, config.OWM_KEY)
@@ -78,30 +85,18 @@ class WeatherFetcher(WorkerEntrypoint):
                 }
 
                 await env.WEATHER_READY.send(event_msg)
-                print(f"  Signaled weather ready for {zip_code}")
+                print(f"  Weather ready for {zip_code}")
 
+                # Acknowledge the message
+                message.ack()
                 success_count += 1
 
             except Exception as e:
                 error_count += 1
-                error_msg = f"ZIP {zip_code}: {str(e)}"
-                errors.append(error_msg)
-                print(f"ERROR processing {zip_code}: {e}")
+                print(f"ERROR fetching weather: {e}")
+                message.retry()
 
-        # Update overall status in KV
-        try:
-            status = {
-                'lastFetchRun': datetime.utcnow().isoformat() + 'Z',
-                'totalZips': len(active_zips),
-                'successCount': success_count,
-                'errorCount': error_count,
-                'errors': errors if errors else None
-            }
-            await env.CONFIG.put('fetcher_status', json.dumps(status))
-        except Exception as e:
-            print(f"Warning: Failed to update fetcher status in KV: {e}")
-
-        print(f"\nWeather Fetcher completed: {success_count} ZIPs processed, {error_count} errors")
+        print(f"Weather Fetcher batch completed: {success_count} success, {error_count} errors")
 
 
 # Export the worker class

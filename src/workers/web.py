@@ -20,20 +20,16 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from shared import (
     FORMAT_CONFIGS,
     DEFAULT_FORMAT,
-    WorkerConfig,
     load_template,
     render_template,
     to_js,
-    geocode_zip,
     get_active_zips,
     get_formats_for_zip,
     add_format_to_zip,
     remove_format_from_zip,
     add_zip_to_active,
     get_all_zips_from_r2,
-    get_formats_per_zip,
-    fetch_weather_from_owm,
-    store_weather_data
+    get_formats_per_zip
 )
 
 
@@ -647,7 +643,7 @@ class WebWorker(WorkerEntrypoint):
     async def _handle_generate(self, env, query_params):
         """
         Handle POST /admin/generate
-        Fetches weather and enqueues to weather-ready queue for processing
+        Enqueues ZIP to fetch-jobs queue for processing through the pipeline
         """
         try:
             zip_code = query_params.get('zip')
@@ -657,48 +653,25 @@ class WebWorker(WorkerEntrypoint):
                     {'status': 400, 'headers': {'Content-Type': 'application/json'}}
                 )
 
-            # Get configuration
-            config = WorkerConfig(env)
-            if not config.OWM_KEY:
-                return Response.new(
-                    json.dumps({'error': 'OWM_API_KEY not configured'}),
-                    {'status': 500, 'headers': {'Content-Type': 'application/json'}}
-                )
-
-            # Geocode the ZIP
-            geo_data = await geocode_zip(env, zip_code, config.OWM_KEY)
-
-            # Fetch weather data
-            weather_data = await fetch_weather_from_owm(
-                config.OWM_KEY,
-                geo_data['lat'],
-                geo_data['lon']
-            )
-
-            # Store weather data in KV
-            await store_weather_data(env, zip_code, weather_data)
-
-            # Signal weather ready (dispatcher will fan out to generation jobs)
-            event_msg = {
+            # Enqueue to fetch-jobs (weather-fetcher will handle the rest)
+            job = {
                 'zip_code': zip_code,
-                'lat': geo_data['lat'],
-                'lon': geo_data['lon'],
-                'fetched_at': datetime.utcnow().isoformat() + 'Z'
+                'scheduled_at': datetime.utcnow().isoformat() + 'Z'
             }
 
-            await env.WEATHER_READY.send(event_msg)
+            await env.FETCH_JOBS.send(job)
 
             return Response.new(
                 json.dumps({
                     'success': True,
                     'zip': zip_code,
-                    'message': f'Weather fetched and queued for generation for ZIP {zip_code}'
+                    'message': f'Generation queued for ZIP {zip_code}'
                 }),
                 headers=to_js({'Content-Type': 'application/json'})
             )
         except Exception as e:
             return Response.new(
-                json.dumps({'error': f'Failed to generate image: {str(e)}'}),
+                json.dumps({'error': f'Failed to queue generation: {str(e)}'}),
                 {'status': 500, 'headers': {'Content-Type': 'application/json'}}
             )
 
