@@ -647,7 +647,7 @@ class WebWorker(WorkerEntrypoint):
     async def _handle_generate(self, env, query_params):
         """
         Handle POST /admin/generate
-        Fetches weather and enqueues jobs to the queue
+        Fetches weather and enqueues to weather-ready queue for processing
         """
         try:
             zip_code = query_params.get('zip')
@@ -678,28 +678,21 @@ class WebWorker(WorkerEntrypoint):
             # Store weather data in KV
             await store_weather_data(env, zip_code, weather_data)
 
-            # Get formats configured for this ZIP
-            enabled_formats = await get_formats_for_zip(env, zip_code)
+            # Signal weather ready (dispatcher will fan out to generation jobs)
+            event_msg = {
+                'zip_code': zip_code,
+                'lat': geo_data['lat'],
+                'lon': geo_data['lon'],
+                'fetched_at': datetime.utcnow().isoformat() + 'Z'
+            }
 
-            # Enqueue jobs for each format
-            jobs_enqueued = []
-            for format_name in enabled_formats:
-                job = {
-                    'zip_code': zip_code,
-                    'format_name': format_name,
-                    'lat': geo_data['lat'],
-                    'lon': geo_data['lon'],
-                    'enqueued_at': datetime.utcnow().isoformat() + 'Z'
-                }
-                await env.LANDSCAPE_JOBS.send(job)
-                jobs_enqueued.append(format_name)
+            await env.WEATHER_READY.send(event_msg)
 
             return Response.new(
                 json.dumps({
                     'success': True,
                     'zip': zip_code,
-                    'jobsEnqueued': jobs_enqueued,
-                    'message': f'Enqueued {len(jobs_enqueued)} generation job(s) for ZIP {zip_code}'
+                    'message': f'Weather fetched and queued for generation for ZIP {zip_code}'
                 }),
                 headers=to_js({'Content-Type': 'application/json'})
             )

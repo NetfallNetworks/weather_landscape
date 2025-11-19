@@ -6,7 +6,7 @@ This directory contains the Cloudflare Python Worker implementation for generati
 
 ### Event-Driven Multi-Worker Architecture
 
-The system uses an event-driven architecture with **three specialized workers** connected via Cloudflare Queues:
+The system uses an event-driven architecture with **four specialized workers** connected via Cloudflare Queues:
 
 ```mermaid
 flowchart TB
@@ -23,7 +23,11 @@ flowchart TB
         end
 
         subgraph FetcherWorker["weather-fetcher"]
-            FETCHER["Weather Data Fetcher<br/>• Process active ZIPs<br/>• Fetch weather data<br/>• Enqueue generation jobs"]
+            FETCHER["Weather Data Fetcher<br/>• Process active ZIPs<br/>• Fetch weather data<br/>• Signal weather ready"]
+        end
+
+        subgraph DispatcherWorker["job-dispatcher"]
+            DISPATCHER["Job Dispatcher<br/>• Fan-out to formats<br/>• Owns format config<br/>• Create generation jobs"]
         end
 
         subgraph GeneratorWorker["landscape-generator"]
@@ -31,8 +35,9 @@ flowchart TB
         end
     end
 
-    subgraph Queue["Cloudflare Queue"]
-        JOBQUEUE["landscape-jobs<br/>• ZIP code<br/>• Format name<br/>• Weather data key"]
+    subgraph Queues["Cloudflare Queues"]
+        WEATHERQ["weather-ready<br/>• ZIP code<br/>• lat/lon"]
+        JOBQUEUE["landscape-jobs<br/>• ZIP code<br/>• Format name"]
     end
 
     subgraph External["External Services"]
@@ -54,7 +59,12 @@ flowchart TB
     %% Weather fetcher flow
     FETCHER <--> KV
     FETCHER <--> OWM
-    FETCHER -->|"Enqueue jobs"| JOBQUEUE
+    FETCHER -->|"Weather ready"| WEATHERQ
+
+    %% Dispatcher flow
+    WEATHERQ -->|"Consume"| DISPATCHER
+    DISPATCHER <--> KV
+    DISPATCHER -->|"Fan-out"| JOBQUEUE
 
     %% Generator flow
     JOBQUEUE -->|"Consume"| GENERATOR
@@ -67,7 +77,7 @@ flowchart TB
     %% Web worker flow
     WEB <--> R2
     WEB <--> KV
-    WEB -->|"Manual gen"| JOBQUEUE
+    WEB -->|"Manual gen"| WEATHERQ
 
     classDef trigger fill:#e1f5fe,stroke:#01579b
     classDef worker fill:#f3e5f5,stroke:#4a148c
@@ -76,8 +86,8 @@ flowchart TB
     classDef core fill:#e8f5e9,stroke:#1b5e20
 
     class CRON,HTTP trigger
-    class WEB,FETCHER,GENERATOR worker
-    class JOBQUEUE queue
+    class WEB,FETCHER,DISPATCHER,GENERATOR worker
+    class WEATHERQ,JOBQUEUE queue
     class OWM,R2,KV external
     class WL,DW,SPRITES core
 ```
@@ -90,7 +100,9 @@ sequenceDiagram
     participant Fetcher as weather-fetcher
     participant KV as KV Store
     participant OWM as OpenWeatherMap
-    participant Queue as landscape-jobs
+    participant WQ as weather-ready
+    participant Dispatcher as job-dispatcher
+    participant JQ as landscape-jobs
     participant Generator as landscape-generator
     participant R2 as R2 Storage
 
@@ -116,18 +128,21 @@ sequenceDiagram
 
         Fetcher->>KV: Store weather:{zip} (TTL: 20min)
 
-        Fetcher->>KV: Get formats:{zip}
-        KV-->>Fetcher: ["rgb_light", "bw", ...]
-
-        loop For each format
-            Fetcher->>Queue: Enqueue {zip, format}
-        end
+        Fetcher->>WQ: Signal weather ready {zip}
     end
 
-    Note over Queue,R2: Parallel processing
+    Note over WQ,R2: Fan-out and parallel processing
+
+    WQ->>Dispatcher: Weather ready {zip}
+    Dispatcher->>KV: Get formats:{zip}
+    KV-->>Dispatcher: ["rgb_light", "bw", ...]
+
+    loop For each format
+        Dispatcher->>JQ: Enqueue {zip, format}
+    end
 
     par Process queue messages
-        Queue->>Generator: Message {zip, format}
+        JQ->>Generator: Message {zip, format}
         Generator->>KV: Get weather:{zip}
         KV-->>Generator: Weather data
         Generator->>Generator: Generate image
@@ -146,6 +161,7 @@ sequenceDiagram
 | **Scaling** | Linear degradation | Automatic queue scaling |
 | **Resource Isolation** | Shared CPU time | Dedicated per worker |
 | **Debugging** | Complex traces | Clear job boundaries |
+| **Separation of Concerns** | Mixed responsibilities | Single purpose per worker |
 
 ### Secure Architecture & Route Layout
 
@@ -244,6 +260,7 @@ src/
 ├── workers/                    # Worker entry points
 │   ├── web.py                  # Web request handler (HTTP routes)
 │   ├── weather_fetcher.py      # Cron-triggered weather fetcher
+│   ├── job_dispatcher.py       # Fan-out from weather-ready to jobs
 │   └── landscape_generator.py  # Queue consumer for image generation
 ├── shared/                     # Shared utilities
 │   ├── __init__.py
@@ -269,8 +286,9 @@ src/
 Each worker has its own entry point in `src/workers/`:
 
 - **web.py**: Handles all HTTP requests (landing page, forecasts, admin, images)
-- **weather_fetcher.py**: Runs on cron, fetches weather data, enqueues jobs
-- **landscape_generator.py**: Consumes queue, generates and uploads images
+- **weather_fetcher.py**: Runs on cron, fetches weather, signals readiness
+- **job_dispatcher.py**: Consumes weather-ready, fans out to generation jobs
+- **landscape_generator.py**: Consumes jobs, generates and uploads images
 
 ## How It Works
 
@@ -432,10 +450,11 @@ curl http://localhost:8787/admin/status
 
 ## Deployment
 
-The system uses three separate workers that must be deployed individually:
+The system uses four separate workers that must be deployed individually:
 
-### 1. Create Queue (first time only)
+### 1. Create Queues (first time only)
 ```bash
+wrangler queues create weather-ready
 wrangler queues create landscape-jobs
 wrangler queues create landscape-jobs-dlq  # Dead letter queue
 ```
@@ -448,6 +467,9 @@ wrangler deploy
 
 # Deploy weather fetcher (cron-triggered)
 wrangler deploy -c wrangler.fetcher.toml
+
+# Deploy job dispatcher (fan-out)
+wrangler deploy -c wrangler.dispatcher.toml
 
 # Deploy landscape generator (queue consumer)
 wrangler deploy -c wrangler.generator.toml
@@ -462,15 +484,17 @@ wrangler secret put OWM_API_KEY
 # Weather fetcher
 wrangler secret put OWM_API_KEY -c wrangler.fetcher.toml
 
+# Job dispatcher (no secrets needed - reads from KV only)
+
 # Landscape generator
 wrangler secret put OWM_API_KEY -c wrangler.generator.toml
 ```
 
 ### Important Notes
 
-- All three workers share the same KV namespace and R2 bucket
-- The queue `landscape-jobs` connects the fetcher to the generator
-- Update `YOUR_KV_NAMESPACE_ID` in all three wrangler configs with your actual KV namespace ID
+- All four workers share the same KV namespace and R2 bucket
+- Queue topology: `weather-ready` → dispatcher → `landscape-jobs` → generator
+- Update `YOUR_KV_NAMESPACE_ID` in all four wrangler configs with your actual KV namespace ID
 - See `../DEPLOYMENT.md` for complete deployment instructions
 
 ## Beta Limitations

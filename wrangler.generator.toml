@@ -42,7 +42,7 @@ bucket_name = "weather-landscapes"
 binding = "CONFIG"
 id = "YOUR_KV_NAMESPACE_ID"
 
-# Queue Consumer Binding - receives jobs from weather fetcher
+# Queue Consumer Binding - receives jobs from job dispatcher
 [[queues.consumers]]
 queue = "landscape-jobs"
 max_batch_size = 10

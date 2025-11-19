@@ -1,8 +1,8 @@
-# Weather Fetcher Worker Configuration
-# Deploy with: wrangler deploy -c wrangler.fetcher.toml
+# Job Dispatcher Worker Configuration
+# Deploy with: wrangler deploy -c wrangler.dispatcher.toml
 
-name = "weather-fetcher"
-main = "src/workers/weather_fetcher.py"
+name = "job-dispatcher"
+main = "src/workers/job_dispatcher.py"
 compatibility_date = "2025-01-10"
 compatibility_flags = ["python_workers"]
 
@@ -31,24 +31,26 @@ type = "Text"
 globs = ["**/*.css"]
 fallthrough = true
 
-# Cron Trigger - runs every 15 minutes to fetch weather
-[triggers]
-crons = ["*/15 * * * *"]
-
 # KV Namespace Binding - stores configuration and metadata
 # Use the same namespace ID as the web worker
 [[kv_namespaces]]
 binding = "CONFIG"
 id = "YOUR_KV_NAMESPACE_ID"
 
-# Queue Producer Binding - sends weather-ready events to dispatcher
-[[queues.producers]]
+# Queue Consumer Binding - receives weather-ready events
+[[queues.consumers]]
 queue = "weather-ready"
-binding = "WEATHER_READY"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 3
+
+# Queue Producer Binding - sends generation jobs to landscape generator
+[[queues.producers]]
+queue = "landscape-jobs"
+binding = "LANDSCAPE_JOBS"
 
 # Environment Variables
 [vars]
 DEFAULT_ZIP = "78729"
 
-# Note: Set OWM_API_KEY using:
-# wrangler secret put OWM_API_KEY -c wrangler.fetcher.toml
+# Note: No API key needed - dispatcher only reads from KV

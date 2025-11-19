@@ -43,10 +43,10 @@ bucket_name = "weather-landscapes"
 binding = "CONFIG"
 id = "YOUR_KV_NAMESPACE_ID"
 
-# Queue Producer Binding - sends jobs to landscape generator
+# Queue Producer Binding - sends weather-ready events to dispatcher
 [[queues.producers]]
-queue = "landscape-jobs"
-binding = "LANDSCAPE_JOBS"
+queue = "weather-ready"
+binding = "WEATHER_READY"
 
 # Environment Variables (non-sensitive)
 # Note: DEFAULT_ZIP is only used as fallback if POST /generate called without zip parameter

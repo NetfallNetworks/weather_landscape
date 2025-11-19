@@ -4,7 +4,7 @@ Weather Fetcher Worker
 Cron-triggered worker that:
 1. Fetches weather data for all active ZIP codes
 2. Stores weather data in KV
-3. Enqueues image generation jobs to Cloudflare Queue
+3. Enqueues "weather ready" events for downstream processing
 """
 
 import json
@@ -19,7 +19,6 @@ from shared import (
     WorkerConfig,
     geocode_zip,
     get_active_zips,
-    get_formats_for_zip,
     store_weather_data,
     fetch_weather_from_owm
 )
@@ -28,13 +27,13 @@ from shared import (
 class WeatherFetcher(WorkerEntrypoint):
     """
     Weather Fetcher Worker
-    Runs on cron schedule to fetch weather and enqueue generation jobs
+    Runs on cron schedule to fetch weather and signal readiness
     """
 
     async def scheduled(self, event, env, ctx):
         """
         Scheduled handler - runs on cron trigger (every 15 minutes)
-        Fetches weather for all active ZIP codes and enqueues generation jobs
+        Fetches weather for all active ZIP codes and signals readiness
         """
         print(f"Weather Fetcher started at {datetime.utcnow().isoformat()}")
 
@@ -50,7 +49,6 @@ class WeatherFetcher(WorkerEntrypoint):
 
         success_count = 0
         error_count = 0
-        jobs_enqueued = 0
         errors = []
 
         # Process each ZIP code
@@ -71,31 +69,16 @@ class WeatherFetcher(WorkerEntrypoint):
                 # Store weather data in KV with TTL
                 await store_weather_data(env, zip_code, weather_data)
 
-                # Get formats configured for this ZIP
-                enabled_formats = await get_formats_for_zip(env, zip_code)
-                print(f"Enqueuing {len(enabled_formats)} job(s) for {zip_code}: {', '.join(enabled_formats)}")
+                # Signal that weather is ready for this ZIP
+                event_msg = {
+                    'zip_code': zip_code,
+                    'lat': geo_data['lat'],
+                    'lon': geo_data['lon'],
+                    'fetched_at': datetime.utcnow().isoformat() + 'Z'
+                }
 
-                # Enqueue a job for each format
-                for format_name in enabled_formats:
-                    try:
-                        # Create job message
-                        job = {
-                            'zip_code': zip_code,
-                            'format_name': format_name,
-                            'lat': geo_data['lat'],
-                            'lon': geo_data['lon'],
-                            'enqueued_at': datetime.utcnow().isoformat() + 'Z'
-                        }
-
-                        # Send to queue
-                        await env.LANDSCAPE_JOBS.send(job)
-                        jobs_enqueued += 1
-                        print(f"  Enqueued: {zip_code}/{format_name}")
-
-                    except Exception as e:
-                        error_msg = f"Failed to enqueue {zip_code}/{format_name}: {str(e)}"
-                        errors.append(error_msg)
-                        print(f"  ERROR: {error_msg}")
+                await env.WEATHER_READY.send(event_msg)
+                print(f"  Signaled weather ready for {zip_code}")
 
                 success_count += 1
 
@@ -112,14 +95,13 @@ class WeatherFetcher(WorkerEntrypoint):
                 'totalZips': len(active_zips),
                 'successCount': success_count,
                 'errorCount': error_count,
-                'jobsEnqueued': jobs_enqueued,
                 'errors': errors if errors else None
             }
             await env.CONFIG.put('fetcher_status', json.dumps(status))
         except Exception as e:
             print(f"Warning: Failed to update fetcher status in KV: {e}")
 
-        print(f"\nWeather Fetcher completed: {success_count} ZIPs processed, {jobs_enqueued} jobs enqueued, {error_count} errors")
+        print(f"\nWeather Fetcher completed: {success_count} ZIPs processed, {error_count} errors")
 
 
 # Export the worker class
