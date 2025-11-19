@@ -209,9 +209,7 @@ async def get_all_zips_from_r2(env):
 
         # List all objects in the R2 bucket
         # R2 list() returns objects with keys like "78729/rgb_light.png"
-        print(f"Listing R2 bucket...")
         listed = await env.WEATHER_IMAGES.list()
-        print(f"R2 list returned: {type(listed)}")
 
         # Extract ZIP codes from object keys
         if hasattr(listed, 'objects'):
