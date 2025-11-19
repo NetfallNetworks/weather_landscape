@@ -227,7 +227,7 @@ class Default(WorkerEntrypoint):
                     </tr>
                 ''')
 
-            zip_table_rows = '\n'.join(zip_rows_html) if zip_rows_html else '<tr><td colspan="5"><em>No ZIP codes found</em></td></tr>'
+            zip_table_rows = '\n'.join(zip_rows_html) if zip_rows_html else '<tr><td colspan="5"><em>No ZIP codes configured. Use the form above to add one.</em></td></tr>'
 
             html = render_template('admin.html', zip_table_rows=zip_table_rows)
             return Response.new(html, headers=to_js({"content-type": "text/html;charset=UTF-8"}))
