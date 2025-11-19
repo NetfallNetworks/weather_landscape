@@ -1,5 +1,5 @@
-name = "weather-landscape-worker"
-main = "src/index.py"
+name = "weather-landscape-web"
+main = "src/workers/web.py"
 compatibility_date = "2025-01-10"
 compatibility_flags = ["python_workers"]
 
@@ -32,10 +32,6 @@ type = "Text"
 globs = ["**/*.css"]
 fallthrough = true
 
-# Cron Trigger - runs every 15 minutes to regenerate weather images
-[triggers]
-crons = ["*/15 * * * *"]
-
 # R2 Bucket Binding - stores generated weather landscape images
 [[r2_buckets]]
 binding = "WEATHER_IMAGES"
@@ -46,6 +42,11 @@ bucket_name = "weather-landscapes"
 [[kv_namespaces]]
 binding = "CONFIG"
 id = "YOUR_KV_NAMESPACE_ID"
+
+# Queue Producer Binding - sends jobs to landscape generator
+[[queues.producers]]
+queue = "landscape-jobs"
+binding = "LANDSCAPE_JOBS"
 
 # Environment Variables (non-sensitive)
 # Note: DEFAULT_ZIP is only used as fallback if POST /generate called without zip parameter
