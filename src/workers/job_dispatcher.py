@@ -30,6 +30,10 @@ class Default(WorkerEntrypoint):
             env: Worker environment
             ctx: Execution context
         """
+        # Try self.env if parameter is None (Python Workers may pass it this way)
+        if env is None:
+            env = getattr(self, 'env', None)
+
         print(f"Job Dispatcher received {len(batch.messages)} event(s)")
 
         total_jobs = 0

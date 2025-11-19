@@ -27,6 +27,10 @@ class Default(WorkerEntrypoint):
         Scheduled handler - runs on cron trigger (every 15 minutes)
         Enqueues all active ZIP codes for weather fetching
         """
+        # Try self.env if parameter is None (Python Workers may pass it this way)
+        if env is None:
+            env = getattr(self, 'env', None)
+
         print(f"ZIP Scheduler started at {datetime.utcnow().isoformat()}")
 
         # Get active ZIP codes
