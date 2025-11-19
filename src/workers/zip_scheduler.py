@@ -16,7 +16,7 @@ from workers import WorkerEntrypoint
 from shared import get_active_zips
 
 
-class Default(WorkerEntrypoint):
+class ZipScheduler(WorkerEntrypoint):
     """
     ZIP Scheduler Worker
     Runs on cron schedule to enqueue ZIP codes for weather fetching

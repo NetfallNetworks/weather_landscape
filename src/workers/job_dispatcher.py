@@ -15,7 +15,7 @@ from workers import WorkerEntrypoint
 from shared import get_formats_for_zip
 
 
-class Default(WorkerEntrypoint):
+class JobDispatcher(WorkerEntrypoint):
     """
     Job Dispatcher Worker
     Fans out weather-ready events into individual generation jobs
