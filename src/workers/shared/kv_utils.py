@@ -197,11 +197,21 @@ async def get_all_zips_from_r2(env):
         list: List of ZIP code strings found in R2
     """
     try:
+        if env is None:
+            print("ERROR: env is None in get_all_zips_from_r2")
+            return []
+
+        if not hasattr(env, 'WEATHER_IMAGES'):
+            print(f"ERROR: env has no WEATHER_IMAGES binding. env type: {type(env)}, attrs: {dir(env)}")
+            return []
+
         zip_codes = set()
 
         # List all objects in the R2 bucket
         # R2 list() returns objects with keys like "78729/rgb_light.png"
+        print(f"Listing R2 bucket...")
         listed = await env.WEATHER_IMAGES.list()
+        print(f"R2 list returned: {type(listed)}")
 
         # Extract ZIP codes from object keys
         if hasattr(listed, 'objects'):

@@ -177,6 +177,13 @@ class Default(WorkerEntrypoint):
     async def _serve_admin(self, env):
         """Serve admin dashboard"""
         try:
+            if env is None:
+                print("ERROR: env is None in _serve_admin")
+                return Response.new(
+                    json.dumps({'error': 'Internal error: environment not available'}),
+                    {'status': 500, 'headers': {'Content-Type': 'application/json'}}
+                )
+
             all_zips = await get_all_zips_from_r2(env)
             active_zips = await get_active_zips(env)
             zip_formats = await get_formats_per_zip(env)
@@ -390,6 +397,14 @@ class Default(WorkerEntrypoint):
     async def _serve_image(self, env, zip_code, query_params, path_parts):
         """Serve weather image for a ZIP code"""
         try:
+            # Debug: Check env
+            if env is None:
+                print(f"ERROR: env is None in _serve_image for zip {zip_code}")
+                return Response.new(
+                    json.dumps({'error': 'Internal error: environment not available'}),
+                    {'status': 500, 'headers': {'Content-Type': 'application/json'}}
+                )
+
             requested_format = DEFAULT_FORMAT
 
             # Check query parameters for format
