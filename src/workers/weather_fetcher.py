@@ -23,7 +23,7 @@ from shared import (
 )
 
 
-class WeatherFetcher(WorkerEntrypoint):
+class Default(WorkerEntrypoint):
     """
     Weather Fetcher Worker
     Consumes fetch-jobs queue and fetches weather for each ZIP
@@ -97,6 +97,3 @@ class WeatherFetcher(WorkerEntrypoint):
 
 
 # Export the worker class
-
-
-export = WeatherFetcher
