@@ -57,8 +57,13 @@ class Default(WorkerEntrypoint):
         - POST /admin/formats/remove?zip={zip}&format={format} - Remove format from a ZIP
         - POST /admin/generate?zip={zip} - Manually trigger generation for a ZIP
         """
-        # Debug: Check env at entry point
-        print(f"on_fetch called. env type: {type(env)}, env is None: {env is None}")
+        # Debug: Check env sources
+        print(f"on_fetch: env param={type(env)}, self.env={type(getattr(self, 'env', None))}")
+
+        # Try self.env if parameter is None (Python Workers may pass it this way)
+        if env is None:
+            env = getattr(self, 'env', None)
+
         if env is not None:
             print(f"env bindings: {[attr for attr in dir(env) if not attr.startswith('_')]}")
 
