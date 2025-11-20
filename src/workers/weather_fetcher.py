@@ -58,6 +58,7 @@ class Default(WorkerEntrypoint):
             try:
                 # Parse job data (convert JsProxy to Python dict)
                 job = message.body.to_py()
+                print(f"DEBUG job type: {type(job)}, content: {job}")
                 zip_code = job['zip_code']
 
                 print(f"Fetching weather for {zip_code}")
