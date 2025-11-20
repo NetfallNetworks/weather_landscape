@@ -22,7 +22,7 @@ class WeatherLandscape:
         from PIL import Image
         import io
         import os
-        from asset_loader import get_global_loader
+        from .asset_loader import get_global_loader
 
         owm = OpenWeatherMap(self.cfg)
         await owm.FromAuto()
@@ -64,7 +64,7 @@ class WeatherLandscape:
         # Import PIL at runtime for Cloudflare Workers compatibility
         from PIL import Image
         import io
-        from asset_loader import get_global_loader
+        from .asset_loader import get_global_loader
 
         owm = OpenWeatherMap(self.cfg)
 
