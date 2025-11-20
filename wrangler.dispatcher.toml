@@ -7,10 +7,11 @@ compatibility_date = "2025-01-10"
 compatibility_flags = ["python_workers"]
 
 # Enable workers.dev for testing (can be disabled in production)
-workers_dev = true
+workers_dev = false
 
 # Workers Logs - enables log collection for visibility during runs
 [observability]
+head_sampling_rate = 1
 enabled = true
 
 # Bundle image files as Data modules (needed for shared imports)

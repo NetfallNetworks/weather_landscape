@@ -12,6 +12,7 @@ preview_urls = false
 # Workers Logs - enables log collection for visibility during runs
 # Free tier: 200,000 events/day, 3 day retention
 [observability]
+head_sampling_rate = 1
 enabled = true
 
 # Bundle image files as Data modules so Python can access them
