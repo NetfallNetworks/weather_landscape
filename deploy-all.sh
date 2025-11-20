@@ -12,12 +12,26 @@ echo "📝 Regenerating local config files..."
 ./setup-local-config.sh
 echo ""
 
-# Deploy all workers
+# Deploy all workers with delays to avoid rate limiting
 echo "📦 Deploying workers..."
-uv run pywrangler deploy -c wrangler.local.toml && \
-uv run pywrangler deploy -c wrangler.fetcher.local.toml && \
-uv run pywrangler deploy -c wrangler.dispatcher.local.toml && \
-uv run pywrangler deploy -c wrangler.generator.local.toml && \
+
+echo "Deploying web worker..."
+uv run pywrangler deploy -c wrangler.local.toml
+sleep 3
+
+echo "Deploying weather fetcher..."
+uv run pywrangler deploy -c wrangler.fetcher.local.toml
+sleep 3
+
+echo "Deploying job dispatcher..."
+uv run pywrangler deploy -c wrangler.dispatcher.local.toml
+sleep 3
+
+echo "Deploying landscape generator..."
+uv run pywrangler deploy -c wrangler.generator.local.toml
+sleep 3
+
+echo "Deploying zip scheduler..."
 uv run pywrangler deploy -c wrangler.scheduler.local.toml
 
 echo ""
