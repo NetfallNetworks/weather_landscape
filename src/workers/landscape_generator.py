@@ -100,8 +100,8 @@ class Default(WorkerEntrypoint):
             tuple: (image_bytes, metadata_dict, format_name)
         """
         # Import at runtime (Pillow loaded from cf-requirements.txt)
-        from weather_landscape import WeatherLandscape
-        from asset_loader import set_global_loader
+        from shared.weather_landscape import WeatherLandscape
+        from shared.asset_loader import set_global_loader
         import io
 
         # Initialize the global asset loader

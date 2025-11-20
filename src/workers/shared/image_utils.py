@@ -23,8 +23,8 @@ async def generate_weather_image(env, zip_code, lat, lon, format_name=None, weat
     """
     try:
         # Import at runtime (Pillow loaded from cf-requirements.txt)
-        from weather_landscape import WeatherLandscape
-        from asset_loader import set_global_loader
+        from .weather_landscape import WeatherLandscape
+        from .asset_loader import set_global_loader
         import io
 
         # Initialize the global asset loader
