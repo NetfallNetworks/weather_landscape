@@ -38,8 +38,8 @@ class Default(WorkerEntrypoint):
 
         for message in batch.messages:
             try:
-                # Parse event data
-                event = message.body
+                # Parse event data (convert JsProxy to Python dict)
+                event = message.body.to_py()
 
                 zip_code = event['zip_code']
                 lat = event['lat']

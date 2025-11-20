@@ -45,8 +45,8 @@ class Default(WorkerEntrypoint):
 
         for message in batch.messages:
             try:
-                # Parse job data
-                job = message.body
+                # Parse job data (convert JsProxy to Python dict)
+                job = message.body.to_py()
 
                 zip_code = job['zip_code']
                 format_name = job['format_name']
