@@ -11,6 +11,7 @@ Queue consumer worker that:
 import json
 from datetime import datetime
 from workers import WorkerEntrypoint
+from js import JSON
 
 
 from shared import (
@@ -45,8 +46,8 @@ class Default(WorkerEntrypoint):
 
         for message in batch.messages:
             try:
-                # Parse job data (convert JsProxy to Python dict)
-                job = message.body.to_py()
+                # Parse job data (convert JsProxy via JSON round-trip)
+                job = json.loads(JSON.stringify(message.body))
 
                 zip_code = job['zip_code']
                 format_name = job['format_name']

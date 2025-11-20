@@ -10,6 +10,7 @@ Queue consumer that creates the fan-out from weather-ready events:
 import json
 from datetime import datetime
 from workers import WorkerEntrypoint
+from js import JSON
 
 
 from shared import get_formats_for_zip
@@ -38,8 +39,8 @@ class Default(WorkerEntrypoint):
 
         for message in batch.messages:
             try:
-                # Parse event data (convert JsProxy to Python dict)
-                event = message.body.to_py()
+                # Parse event data (convert JsProxy via JSON round-trip)
+                event = json.loads(JSON.stringify(message.body))
 
                 zip_code = event['zip_code']
                 lat = event['lat']

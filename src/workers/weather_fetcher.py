@@ -13,6 +13,7 @@ Processes ONE ZIP per message for true parallelism.
 import json
 from datetime import datetime
 from workers import WorkerEntrypoint
+from js import JSON
 
 
 from shared import (
@@ -56,9 +57,8 @@ class Default(WorkerEntrypoint):
 
         for message in batch.messages:
             try:
-                # Parse job data (convert JsProxy to Python dict)
-                job = message.body.to_py()
-                print(f"DEBUG job type: {type(job)}, content: {job}")
+                # Parse job data (convert JsProxy via JSON round-trip)
+                job = json.loads(JSON.stringify(message.body))
                 zip_code = job['zip_code']
 
                 print(f"Fetching weather for {zip_code}")
