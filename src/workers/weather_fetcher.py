@@ -20,7 +20,8 @@ from shared import (
     WorkerConfig,
     geocode_zip,
     store_weather_data,
-    fetch_weather_from_owm
+    fetch_weather_from_owm,
+    to_js
 )
 
 
@@ -90,7 +91,7 @@ class Default(WorkerEntrypoint):
                     'fetched_at': datetime.utcnow().isoformat() + 'Z'
                 }
 
-                await env.WEATHER_READY.send(event_msg)
+                await env.WEATHER_READY.send(to_js(event_msg))
                 print(f"  Weather ready for {zip_code}")
 
                 # Acknowledge the message

@@ -13,7 +13,7 @@ from workers import WorkerEntrypoint
 from js import JSON
 
 
-from shared import get_formats_for_zip
+from shared import get_formats_for_zip, to_js
 
 
 class Default(WorkerEntrypoint):
@@ -62,7 +62,7 @@ class Default(WorkerEntrypoint):
                         'enqueued_at': datetime.utcnow().isoformat() + 'Z'
                     }
 
-                    await env.LANDSCAPE_JOBS.send(job)
+                    await env.LANDSCAPE_JOBS.send(to_js(job))
                     total_jobs += 1
 
                 # Acknowledge the message

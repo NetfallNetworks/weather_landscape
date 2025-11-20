@@ -13,7 +13,7 @@ import json
 from datetime import datetime
 from workers import WorkerEntrypoint
 
-from shared import get_active_zips
+from shared import get_active_zips, to_js
 
 
 class Default(WorkerEntrypoint):
@@ -45,7 +45,7 @@ class Default(WorkerEntrypoint):
                     'scheduled_at': datetime.utcnow().isoformat() + 'Z'
                 }
 
-                await env.FETCH_JOBS.send(job)
+                await env.FETCH_JOBS.send(to_js(job))
                 enqueued += 1
 
             except Exception as e:

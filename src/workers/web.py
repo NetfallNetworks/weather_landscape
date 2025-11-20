@@ -685,7 +685,7 @@ class Default(WorkerEntrypoint):
                 'scheduled_at': datetime.utcnow().isoformat() + 'Z'
             }
 
-            await env.FETCH_JOBS.send(job)
+            await env.FETCH_JOBS.send(to_js(job))
 
             return Response.new(
                 json.dumps({
