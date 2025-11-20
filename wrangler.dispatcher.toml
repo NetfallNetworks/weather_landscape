@@ -10,9 +10,16 @@ compatibility_flags = ["python_workers"]
 workers_dev = false
 
 # Workers Logs - enables log collection for visibility during runs
-[observability]
-head_sampling_rate = 1
+[observability.logs]
 enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+head_sampling_rate = 1
+persist = true
 
 # Bundle image files as Data modules (needed for shared imports)
 [[rules]]

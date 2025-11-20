@@ -11,9 +11,16 @@ preview_urls = false
 
 # Workers Logs - enables log collection for visibility during runs
 # Free tier: 200,000 events/day, 3 day retention
-[observability]
-head_sampling_rate = 1
+[observability.logs]
 enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+head_sampling_rate = 1
+persist = true
 
 # Bundle image files as Data modules so Python can access them
 [[rules]]
