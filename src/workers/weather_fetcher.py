@@ -57,10 +57,15 @@ class Default(WorkerEntrypoint):
 
         for message in batch.messages:
             try:
+                # Debug message structure
+                print(f"DEBUG message type: {type(message)}")
+                print(f"DEBUG message.body type: {type(message.body)}")
+
                 # Parse job data (convert JsProxy via JSON round-trip)
                 raw = JSON.stringify(message.body)
-                print(f"DEBUG raw message body: {raw}")
+                print(f"DEBUG raw JSON: {raw}")
                 job = json.loads(raw)
+                print(f"DEBUG parsed job: {job}")
                 zip_code = job['zip_code']
 
                 print(f"Fetching weather for {zip_code}")
