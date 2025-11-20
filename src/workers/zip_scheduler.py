@@ -13,13 +13,7 @@ import json
 from datetime import datetime
 from workers import WorkerEntrypoint
 
-from shared import (
-    get_active_zips,
-    to_js,
-    generate_trace_id,
-    add_trace_context,
-    log_with_trace
-)
+from shared import get_active_zips, to_js
 
 
 class Default(WorkerEntrypoint):
@@ -46,31 +40,10 @@ class Default(WorkerEntrypoint):
         # Enqueue each ZIP for weather fetching
         for zip_code in active_zips:
             try:
-                # Generate unique trace ID for this ZIP's pipeline run
-                trace_id = generate_trace_id()
-
                 job = {
                     'zip_code': zip_code,
                     'scheduled_at': datetime.utcnow().isoformat() + 'Z'
                 }
-
-                # Add trace context
-                job = add_trace_context(job, trace_id=trace_id)
-
-                # Extract trace context from the job for logging
-                trace_context = {
-                    'trace_id': job.get('traceId'),
-                    'span_id': job.get('spanId'),
-                    'parent_span_id': job.get('parentSpanId')
-                }
-
-                log_with_trace(
-                    f"Scheduling ZIP {zip_code} for refresh",
-                    trace_context=trace_context,
-                    zip_code=zip_code,
-                    worker='zip_scheduler',
-                    action='schedule_zip'
-                )
 
                 await env.FETCH_JOBS.send(to_js(job))
                 enqueued += 1

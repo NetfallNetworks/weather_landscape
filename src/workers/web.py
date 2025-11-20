@@ -683,45 +683,19 @@ class Default(WorkerEntrypoint):
                     {'status': 400, 'headers': {'Content-Type': 'application/json'}}
                 )
 
-            # Generate trace ID for end-to-end tracking
-            trace_id = generate_trace_id()
-
             # Enqueue to fetch-jobs (weather-fetcher will handle the rest)
             job = {
                 'zip_code': zip_code,
                 'scheduled_at': datetime.utcnow().isoformat() + 'Z'
             }
 
-            # Add trace context for distributed tracing
-            job = add_trace_context(job, trace_id=trace_id)
-
-            # DEBUG: Show what we're sending to the queue
-            debug_trace_propagation(job, worker_name="web")
-            print(f"🔍 WEB: Sending trace_id {trace_id} to FETCH_JOBS queue")
-
-            # Extract trace context from the job for logging
-            trace_context = {
-                'trace_id': job.get('traceId'),
-                'span_id': job.get('spanId'),
-                'parent_span_id': job.get('parentSpanId')
-            }
-
-            # Log with trace context
-            log_with_trace(
-                f"Enqueuing generation for ZIP {zip_code}",
-                trace_context=trace_context,
-                zip_code=zip_code,
-                worker='web',
-                action='enqueue_fetch_job'
-            )
-
+            print(f"Enqueuing generation for ZIP {zip_code}")
             await env.FETCH_JOBS.send(to_js(job))
 
             return Response.new(
                 json.dumps({
                     'success': True,
                     'zip': zip_code,
-                    'trace_id': trace_id,  # Return trace_id to client for tracking
                     'message': f'Generation queued for ZIP {zip_code}'
                 }),
                 headers=to_js({'Content-Type': 'application/json'})

@@ -13,14 +13,7 @@ from workers import WorkerEntrypoint
 from js import JSON
 
 
-from shared import (
-    get_formats_for_zip,
-    to_js,
-    extract_trace_context,
-    add_trace_context,
-    log_with_trace,
-    get_trace_id
-)
+from shared import get_formats_for_zip, to_js
 
 
 class Default(WorkerEntrypoint):
@@ -53,21 +46,11 @@ class Default(WorkerEntrypoint):
                 lat = event['lat']
                 lon = event['lon']
 
-                # Extract trace context
-                trace_context = extract_trace_context(message)
-                trace_id = get_trace_id(trace_context)
+                print(f"Processing weather-ready for {zip_code}")
 
                 # Get formats configured for this ZIP
                 formats = await get_formats_for_zip(env, zip_code)
-
-                log_with_trace(
-                    f"Dispatching {len(formats)} jobs for ZIP {zip_code}",
-                    trace_context=trace_context,
-                    zip_code=zip_code,
-                    formats=formats,
-                    worker='job_dispatcher',
-                    action='dispatch_jobs'
-                )
+                print(f"  Dispatching {len(formats)} job(s): {', '.join(formats)}")
 
                 # Enqueue a job for each format
                 for format_name in formats:
@@ -79,13 +62,6 @@ class Default(WorkerEntrypoint):
                         'enqueued_at': datetime.utcnow().isoformat() + 'Z'
                     }
 
-                    # Propagate trace context
-                    job = add_trace_context(
-                        job,
-                        trace_id=trace_id,
-                        parent_span_id=trace_context['span_id'] if trace_context else None
-                    )
-
                     await env.LANDSCAPE_JOBS.send(to_js(job))
                     total_jobs += 1
 
@@ -93,13 +69,7 @@ class Default(WorkerEntrypoint):
                 message.ack()
 
             except Exception as e:
-                log_with_trace(
-                    f"ERROR dispatching jobs: {e}",
-                    trace_context=trace_context if 'trace_context' in locals() else None,
-                    error=str(e),
-                    worker='job_dispatcher',
-                    action='error'
-                )
+                print(f"ERROR dispatching jobs: {e}")
                 message.retry()
 
         print(f"Job Dispatcher completed: {total_jobs} jobs enqueued")

@@ -63,26 +63,11 @@ class Default(WorkerEntrypoint):
 
         for message in batch.messages:
             try:
-                # DEBUG: Show what we received from the queue
-                debug_message(message, worker_name="weather_fetcher")
-
                 # Parse job data (convert JsProxy via JSON round-trip)
                 job = json.loads(JSON.stringify(message.body))
                 zip_code = job['zip_code']
 
-                # Extract trace context from incoming message
-                trace_context = extract_trace_context(message)
-                trace_id = get_trace_id(trace_context)
-
-                print(f"🔍 FETCHER: Extracted trace_id: {trace_id}")
-
-                log_with_trace(
-                    f"Fetching weather for ZIP {zip_code}",
-                    trace_context=trace_context,
-                    zip_code=zip_code,
-                    worker='weather_fetcher',
-                    action='fetch_weather'
-                )
+                print(f"Fetching weather for {zip_code}")
 
                 # Geocode the ZIP (uses cache if available)
                 geo_data = await geocode_zip(env, zip_code, config.OWM_KEY)
@@ -105,29 +90,8 @@ class Default(WorkerEntrypoint):
                     'fetched_at': datetime.utcnow().isoformat() + 'Z'
                 }
 
-                # Propagate trace context to next queue
-                event_msg = add_trace_context(
-                    event_msg,
-                    trace_id=trace_id,
-                    parent_span_id=trace_context['span_id'] if trace_context else None
-                )
-
-                # Extract trace context from event_msg for logging
-                event_trace_context = {
-                    'trace_id': event_msg.get('traceId'),
-                    'span_id': event_msg.get('spanId'),
-                    'parent_span_id': event_msg.get('parentSpanId')
-                }
-
-                log_with_trace(
-                    f"Weather ready for ZIP {zip_code}",
-                    trace_context=event_trace_context,
-                    zip_code=zip_code,
-                    worker='weather_fetcher',
-                    action='weather_ready'
-                )
-
                 await env.WEATHER_READY.send(to_js(event_msg))
+                print(f"  Weather ready for {zip_code}")
 
                 # Acknowledge the message
                 message.ack()
@@ -135,13 +99,7 @@ class Default(WorkerEntrypoint):
 
             except Exception as e:
                 error_count += 1
-                log_with_trace(
-                    f"ERROR fetching weather: {e}",
-                    trace_context=trace_context if 'trace_context' in locals() else None,
-                    error=str(e),
-                    worker='weather_fetcher',
-                    action='error'
-                )
+                print(f"ERROR fetching weather: {e}")
                 message.retry()
 
         print(f"Weather Fetcher batch completed: {success_count} success, {error_count} errors")
