@@ -31,9 +31,9 @@ type = "Text"
 globs = ["**/*.css"]
 fallthrough = true
 
-# Cron Trigger - runs every 15 minutes to schedule ZIP processing
+# Cron Trigger - runs every 5 minutes to schedule ZIP processing
 [triggers]
-crons = ["*/15 * * * *"]
+crons = ["*/5 * * * *"]
 
 # KV Namespace Binding - stores configuration and metadata
 # Use the same namespace ID as the web worker
