@@ -29,6 +29,19 @@ from .r2_utils import upload_to_r2
 
 from .image_utils import generate_weather_image
 
+from .tracing import (
+    generate_trace_id,
+    add_trace_context,
+    extract_trace_context,
+    log_with_trace,
+    get_trace_id
+)
+
+from .debug_tracing import (
+    debug_message,
+    debug_trace_propagation
+)
+
 __all__ = [
     # Config
     'FORMAT_CONFIGS',
@@ -52,5 +65,14 @@ __all__ = [
     # R2 utils
     'upload_to_r2',
     # Image utils
-    'generate_weather_image'
+    'generate_weather_image',
+    # Tracing
+    'generate_trace_id',
+    'add_trace_context',
+    'extract_trace_context',
+    'log_with_trace',
+    'get_trace_id',
+    # Debug tracing
+    'debug_message',
+    'debug_trace_propagation'
 ]
