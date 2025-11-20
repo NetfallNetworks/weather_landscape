@@ -1,4 +1,4 @@
-from p_weather.configuration import WLBaseSettings
+from .p_weather.configuration import WLBaseSettings
 import os
 
 # Detect if running in Cloudflare Workers
