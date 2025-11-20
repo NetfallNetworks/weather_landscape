@@ -699,10 +699,17 @@ class Default(WorkerEntrypoint):
             debug_trace_propagation(job, worker_name="web")
             print(f"🔍 WEB: Sending trace_id {trace_id} to FETCH_JOBS queue")
 
+            # Extract trace context from the job for logging
+            trace_context = {
+                'trace_id': job.get('traceId'),
+                'span_id': job.get('spanId'),
+                'parent_span_id': job.get('parentSpanId')
+            }
+
             # Log with trace context
             log_with_trace(
                 f"Enqueuing generation for ZIP {zip_code}",
-                trace_context=job['_trace'],
+                trace_context=trace_context,
                 zip_code=zip_code,
                 worker='web',
                 action='enqueue_fetch_job'

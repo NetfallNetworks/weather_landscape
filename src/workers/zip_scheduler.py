@@ -57,9 +57,16 @@ class Default(WorkerEntrypoint):
                 # Add trace context
                 job = add_trace_context(job, trace_id=trace_id)
 
+                # Extract trace context from the job for logging
+                trace_context = {
+                    'trace_id': job.get('traceId'),
+                    'span_id': job.get('spanId'),
+                    'parent_span_id': job.get('parentSpanId')
+                }
+
                 log_with_trace(
                     f"Scheduling ZIP {zip_code} for refresh",
-                    trace_context=job['_trace'],
+                    trace_context=trace_context,
                     zip_code=zip_code,
                     worker='zip_scheduler',
                     action='schedule_zip'

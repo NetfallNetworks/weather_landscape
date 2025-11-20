@@ -112,9 +112,16 @@ class Default(WorkerEntrypoint):
                     parent_span_id=trace_context['span_id'] if trace_context else None
                 )
 
+                # Extract trace context from event_msg for logging
+                event_trace_context = {
+                    'trace_id': event_msg.get('traceId'),
+                    'span_id': event_msg.get('spanId'),
+                    'parent_span_id': event_msg.get('parentSpanId')
+                }
+
                 log_with_trace(
                     f"Weather ready for ZIP {zip_code}",
-                    trace_context=event_msg['_trace'],
+                    trace_context=event_trace_context,
                     zip_code=zip_code,
                     worker='weather_fetcher',
                     action='weather_ready'

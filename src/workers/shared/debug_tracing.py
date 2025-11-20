@@ -27,11 +27,11 @@ def debug_message(message, worker_name="unknown"):
         print(json.dumps(body, indent=2))
         print(f"=== END DEBUG ===")
 
-        # Check for trace context
-        if '_trace' in body:
-            print(f"✅ Trace context found: {body['_trace'].get('trace_id')}")
+        # Check for trace context (top-level fields)
+        if 'traceId' in body:
+            print(f"✅ Trace context found: traceId={body.get('traceId')}")
         else:
-            print(f"❌ No _trace field in message!")
+            print(f"❌ No traceId field in message!")
             print(f"Available fields: {list(body.keys())}")
 
     except Exception as e:
@@ -49,9 +49,9 @@ def debug_trace_propagation(job_dict, worker_name="unknown"):
     print(f"=== DEBUG OUTGOING MESSAGE from {worker_name} ===")
     print(json.dumps(job_dict, indent=2, default=str))
 
-    if '_trace' in job_dict:
-        print(f"✅ Trace context included: {job_dict['_trace'].get('trace_id')}")
+    if 'traceId' in job_dict:
+        print(f"✅ Trace context included: traceId={job_dict.get('traceId')}")
     else:
-        print(f"❌ WARNING: No _trace field in outgoing message!")
+        print(f"❌ WARNING: No traceId field in outgoing message!")
 
     print(f"=== END DEBUG ===")

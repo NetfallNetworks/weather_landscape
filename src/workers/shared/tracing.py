@@ -23,6 +23,8 @@ def add_trace_context(message_dict, trace_id=None, parent_span_id=None):
     """
     Add trace context to a queue message.
 
+    Uses top-level fields (not underscore-prefixed) to avoid being stripped by queues.
+
     Args:
         message_dict: The message dictionary to add trace context to
         trace_id: Optional trace ID (generates new one if not provided)
@@ -34,11 +36,10 @@ def add_trace_context(message_dict, trace_id=None, parent_span_id=None):
     if trace_id is None:
         trace_id = generate_trace_id()
 
-    message_dict['_trace'] = {
-        'trace_id': trace_id,
-        'span_id': uuid.uuid4().hex[:16],  # Shorter span ID
-        'parent_span_id': parent_span_id
-    }
+    # Use top-level fields without underscore prefix
+    message_dict['traceId'] = trace_id
+    message_dict['spanId'] = uuid.uuid4().hex[:16]  # Shorter span ID
+    message_dict['parentSpanId'] = parent_span_id
 
     return message_dict
 
@@ -63,7 +64,15 @@ def extract_trace_context(message):
         else:
             return None
 
-        return body.get('_trace')
+        # Look for top-level trace fields
+        if 'traceId' in body:
+            return {
+                'trace_id': body.get('traceId'),
+                'span_id': body.get('spanId'),
+                'parent_span_id': body.get('parentSpanId')
+            }
+
+        return None
     except Exception:
         return None
 
