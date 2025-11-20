@@ -96,7 +96,7 @@ class WorkerConfig:
             format_name: Format name (e.g., 'rgb_white', 'bw', 'eink')
         """
         # Import at runtime to allow Pillow to load first
-        import configs
+        from . import configs
 
         # Default to RGB_White if no format specified
         if format_name is None:
