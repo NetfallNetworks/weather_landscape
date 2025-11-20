@@ -27,7 +27,10 @@ from shared import (
     remove_format_from_zip,
     add_zip_to_active,
     get_all_zips_from_r2,
-    get_formats_per_zip
+    get_formats_per_zip,
+    generate_trace_id,
+    add_trace_context,
+    log_with_trace
 )
 
 
@@ -679,11 +682,26 @@ class Default(WorkerEntrypoint):
                     {'status': 400, 'headers': {'Content-Type': 'application/json'}}
                 )
 
+            # Generate trace ID for end-to-end tracking
+            trace_id = generate_trace_id()
+
             # Enqueue to fetch-jobs (weather-fetcher will handle the rest)
             job = {
                 'zip_code': zip_code,
                 'scheduled_at': datetime.utcnow().isoformat() + 'Z'
             }
+
+            # Add trace context for distributed tracing
+            job = add_trace_context(job, trace_id=trace_id)
+
+            # Log with trace context
+            log_with_trace(
+                f"Enqueuing generation for ZIP {zip_code}",
+                trace_context=job['_trace'],
+                zip_code=zip_code,
+                worker='web',
+                action='enqueue_fetch_job'
+            )
 
             await env.FETCH_JOBS.send(to_js(job))
 
@@ -691,6 +709,7 @@ class Default(WorkerEntrypoint):
                 json.dumps({
                     'success': True,
                     'zip': zip_code,
+                    'trace_id': trace_id,  # Return trace_id to client for tracking
                     'message': f'Generation queued for ZIP {zip_code}'
                 }),
                 headers=to_js({'Content-Type': 'application/json'})

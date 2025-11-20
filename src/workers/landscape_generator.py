@@ -18,7 +18,9 @@ from shared import (
     WorkerConfig,
     FORMAT_CONFIGS,
     get_weather_data,
-    upload_to_r2
+    upload_to_r2,
+    extract_trace_context,
+    log_with_trace
 )
 
 
@@ -54,7 +56,17 @@ class Default(WorkerEntrypoint):
                 lat = job['lat']
                 lon = job['lon']
 
-                print(f"Processing: {zip_code}/{format_name}")
+                # Extract trace context
+                trace_context = extract_trace_context(message)
+
+                log_with_trace(
+                    f"Generating {format_name} image for ZIP {zip_code}",
+                    trace_context=trace_context,
+                    zip_code=zip_code,
+                    format_name=format_name,
+                    worker='landscape_generator',
+                    action='generate_image'
+                )
 
                 # Get weather data from KV
                 weather_data = await get_weather_data(env, zip_code)
@@ -69,7 +81,15 @@ class Default(WorkerEntrypoint):
                 # Upload to R2
                 await upload_to_r2(env, image_bytes, metadata, zip_code, format_name)
 
-                print(f"Completed: {zip_code}/{format_name} ({len(image_bytes)} bytes)")
+                log_with_trace(
+                    f"Successfully generated {format_name} for ZIP {zip_code}",
+                    trace_context=trace_context,
+                    zip_code=zip_code,
+                    format_name=format_name,
+                    image_size=len(image_bytes),
+                    worker='landscape_generator',
+                    action='generation_complete'
+                )
 
                 # Acknowledge the message
                 message.ack()
@@ -77,7 +97,14 @@ class Default(WorkerEntrypoint):
 
             except Exception as e:
                 error_count += 1
-                import traceback; traceback.print_exc(); print(f"ERROR processing job: {e}")
+                import traceback; traceback.print_exc()
+                log_with_trace(
+                    f"ERROR generating image: {e}",
+                    trace_context=trace_context if 'trace_context' in locals() else None,
+                    error=str(e),
+                    worker='landscape_generator',
+                    action='error'
+                )
 
                 # Retry the message (will be re-delivered)
                 message.retry()
