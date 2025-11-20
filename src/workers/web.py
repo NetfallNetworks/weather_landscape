@@ -30,7 +30,8 @@ from shared import (
     get_formats_per_zip,
     generate_trace_id,
     add_trace_context,
-    log_with_trace
+    log_with_trace,
+    debug_trace_propagation
 )
 
 
@@ -693,6 +694,10 @@ class Default(WorkerEntrypoint):
 
             # Add trace context for distributed tracing
             job = add_trace_context(job, trace_id=trace_id)
+
+            # DEBUG: Show what we're sending to the queue
+            debug_trace_propagation(job, worker_name="web")
+            print(f"🔍 WEB: Sending trace_id {trace_id} to FETCH_JOBS queue")
 
             # Log with trace context
             log_with_trace(

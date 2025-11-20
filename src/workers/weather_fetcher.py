@@ -25,7 +25,8 @@ from shared import (
     extract_trace_context,
     add_trace_context,
     log_with_trace,
-    get_trace_id
+    get_trace_id,
+    debug_message
 )
 
 
@@ -62,6 +63,9 @@ class Default(WorkerEntrypoint):
 
         for message in batch.messages:
             try:
+                # DEBUG: Show what we received from the queue
+                debug_message(message, worker_name="weather_fetcher")
+
                 # Parse job data (convert JsProxy via JSON round-trip)
                 job = json.loads(JSON.stringify(message.body))
                 zip_code = job['zip_code']
@@ -69,6 +73,8 @@ class Default(WorkerEntrypoint):
                 # Extract trace context from incoming message
                 trace_context = extract_trace_context(message)
                 trace_id = get_trace_id(trace_context)
+
+                print(f"🔍 FETCHER: Extracted trace_id: {trace_id}")
 
                 log_with_trace(
                     f"Fetching weather for ZIP {zip_code}",
