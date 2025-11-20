@@ -1,8 +1,8 @@
 import os
 
-from p_weather.openweathermap import OpenWeatherMap
-from p_weather.draw_weather import DrawWeather
-from p_weather.configuration import WLBaseSettings
+from .p_weather.openweathermap import OpenWeatherMap
+from .p_weather.draw_weather import DrawWeather
+from .p_weather.configuration import WLBaseSettings
 
 import secrets
 

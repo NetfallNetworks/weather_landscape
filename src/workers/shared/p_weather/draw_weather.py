@@ -1,9 +1,9 @@
 
-from p_weather.sprites import Sprites
-from p_weather.sprites_rgb import SpritesRGB
-from p_weather.openweathermap import OpenWeatherMap,WeatherInfo
-from p_weather.sunrise import sun
-from p_weather.configuration import WLBaseSettings
+from .sprites import Sprites
+from .sprites_rgb import SpritesRGB
+from .openweathermap import OpenWeatherMap,WeatherInfo
+from .sunrise import sun
+from .configuration import WLBaseSettings
 
 
 import datetime 

@@ -1,5 +1,5 @@
 import os
-from p_weather.holidays import WLHolidays,WLHEntry
+from .holidays import WLHolidays,WLHEntry
 import datetime
 from typing import List,Tuple
 

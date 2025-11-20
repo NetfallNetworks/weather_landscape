@@ -12,7 +12,7 @@ except ImportError:
     from urllib.request import urlopen
     CLOUDFLARE_WORKER = False
 
-from p_weather.configuration import WLBaseSettings
+from .configuration import WLBaseSettings
 
 
 
