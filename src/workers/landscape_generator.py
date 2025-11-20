@@ -77,7 +77,7 @@ class Default(WorkerEntrypoint):
 
             except Exception as e:
                 error_count += 1
-                print(f"ERROR processing job: {e}")
+                import traceback; traceback.print_exc(); print(f"ERROR processing job: {e}")
 
                 # Retry the message (will be re-delivered)
                 message.retry()
