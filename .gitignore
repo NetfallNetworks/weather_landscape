@@ -12,6 +12,9 @@ secrets.py
 # Wrangler / Cloudflare Workers
 .wrangler/
 .dev.vars
+.wrangler.local.env
+wrangler.*.local.toml
+wrangler.local.toml
 node_modules/
 .venv-workers/
 python_modules/

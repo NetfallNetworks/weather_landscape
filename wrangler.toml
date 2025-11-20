@@ -46,7 +46,9 @@ binding = "WEATHER_IMAGES"
 bucket_name = "weather-landscapes"
 
 # KV Namespace Binding - stores configuration and metadata
-# Replace YOUR_KV_NAMESPACE_ID with the ID from: wrangler kv namespace create CONFIG
+# Note: YOUR_KV_NAMESPACE_ID is a placeholder kept in git
+# For local development, run: ./setup-local-config.sh
+# Then deploy with: wrangler deploy -c wrangler.local.toml
 [[kv_namespaces]]
 binding = "CONFIG"
 id = "YOUR_KV_NAMESPACE_ID"
