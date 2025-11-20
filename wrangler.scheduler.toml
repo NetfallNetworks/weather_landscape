@@ -1,0 +1,54 @@
+# ZIP Scheduler Worker Configuration
+# Deploy with: wrangler deploy -c wrangler.scheduler.toml
+
+name = "zip-scheduler"
+main = "src/workers/zip_scheduler.py"
+compatibility_date = "2025-01-10"
+compatibility_flags = ["python_workers"]
+
+# Enable workers.dev for testing (can be disabled in production)
+workers_dev = false
+
+# Workers Logs - enables log collection for visibility during runs
+[observability]
+head_sampling_rate = 1
+enabled = true
+
+# Bundle image files as Data modules (needed for shared imports)
+[[rules]]
+type = "Data"
+globs = ["**/*.bmp", "**/*.png", "**/*.jpg", "**/*.jpeg"]
+fallthrough = true
+
+# Bundle HTML templates as Text modules
+[[rules]]
+type = "Text"
+globs = ["src/templates/*.html"]
+fallthrough = true
+
+# Bundle CSS files as Text modules
+[[rules]]
+type = "Text"
+globs = ["**/*.css"]
+fallthrough = true
+
+# Cron Trigger - runs every 5 minutes to schedule ZIP processing
+[triggers]
+crons = ["*/5 * * * *"]
+
+# KV Namespace Binding - stores configuration and metadata
+# Use the same namespace ID as the web worker
+[[kv_namespaces]]
+binding = "CONFIG"
+id = "YOUR_KV_NAMESPACE_ID"
+
+# Queue Producer Binding - sends ZIPs to weather fetcher
+[[queues.producers]]
+queue = "fetch-jobs"
+binding = "FETCH_JOBS"
+
+# Environment Variables
+[vars]
+DEFAULT_ZIP = "78729"
+
+# Note: No OWM_API_KEY needed - scheduler only reads KV and enqueues

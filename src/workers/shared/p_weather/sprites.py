@@ -113,7 +113,7 @@ class Sprites(Canvas):
 
         # Load asset using the asset loader
         try:
-            from asset_loader import get_global_loader
+            from ..asset_loader import get_global_loader
             loader = get_global_loader()
 
             # Load the sprite file

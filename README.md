@@ -139,6 +139,57 @@ Deploy your weather landscape as a globally distributed Cloudflare Worker with a
 - ⚙️ **Admin dashboard** - Manage ZIP codes and formats via web interface
 - 💰 Free tier friendly (well within limits)
 
+### Pipeline Architecture
+
+The Cloudflare deployment uses an event-driven architecture with 5 specialized workers connected via Queues:
+
+```
+┌─────────────────┐     ┌────────────┐     ┌─────────────────┐
+│  zip-scheduler  │────▶│ fetch-jobs │────▶│ weather-fetcher │
+│   (cron 15m)    │     │   queue    │     │  (queue cons.)  │
+└─────────────────┘     └────────────┘     └────────┬────────┘
+                                                    │
+┌─────────────────┐     ┌───────────────┐     ┌─────▼────────┐
+│ landscape-gen.  │◀────│ landscape-   │◀────│ job-         │
+│ (queue cons.)   │     │ jobs queue   │     │ dispatcher   │
+└────────┬────────┘     └───────────────┘     └──────────────┘
+         │                                          ▲
+         ▼                                          │
+    ┌────────┐                              ┌───────┴────────┐
+    │   R2   │                              │ weather-ready  │
+    │ bucket │                              │     queue      │
+    └────────┘                              └────────────────┘
+```
+
+**Worker Responsibilities:**
+
+| Worker | Trigger | Produces | Consumes | Purpose |
+|--------|---------|----------|----------|---------|
+| `zip-scheduler` | Cron (15m) | fetch-jobs | - | Enqueues active ZIPs for processing |
+| `weather-fetcher` | Queue | weather-ready | fetch-jobs | Fetches weather data from OWM, stores in KV |
+| `job-dispatcher` | Queue | landscape-jobs | weather-ready | Fan-out: creates one job per format |
+| `landscape-generator` | Queue | - | landscape-jobs | Generates images, uploads to R2 |
+| `weather-landscape-web` | HTTP | fetch-jobs | - | Serves UI, handles admin actions |
+
+**Benefits:**
+- **Parallelism**: Each ZIP and format is processed independently
+- **Scalability**: Handles 2000+ ZIPs without timeouts
+- **Separation of concerns**: Each worker does one thing well
+- **Fault tolerance**: Queue retries and dead-letter queues
+
+**Deployment:**
+
+```bash
+# Deploy all workers (order matters for queue bindings)
+uv run pywrangler deploy -c wrangler.scheduler.toml
+uv run pywrangler deploy -c wrangler.fetcher.toml
+uv run pywrangler deploy -c wrangler.dispatcher.toml
+uv run pywrangler deploy -c wrangler.generator.toml
+uv run pywrangler deploy  # web worker (wrangler.toml)
+```
+
+**Note:** Cloudflare Queues require a Workers Paid plan ($5/month).
+
 ### Quick Deploy
 
 ```bash

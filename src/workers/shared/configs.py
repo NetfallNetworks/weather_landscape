@@ -1,4 +1,4 @@
-from p_weather.configuration import WLBaseSettings
+from .p_weather.configuration import WLBaseSettings
 import os
 
 # Detect if running in Cloudflare Workers
@@ -17,8 +17,8 @@ class WLConfig_BW(WLBaseSettings):
     WORK_DIR = "tmp"
     OUT_FILENAME = "landscape_wb"
     OUT_FILEEXT = ".bmp"
-    TEMPLATE_FILENAME = os.path.join(BASE_PATH, "p_weather/template_wb.bmp")
-    SPRITES_DIR = os.path.join(BASE_PATH, "p_weather/sprite")
+    TEMPLATE_FILENAME = os.path.join(BASE_PATH, "shared/p_weather/template_wb.bmp")
+    SPRITES_DIR = os.path.join(BASE_PATH, "shared/p_weather/sprite")
     POSTPROCESS_INVERT = False
     POSTPROCESS_EINKFLIP = False
     TEMPUNITS_MODE = WLBaseSettings.TEMP_UNITS_FAHRENHEIT
@@ -44,8 +44,8 @@ class WLConfig_RGB_White(WLBaseSettings):
     WORK_DIR = "tmp"
     OUT_FILENAME = "landscape_rgb_w"
     OUT_FILEEXT = ".png"
-    SPRITES_DIR = os.path.join(BASE_PATH, "p_weather/sprite_rgb")
-    TEMPLATE_FILENAME = os.path.join(BASE_PATH, "p_weather/template_rgb.bmp")
+    SPRITES_DIR = os.path.join(BASE_PATH, "shared/p_weather/sprite_rgb")
+    TEMPLATE_FILENAME = os.path.join(BASE_PATH, "shared/p_weather/template_rgb.bmp")
 
     POSTPROCESS_INVERT = False
     POSTPROCESS_EINKFLIP = False

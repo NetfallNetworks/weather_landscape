@@ -4,8 +4,8 @@ import random
 import math
 from typing import List
 
-from p_weather.configuration import WLBaseSettings
-from p_weather.sprites import Sprites,Canvas
+from .configuration import WLBaseSettings
+from .sprites import Sprites,Canvas
 
 
 
