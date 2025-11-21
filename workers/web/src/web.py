@@ -165,9 +165,8 @@ class Default(WorkerEntrypoint):
                 image_bytes = f.read()
 
             from js import Uint8Array
-            js_array = Uint8Array.new(len(image_bytes))
-            for i, byte in enumerate(image_bytes):
-                js_array[i] = byte
+            # Use buffer protocol for efficient bulk transfer (no byte-by-byte copy)
+            js_array = Uint8Array.new(memoryview(image_bytes))
 
             return Response.new(js_array, headers=to_js({
                 "content-type": "image/png",
@@ -284,9 +283,8 @@ class Default(WorkerEntrypoint):
                 image_bytes = f.read()
 
             from js import Uint8Array
-            js_array = Uint8Array.new(len(image_bytes))
-            for i, byte in enumerate(image_bytes):
-                js_array[i] = byte
+            # Use buffer protocol for efficient bulk transfer (no byte-by-byte copy)
+            js_array = Uint8Array.new(memoryview(image_bytes))
 
             return Response.new(js_array, headers=to_js({
                 "content-type": "image/png",
@@ -324,9 +322,8 @@ class Default(WorkerEntrypoint):
                 image_bytes = f.read()
 
             from js import Uint8Array
-            js_array = Uint8Array.new(len(image_bytes))
-            for i, byte in enumerate(image_bytes):
-                js_array[i] = byte
+            # Use buffer protocol for efficient bulk transfer (no byte-by-byte copy)
+            js_array = Uint8Array.new(memoryview(image_bytes))
 
             return Response.new(js_array, headers=to_js({
                 "content-type": "image/bmp",

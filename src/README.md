@@ -418,9 +418,8 @@ return Response.new(css_content, headers={
 
 # Images (binary conversion required)
 from js import Uint8Array
-js_array = Uint8Array.new(len(image_bytes))
-for i, byte in enumerate(image_bytes):
-    js_array[i] = byte
+# Use buffer protocol for efficient bulk transfer
+js_array = Uint8Array.new(memoryview(image_bytes))
 ```
 
 ## Dependencies

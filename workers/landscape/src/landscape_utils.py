@@ -150,10 +150,9 @@ async def upload_to_r2(env, image_bytes, metadata, zip_code, format_name=None):
         }
 
         # Convert Python bytes to JavaScript Uint8Array for R2
+        # Use buffer protocol for efficient bulk transfer (no byte-by-byte copy)
         from js import Uint8Array
-        js_array = Uint8Array.new(len(image_bytes))
-        for i, byte in enumerate(image_bytes):
-            js_array[i] = byte
+        js_array = Uint8Array.new(memoryview(image_bytes))
 
         # Upload to R2
         await env.WEATHER_IMAGES.put(
