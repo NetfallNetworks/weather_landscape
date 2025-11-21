@@ -1,0 +1,70 @@
+# Web Worker Configuration
+# Deploy from workers/web/ directory with: uv run pywrangler deploy
+
+name = "weather-landscape-web"
+main = "src/web.py"
+compatibility_date = "2025-01-10"
+compatibility_flags = ["python_workers"]
+
+# Disable workers.dev subdomain - only accessible via custom domain with zero trust
+workers_dev = false
+
+# Disable preview URLs - requires custom domain with zero trust
+preview_urls = false
+
+# Workers Logs - enables log collection for visibility during runs
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+head_sampling_rate = 1
+persist = true
+
+# Bundle image files as Data modules so Python can access them
+[[rules]]
+type = "Data"
+globs = ["**/*.bmp", "**/*.png", "**/*.jpg", "**/*.jpeg"]
+fallthrough = true
+
+# Bundle HTML templates as Text modules
+[[rules]]
+type = "Text"
+globs = ["**/*.html"]
+fallthrough = true
+
+# Bundle CSS files as Text modules
+[[rules]]
+type = "Text"
+globs = ["**/*.css"]
+fallthrough = true
+
+# R2 Bucket Binding - stores generated weather landscape images
+[[r2_buckets]]
+binding = "WEATHER_IMAGES"
+bucket_name = "weather-landscapes"
+
+# KV Namespace Binding - stores configuration and metadata
+# Note: YOUR_KV_NAMESPACE_ID is a placeholder kept in git
+# For local development, run: ./setup-local-config.sh from project root
+# Then deploy with: uv run pywrangler deploy -c wrangler.local.toml
+[[kv_namespaces]]
+binding = "CONFIG"
+id = "YOUR_KV_NAMESPACE_ID"
+
+# Queue Producer Binding - sends fetch jobs to weather fetcher
+[[queues.producers]]
+queue = "fetch-jobs"
+binding = "FETCH_JOBS"
+
+# Environment Variables
+[vars]
+DEFAULT_ZIP = "78729"
+
+# Note: Image formats are configured per-ZIP via the API:
+# POST /admin/formats/add?zip=78729&format=rgb_dark
+# POST /admin/formats/remove?zip=78729&format=bw
+# GET /admin/formats?zip=78729
