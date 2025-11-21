@@ -21,12 +21,7 @@ from shared import (
     geocode_zip,
     store_weather_data,
     fetch_weather_from_owm,
-    to_js,
-    extract_trace_context,
-    add_trace_context,
-    log_with_trace,
-    get_trace_id,
-    debug_message
+    to_js
 )
 
 
