@@ -180,12 +180,15 @@ The Cloudflare deployment uses an event-driven architecture with 5 specialized w
 **Deployment:**
 
 ```bash
-# Deploy all workers (order matters for queue bindings)
-uv run pywrangler deploy -c wrangler.scheduler.toml
-uv run pywrangler deploy -c wrangler.fetcher.toml
-uv run pywrangler deploy -c wrangler.dispatcher.toml
-uv run pywrangler deploy -c wrangler.generator.toml
-uv run pywrangler deploy  # web worker (wrangler.toml)
+# Deploy all workers using the deploy-all script
+./deploy-all.sh
+
+# OR deploy individually (order matters for queue bindings)
+(cd workers/scheduler && uv run pywrangler deploy -c wrangler.local.toml)
+(cd workers/fetcher && uv run pywrangler deploy -c wrangler.local.toml)
+uv run pywrangler deploy -c wrangler.dispatcher.local.toml
+uv run pywrangler deploy -c wrangler.generator.local.toml
+uv run pywrangler deploy -c wrangler.local.toml  # web worker
 ```
 
 **Note:** Cloudflare Queues require a Workers Paid plan ($5/month).

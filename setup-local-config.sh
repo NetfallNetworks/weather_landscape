@@ -32,10 +32,10 @@ echo "🔧 Generating local wrangler config files..."
 # Array of wrangler config files (path:destination format for different directories)
 CONFIGS=(
     "wrangler.toml"
-    "wrangler.fetcher.toml"
     "wrangler.dispatcher.toml"
     "wrangler.generator.toml"
     "workers/scheduler/wrangler.toml"
+    "workers/fetcher/wrangler.toml"
 )
 
 # Function to replace KV namespace IDs based on binding names
@@ -108,7 +108,7 @@ echo "📦 To deploy, use the deploy-all.sh script or deploy individually:"
 echo "   ./deploy-all.sh"
 echo "   # OR deploy individually:"
 echo "   uv run pywrangler deploy -c wrangler.local.toml"
-echo "   uv run pywrangler deploy -c wrangler.fetcher.local.toml"
+echo "   (cd workers/fetcher && uv run pywrangler deploy -c wrangler.local.toml)"
 echo "   etc."
 echo ""
 echo "💡 Tip: The *.local.toml files are git-ignored, so your namespace IDs stay private"
