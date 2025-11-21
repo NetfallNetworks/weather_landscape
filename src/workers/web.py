@@ -685,6 +685,7 @@ class Default(WorkerEntrypoint):
                 'scheduled_at': datetime.utcnow().isoformat() + 'Z'
             }
 
+            print(f"Enqueuing generation for ZIP {zip_code}")
             await env.FETCH_JOBS.send(to_js(job))
 
             return Response.new(

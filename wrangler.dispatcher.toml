@@ -10,9 +10,16 @@ compatibility_flags = ["python_workers"]
 workers_dev = false
 
 # Workers Logs - enables log collection for visibility during runs
-[observability]
-head_sampling_rate = 1
+[observability.logs]
 enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+head_sampling_rate = 1
+persist = true
 
 # Bundle image files as Data modules (needed for shared imports)
 [[rules]]
@@ -33,7 +40,9 @@ globs = ["**/*.css"]
 fallthrough = true
 
 # KV Namespace Binding - stores configuration and metadata
-# Use the same namespace ID as the web worker
+# Note: YOUR_KV_NAMESPACE_ID is a placeholder kept in git
+# For local development, run: ./setup-local-config.sh
+# Then deploy with: wrangler deploy -c wrangler.dispatcher.local.toml
 [[kv_namespaces]]
 binding = "CONFIG"
 id = "YOUR_KV_NAMESPACE_ID"
