@@ -63,13 +63,10 @@ class WeatherLandscape:
         from PIL import Image
         import io
         from .asset_loader import get_global_loader
+        from .p_weather.weather_data import ParsedWeatherData
 
-        # Create OpenWeatherMap instance
-        # Note: No API key needed since we're using pre-fetched data
-        owm = OpenWeatherMap(self.cfg)
-
-        # Load from pre-fetched data instead of making API calls
-        owm.FromJSON(weather_data['current'], weather_data['forecast'])
+        # Parse the weather data (no API calls, no OpenWeatherMap class needed)
+        weather = ParsedWeatherData(self.cfg, weather_data['current'], weather_data['forecast'])
 
         # Load the template image using the asset loader
         try:
@@ -90,7 +87,7 @@ class WeatherLandscape:
             img = Image.open(self.cfg.TEMPLATE_FILENAME)
 
         art = DrawWeather(img, self.cfg)
-        img = art.Draw(owm)
+        img = art.Draw(weather)
 
         return img
 
