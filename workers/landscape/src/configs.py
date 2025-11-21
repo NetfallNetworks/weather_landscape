@@ -13,8 +13,8 @@ try:
     BASE_PATH = ""
 except ImportError:
     CLOUDFLARE_WORKER = False
-    # Local development uses workers/landscape/ prefix
-    BASE_PATH = "workers/landscape/"
+    # Local development uses workers/landscape/src/ prefix
+    BASE_PATH = "workers/landscape/src/"
 
 
 class WLConfig_BW(WLBaseSettings):

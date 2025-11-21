@@ -28,22 +28,26 @@ workers/landscape/
 ├── pyproject.toml              # Only Pillow dependency
 ├── wrangler.toml               # Worker configuration (template)
 ├── wrangler.local.toml         # Generated with actual KV IDs (git-ignored)
-├── landscape_generator.py      # Main worker (149 lines)
-├── landscape_utils.py          # Minimal utilities (KV, R2, configs)
-├── configs.py                  # Format configuration classes
-├── weather_landscape.py        # WeatherLandscape rendering class
-├── asset_loader.py             # Asset loading utilities
-└── p_weather/                  # Weather rendering modules
-    ├── template_rgb.bmp        # RGB template (149KB)
-    ├── template_wb.bmp         # B&W template (5KB)
-    ├── sprite/                 # B&W sprites (~50KB, 122 PNGs)
-    ├── sprite_rgb/             # RGB sprites (~50KB, 100+ PNGs)
-    ├── configuration.py        # Base configuration
-    ├── openweathermap.py       # Weather data parsing
-    ├── sunrise.py              # Sunrise/sunset calculations
-    ├── holidays.py             # Holiday/birthday logic
-    └── sprites_*.py            # Sprite definitions
+├── README.md                   # This file
+└── src/                        # Source code (prevents venv bundling)
+    ├── landscape_generator.py  # Main worker (149 lines)
+    ├── landscape_utils.py      # Minimal utilities (KV, R2, configs)
+    ├── configs.py              # Format configuration classes
+    ├── weather_landscape.py    # WeatherLandscape rendering class
+    ├── asset_loader.py         # Asset loading utilities
+    └── p_weather/              # Weather rendering modules
+        ├── template_rgb.bmp    # RGB template (149KB)
+        ├── template_wb.bmp     # B&W template (5KB)
+        ├── sprite/             # B&W sprites (~50KB, 122 PNGs)
+        ├── sprite_rgb/         # RGB sprites (~50KB, 100+ PNGs)
+        ├── configuration.py    # Base configuration
+        ├── openweathermap.py   # Weather data parsing
+        ├── sunrise.py          # Sunrise/sunset calculations
+        ├── holidays.py         # Holiday/birthday logic
+        └── sprites_*.py        # Sprite definitions
 ```
+
+**Note:** Code is in `src/` subdirectory to prevent venv bundling. When `uv run` creates `.venv-workers/` in the parent directory, it won't get bundled into the worker.
 
 ## Deployment
 

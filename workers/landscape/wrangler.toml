@@ -1,8 +1,8 @@
 # Landscape Generator Worker Configuration
-# Deploy with: wrangler deploy -c workers/landscape/wrangler.toml
+# Deploy from workers/landscape/ directory with: uv run pywrangler deploy
 
 name = "landscape-generator"
-main = "workers/landscape/landscape_generator.py"
+main = "src/landscape_generator.py"
 compatibility_date = "2025-01-10"
 compatibility_flags = ["python_workers"]
 
