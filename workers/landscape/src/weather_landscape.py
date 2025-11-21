@@ -1,8 +1,8 @@
 import os
 
-from .p_weather.openweathermap import OpenWeatherMap
-from .p_weather.draw_weather import DrawWeather
-from .p_weather.configuration import WLBaseSettings
+from p_weather.openweathermap import OpenWeatherMap
+from p_weather.draw_weather import DrawWeather
+from p_weather.configuration import WLBaseSettings
 
 import secrets
 
@@ -20,7 +20,7 @@ class WeatherLandscape:
         from PIL import Image
         import io
         import os
-        from .asset_loader import get_global_loader
+        from asset_loader import get_global_loader
 
         owm = OpenWeatherMap(self.cfg)
         await owm.FromAuto()
@@ -62,8 +62,8 @@ class WeatherLandscape:
         # Import PIL at runtime for Cloudflare Workers compatibility
         from PIL import Image
         import io
-        from .asset_loader import get_global_loader
-        from .p_weather.weather_data import ParsedWeatherData
+        from asset_loader import get_global_loader
+        from p_weather.weather_data import ParsedWeatherData
 
         # Parse the weather data (no API calls, no OpenWeatherMap class needed)
         weather = ParsedWeatherData(self.cfg, weather_data['current'], weather_data['forecast'])

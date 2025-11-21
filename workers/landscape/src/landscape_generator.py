@@ -13,7 +13,7 @@ from datetime import datetime
 from workers import WorkerEntrypoint
 from js import JSON
 
-from .landscape_utils import (
+from landscape_utils import (
     WorkerConfig,
     FORMAT_CONFIGS,
     get_weather_data,
@@ -99,8 +99,8 @@ class Default(WorkerEntrypoint):
             tuple: (image_bytes, metadata_dict, format_name)
         """
         # Import at runtime (Pillow loaded from cf-requirements.txt)
-        from .weather_landscape import WeatherLandscape
-        from .asset_loader import set_global_loader
+        from weather_landscape import WeatherLandscape
+        from asset_loader import set_global_loader
         import io
 
         # Initialize the global asset loader
