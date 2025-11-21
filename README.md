@@ -186,7 +186,7 @@ The Cloudflare deployment uses an event-driven architecture with 5 specialized w
 # OR deploy individually (order matters for queue bindings)
 (cd workers/scheduler && uv run pywrangler deploy -c wrangler.local.toml)
 (cd workers/fetcher && uv run pywrangler deploy -c wrangler.local.toml)
-uv run pywrangler deploy -c wrangler.dispatcher.local.toml
+(cd workers/dispatcher && uv run pywrangler deploy -c wrangler.local.toml)
 uv run pywrangler deploy -c wrangler.generator.local.toml
 uv run pywrangler deploy -c wrangler.local.toml  # web worker
 ```

@@ -1,0 +1,51 @@
+# Job Dispatcher Worker Configuration
+# Deploy from workers/dispatcher/ directory with: uv run pywrangler deploy
+
+name = "job-dispatcher"
+main = "src/dispatcher.py"
+compatibility_date = "2025-01-10"
+compatibility_flags = ["python_workers"]
+
+# Enable workers.dev for testing (can be disabled in production)
+workers_dev = false
+
+# Workers Logs - enables log collection for visibility during runs
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+head_sampling_rate = 1
+persist = true
+
+# No bundle rules needed - dispatcher only needs Python code for KV lookups
+# (Images, templates, CSS are bundled in the image generator worker)
+
+# KV Namespace Binding - stores configuration and metadata
+# Note: YOUR_KV_NAMESPACE_ID is a placeholder kept in git
+# For local development, run: ./setup-local-config.sh from project root
+# Then deploy with: uv run pywrangler deploy -c wrangler.local.toml
+[[kv_namespaces]]
+binding = "CONFIG"
+id = "YOUR_KV_NAMESPACE_ID"
+
+# Queue Consumer Binding - receives weather-ready events
+[[queues.consumers]]
+queue = "weather-ready"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 3
+
+# Queue Producer Binding - sends generation jobs to landscape generator
+[[queues.producers]]
+queue = "landscape-jobs"
+binding = "LANDSCAPE_JOBS"
+
+# Environment Variables
+[vars]
+DEFAULT_ZIP = "78729"
+
+# Note: No API key needed - dispatcher only reads from KV
