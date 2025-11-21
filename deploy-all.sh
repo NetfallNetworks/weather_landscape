@@ -32,7 +32,7 @@ echo "Deploying zip scheduler (isolated environment)..."
 sleep 3
 
 echo "Deploying weather fetcher (isolated environment)..."
-(cd workers/fetcher && ./deploy.sh)
+(cd workers/fetcher && uv run pywrangler deploy -c wrangler.local.toml)
 
 echo ""
 echo "✅ All workers deployed successfully!"

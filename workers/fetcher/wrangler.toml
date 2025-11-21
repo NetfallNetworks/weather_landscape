@@ -2,7 +2,7 @@
 # Deploy from workers/fetcher/ directory with: uv run pywrangler deploy
 
 name = "weather-fetcher"
-main = "weather_fetcher.py"
+main = "src/weather_fetcher.py"
 compatibility_date = "2025-01-10"
 compatibility_flags = ["python_workers"]
 

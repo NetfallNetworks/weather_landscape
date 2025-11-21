@@ -25,10 +25,13 @@ workers/fetcher/
 ├── pyproject.toml         # NO Pillow dependency!
 ├── wrangler.toml          # Worker configuration (template)
 ├── wrangler.local.toml    # Generated with actual KV IDs (git-ignored)
-├── weather_fetcher.py     # Main worker (103 lines)
-├── kv_utils.py            # Minimal KV utilities (geocoding, OWM fetch, storage)
-└── config.py              # Minimal config (WorkerConfig, to_js, format constants)
+└── src/
+    ├── weather_fetcher.py # Main worker (103 lines)
+    ├── kv_utils.py        # Minimal KV utilities (geocoding, OWM fetch, storage)
+    └── config.py          # Minimal config (WorkerConfig, to_js, format constants)
 ```
+
+**Note:** Code is in `src/` subdirectory to prevent venv bundling. When `uv run` creates `.venv-workers/` in the parent directory, it won't get bundled into the worker.
 
 ## Deployment
 
@@ -40,20 +43,7 @@ Deploy from project root using:
 Or deploy just the fetcher:
 ```bash
 cd workers/fetcher
-./deploy.sh  # Recommended - auto-cleans venv before/after deploy
-```
-
-**Manual deployment (without venv cleanup):**
-```bash
-cd workers/fetcher
 uv run pywrangler deploy -c wrangler.local.toml
-```
-
-**Purge virtual environments:**
-If you encounter venv bundling issues, manually purge:
-```bash
-cd workers/fetcher
-./purge-venv.sh
 ```
 
 ## Dependencies
