@@ -49,17 +49,17 @@ This project uses a template-based approach for Wrangler configuration files to 
 # Deploy web worker
 uv run pywrangler deploy -c wrangler.local.toml
 
-# Deploy fetcher worker
-uv run pywrangler deploy -c wrangler.fetcher.local.toml
+# Deploy scheduler worker (isolated environment)
+(cd workers/scheduler && uv run pywrangler deploy -c wrangler.local.toml)
 
-# Deploy dispatcher worker
-uv run pywrangler deploy -c wrangler.dispatcher.local.toml
+# Deploy fetcher worker (isolated environment)
+(cd workers/fetcher && uv run pywrangler deploy -c wrangler.local.toml)
+
+# Deploy dispatcher worker (isolated environment)
+(cd workers/dispatcher && uv run pywrangler deploy -c wrangler.local.toml)
 
 # Deploy generator worker
 uv run pywrangler deploy -c wrangler.generator.local.toml
-
-# Deploy scheduler worker
-uv run pywrangler deploy -c wrangler.scheduler.local.toml
 ```
 
 ### How It Works
