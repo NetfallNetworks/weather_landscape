@@ -17,34 +17,31 @@ R2 uploads taking ~1.5-1.7 seconds for 3KB PNG files from landscape-generator wo
 
 ## Solution Options
 
-### Option 1: Move R2 Bucket to WNAM (Recommended)
-Create new bucket in same region as worker:
+### Option 1: Use Smart Placement (Implemented)
+Enable smart placement to run worker closer to R2 bucket:
+
+```toml
+# In wrangler.toml
+[placement]
+mode = "smart"
+```
+
+Smart placement analyzes bindings (R2, KV, etc.) and routes the worker to run in regions closer to those resources.
+
+**Status:** ✅ Implemented in wrangler.toml
+**Expected improvement:** 1700ms → ~100-300ms (5-17x faster)
+
+### Option 2: Move R2 Bucket to WNAM (Alternative)
+If smart placement doesn't help, create new bucket in same region as most traffic:
 
 ```bash
 # Create new WNAM bucket
 wrangler r2 bucket create weather-landscapes-wnam --jurisdiction wnam
 
-# Migrate existing data (if needed)
-wrangler r2 object get weather-landscapes <key> | \
-  wrangler r2 object put weather-landscapes-wnam <key>
-
 # Update wrangler.toml
 bucket_name = "weather-landscapes-wnam"
 jurisdiction = "wnam"
 ```
-
-**Expected improvement:** 1700ms → ~100-300ms (5-17x faster)
-
-### Option 2: Deploy Worker to ENAM
-Constrain worker to run only in Eastern North America:
-
-```toml
-# In wrangler.toml, add:
-[placement]
-mode = "smart"
-```
-
-Then use Cloudflare dashboard to set placement hints to prefer ENAM regions.
 
 **Expected improvement:** Similar to Option 1
 
