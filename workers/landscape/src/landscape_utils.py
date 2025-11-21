@@ -149,15 +149,13 @@ async def upload_to_r2(env, image_bytes, metadata, zip_code, format_name=None):
             'variant': format_name
         }
 
-        # Convert Python bytes to JavaScript Uint8Array for R2
-        # Use buffer protocol for efficient bulk transfer (no byte-by-byte copy)
-        from js import Uint8Array
-        js_array = Uint8Array.new(memoryview(image_bytes))
-
-        # Upload to R2
+        # Try passing bytes directly - let Pyodide's FFI handle conversion
+        # This might be more efficient than manual Uint8Array creation
+        import time
+        start_upload = time.time()
         await env.WEATHER_IMAGES.put(
             key,
-            js_array,
+            image_bytes,
             {
                 'httpMetadata': {
                     'contentType': format_info['mime_type'],
@@ -165,8 +163,10 @@ async def upload_to_r2(env, image_bytes, metadata, zip_code, format_name=None):
                 'customMetadata': custom_metadata
             }
         )
+        upload_ms = (time.time() - start_upload) * 1000
+        print(f"  R2.put took: {upload_ms:.2f}ms")
 
-        print(f"Uploaded {key} to R2 ({len(image_bytes)} bytes)")
+        print(f"Uploaded {key} to R2 ({len(image_bytes)} bytes, upload: {upload_ms:.2f}ms)")
 
         # Save metadata to KV (per-ZIP-format)
         await env.CONFIG.put(
