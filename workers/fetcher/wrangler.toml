@@ -1,0 +1,52 @@
+# Weather Fetcher Worker Configuration
+# Deploy from workers/fetcher/ directory with: uv run pywrangler deploy
+
+name = "weather-fetcher"
+main = "weather_fetcher.py"
+compatibility_date = "2025-01-10"
+compatibility_flags = ["python_workers"]
+
+# Enable workers.dev for testing (can be disabled in production)
+workers_dev = false
+
+# Workers Logs - enables log collection for visibility during runs
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+head_sampling_rate = 1
+persist = true
+
+# No bundle rules needed - fetcher only needs Python code for API calls
+# (Images, templates, CSS are bundled in other workers that need them)
+
+# KV Namespace Binding - stores configuration and metadata
+# Note: YOUR_KV_NAMESPACE_ID is a placeholder kept in git
+# For local development, run: ./setup-local-config.sh from project root
+# Then deploy with: uv run pywrangler deploy -c wrangler.local.toml
+[[kv_namespaces]]
+binding = "CONFIG"
+id = "YOUR_KV_NAMESPACE_ID"
+
+# Queue Consumer Binding - receives ZIPs from scheduler
+[[queues.consumers]]
+queue = "fetch-jobs"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 3
+
+# Queue Producer Binding - sends weather-ready events to dispatcher
+[[queues.producers]]
+queue = "weather-ready"
+binding = "WEATHER_READY"
+
+# Environment Variables
+[vars]
+DEFAULT_ZIP = "78729"
+
+# Note: Set OWM_API_KEY using:
+# wrangler secret put OWM_API_KEY -c workers/fetcher/wrangler.toml

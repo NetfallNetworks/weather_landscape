@@ -19,10 +19,6 @@ echo "Deploying web worker..."
 uv run pywrangler deploy -c wrangler.local.toml
 sleep 3
 
-echo "Deploying weather fetcher..."
-uv run pywrangler deploy -c wrangler.fetcher.local.toml
-sleep 3
-
 echo "Deploying job dispatcher..."
 uv run pywrangler deploy -c wrangler.dispatcher.local.toml
 sleep 3
@@ -33,6 +29,10 @@ sleep 3
 
 echo "Deploying zip scheduler (isolated environment)..."
 (cd workers/scheduler && uv run pywrangler deploy -c wrangler.local.toml)
+sleep 3
+
+echo "Deploying weather fetcher (isolated environment)..."
+(cd workers/fetcher && uv run pywrangler deploy -c wrangler.local.toml)
 
 echo ""
 echo "✅ All workers deployed successfully!"

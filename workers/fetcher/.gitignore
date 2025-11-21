@@ -1,0 +1,10 @@
+# Local wrangler config (contains actual KV namespace IDs)
+wrangler.local.toml
+
+# Python cache
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# UV cache
+.venv/

@@ -1,0 +1,12 @@
+[project]
+name = "weather-landscape-fetcher"
+version = "0.1.0"
+description = "Weather fetcher worker for Weather Landscape - minimal dependencies"
+requires-python = ">=3.12"
+# NO dependencies needed - fetcher only calls OWM API and stores in KV
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "workers-py>=1.7.0",  # Required for Cloudflare Workers runtime
+]
