@@ -1,0 +1,14 @@
+[project]
+name = "weather-landscape-generator"
+version = "0.1.0"
+description = "Landscape generator worker for Weather Landscape - optimized deployment"
+requires-python = ">=3.12"
+# Only Pillow is needed for image generation
+dependencies = [
+    "Pillow>=10.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "workers-py>=1.7.0",  # Required for Cloudflare Workers runtime
+]

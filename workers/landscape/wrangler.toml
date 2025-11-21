@@ -1,8 +1,8 @@
 # Landscape Generator Worker Configuration
-# Deploy with: wrangler deploy -c wrangler.generator.toml
+# Deploy from workers/landscape/ directory with: uv run pywrangler deploy
 
 name = "landscape-generator"
-main = "src/workers/landscape_generator.py"
+main = "src/landscape_generator.py"
 compatibility_date = "2025-01-10"
 compatibility_flags = ["python_workers"]
 
@@ -27,18 +27,6 @@ type = "Data"
 globs = ["**/*.bmp", "**/*.png", "**/*.jpg", "**/*.jpeg"]
 fallthrough = true
 
-# Bundle HTML templates as Text modules
-[[rules]]
-type = "Text"
-globs = ["src/templates/*.html"]
-fallthrough = true
-
-# Bundle CSS files as Text modules
-[[rules]]
-type = "Text"
-globs = ["**/*.css"]
-fallthrough = true
-
 # R2 Bucket Binding - stores generated weather landscape images
 [[r2_buckets]]
 binding = "WEATHER_IMAGES"
@@ -47,7 +35,7 @@ bucket_name = "weather-landscapes"
 # KV Namespace Binding - stores configuration and metadata
 # Note: YOUR_KV_NAMESPACE_ID is a placeholder kept in git
 # For local development, run: ./setup-local-config.sh
-# Then deploy with: wrangler deploy -c wrangler.generator.local.toml
+# Then deploy with: wrangler deploy -c workers/landscape/wrangler.local.toml
 [[kv_namespaces]]
 binding = "CONFIG"
 id = "YOUR_KV_NAMESPACE_ID"
@@ -66,4 +54,4 @@ DEFAULT_ZIP = "78729"
 
 # Note: OWM_API_KEY needed for OpenWeatherMap class initialization
 # (even though generator uses pre-fetched weather data from KV)
-# Set with: wrangler secret put OWM_API_KEY -c wrangler.generator.toml
+# Set with: wrangler secret put OWM_API_KEY -c workers/landscape/wrangler.toml

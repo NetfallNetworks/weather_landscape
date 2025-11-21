@@ -466,13 +466,13 @@ wrangler queues create landscape-jobs-dlq  # Dead letter queue
 wrangler deploy
 
 # Deploy weather fetcher (cron-triggered)
-wrangler deploy -c wrangler.fetcher.toml
+(cd workers/fetcher && wrangler deploy -c wrangler.toml)
 
 # Deploy job dispatcher (fan-out)
-wrangler deploy -c wrangler.dispatcher.toml
+(cd workers/dispatcher && wrangler deploy -c wrangler.toml)
 
 # Deploy landscape generator (queue consumer)
-wrangler deploy -c wrangler.generator.toml
+(cd workers/landscape && wrangler deploy -c wrangler.toml)
 ```
 
 ### 3. Set Secrets for Each Worker
@@ -482,12 +482,12 @@ wrangler deploy -c wrangler.generator.toml
 wrangler secret put OWM_API_KEY
 
 # Weather fetcher
-wrangler secret put OWM_API_KEY -c wrangler.fetcher.toml
+(cd workers/fetcher && wrangler secret put OWM_API_KEY -c wrangler.toml)
 
 # Job dispatcher (no secrets needed - reads from KV only)
 
 # Landscape generator
-wrangler secret put OWM_API_KEY -c wrangler.generator.toml
+(cd workers/landscape && wrangler secret put OWM_API_KEY -c wrangler.toml)
 ```
 
 ### Important Notes

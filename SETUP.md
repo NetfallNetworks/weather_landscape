@@ -58,13 +58,13 @@ uv run pywrangler deploy -c wrangler.local.toml
 # Deploy dispatcher worker (isolated environment)
 (cd workers/dispatcher && uv run pywrangler deploy -c wrangler.local.toml)
 
-# Deploy generator worker
-uv run pywrangler deploy -c wrangler.generator.local.toml
+# Deploy generator worker (isolated environment)
+(cd workers/landscape && uv run pywrangler deploy -c wrangler.local.toml)
 ```
 
 ### How It Works
 
-- **Template files** (`wrangler.toml`, `wrangler.fetcher.toml`, etc.) contain `YOUR_KV_NAMESPACE_ID` as a placeholder and are committed to git
+- **Template files** (`wrangler.toml`, `workers/*/wrangler.toml`) contain `YOUR_KV_NAMESPACE_ID` as a placeholder and are committed to git
 - **Local config** (`.wrangler.local.env`) contains your actual IDs mapped by binding name (e.g., `CONFIG=abc123`) and is git-ignored
 - **Setup script** (`setup-local-config.sh`) generates local versions by matching bindings to IDs and substituting values
 - **Local files** (`*.local.toml`) are used for deployment and are git-ignored

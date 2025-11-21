@@ -19,8 +19,8 @@ echo "Deploying web worker..."
 uv run pywrangler deploy -c wrangler.local.toml
 sleep 3
 
-echo "Deploying landscape generator..."
-uv run pywrangler deploy -c wrangler.generator.local.toml
+echo "Deploying landscape generator (isolated environment)..."
+(cd workers/landscape && uv run pywrangler deploy -c wrangler.local.toml)
 sleep 3
 
 echo "Deploying zip scheduler (isolated environment)..."
