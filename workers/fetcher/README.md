@@ -40,7 +40,20 @@ Deploy from project root using:
 Or deploy just the fetcher:
 ```bash
 cd workers/fetcher
+./deploy.sh  # Recommended - auto-cleans venv before/after deploy
+```
+
+**Manual deployment (without venv cleanup):**
+```bash
+cd workers/fetcher
 uv run pywrangler deploy -c wrangler.local.toml
+```
+
+**Purge virtual environments:**
+If you encounter venv bundling issues, manually purge:
+```bash
+cd workers/fetcher
+./purge-venv.sh
 ```
 
 ## Dependencies
