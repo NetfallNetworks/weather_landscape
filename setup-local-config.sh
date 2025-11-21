@@ -29,13 +29,13 @@ fi
 
 echo "🔧 Generating local wrangler config files..."
 
-# Array of wrangler config files
+# Array of wrangler config files (path:destination format for different directories)
 CONFIGS=(
     "wrangler.toml"
     "wrangler.fetcher.toml"
     "wrangler.dispatcher.toml"
     "wrangler.generator.toml"
-    "wrangler.scheduler.toml"
+    "workers/scheduler/wrangler.toml"
 )
 
 # Function to replace KV namespace IDs based on binding names

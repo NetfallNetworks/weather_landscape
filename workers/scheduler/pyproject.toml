@@ -1,0 +1,12 @@
+[project]
+name = "weather-landscape-scheduler"
+version = "0.1.0"
+description = "ZIP scheduler worker for Weather Landscape - minimal dependencies"
+requires-python = ">=3.12"
+# NO dependencies needed - scheduler only reads KV and enqueues jobs
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "workers-py>=1.7.0",  # Required for Cloudflare Workers runtime
+]

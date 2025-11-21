@@ -1,8 +1,8 @@
 # ZIP Scheduler Worker Configuration
-# Deploy with: wrangler deploy -c wrangler.scheduler.toml
+# Deploy from workers/scheduler/ directory with: uv run pywrangler deploy
 
 name = "zip-scheduler"
-main = "src/workers/zip_scheduler.py"
+main = "src/zip_scheduler.py"
 compatibility_date = "2025-01-10"
 compatibility_flags = ["python_workers"]
 
@@ -30,8 +30,8 @@ crons = ["*/5 * * * *"]
 
 # KV Namespace Binding - stores configuration and metadata
 # Note: YOUR_KV_NAMESPACE_ID is a placeholder kept in git
-# For local development, run: ./setup-local-config.sh
-# Then deploy with: wrangler deploy -c wrangler.scheduler.local.toml
+# For local development, run: ./setup-local-config.sh from project root
+# Then deploy with: uv run pywrangler deploy -c wrangler.local.toml
 [[kv_namespaces]]
 binding = "CONFIG"
 id = "YOUR_KV_NAMESPACE_ID"
