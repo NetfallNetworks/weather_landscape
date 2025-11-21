@@ -58,8 +58,8 @@ uv run pywrangler deploy -c wrangler.local.toml
 # Deploy dispatcher worker (isolated environment)
 (cd workers/dispatcher && uv run pywrangler deploy -c wrangler.local.toml)
 
-# Deploy generator worker
-uv run pywrangler deploy -c wrangler.generator.local.toml
+# Deploy generator worker (isolated environment)
+(cd workers/landscape && uv run pywrangler deploy -c wrangler.local.toml)
 ```
 
 ### How It Works
