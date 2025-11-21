@@ -15,38 +15,40 @@ R2 uploads taking ~1.5-1.7 seconds for 3KB PNG files from landscape-generator wo
 
 **Result:** Every upload makes a cross-country roundtrip (~2,500 miles), adding massive latency.
 
-## Solution Options
+## Solution (Implemented)
 
-### Option 1: Use Smart Placement (Implemented)
-Enable smart placement to run worker closer to R2 bucket:
+### Move R2 Bucket to WNAM ✅
 
-```toml
-# In wrangler.toml
-[placement]
-mode = "smart"
-```
-
-Smart placement analyzes bindings (R2, KV, etc.) and routes the worker to run in regions closer to those resources.
-
-**Status:** ✅ Implemented in wrangler.toml
-**Expected improvement:** 1700ms → ~100-300ms (5-17x faster)
-
-### Option 2: Move R2 Bucket to WNAM (Alternative)
-If smart placement doesn't help, create new bucket in same region as most traffic:
+Created new bucket matching worker execution region:
 
 ```bash
 # Create new WNAM bucket
 wrangler r2 bucket create weather-landscapes-wnam --jurisdiction wnam
-
-# Update wrangler.toml
-bucket_name = "weather-landscapes-wnam"
-jurisdiction = "wnam"
 ```
 
-**Expected improvement:** Similar to Option 1
+**Configuration updates:**
+- `workers/landscape/wrangler.toml`: Updated to use `weather-landscapes-wnam`
+- `workers/web/wrangler.toml`: Updated to use `weather-landscapes-wnam` + added smart placement
 
-### Option 3: Accept Current Performance
-If uploads are async and non-blocking, the latency may be acceptable.
+**Why this works:**
+- Queue consumer workers run consistently in WNAM (SEA colo)
+- Smart placement doesn't affect queue consumers (only HTTP fetch handlers)
+- Co-locating bucket with worker eliminates cross-region latency
+
+**Status:** ✅ Implemented
+**Expected improvement:** 1700ms → ~100-300ms (5-17x faster)
+
+### Smart Placement for Web Worker ✅
+
+Added smart placement to the web worker since it serves HTTP requests from various locations:
+
+```toml
+# In workers/web/wrangler.toml
+[placement]
+mode = "smart"
+```
+
+This allows the web worker to run closer to where users are accessing it, while still accessing the WNAM R2 bucket efficiently.
 
 ## Code Optimizations Applied
 

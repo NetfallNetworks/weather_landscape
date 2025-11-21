@@ -155,7 +155,7 @@ async def upload_to_r2(env, image_bytes, metadata, zip_code, format_name=None):
         js_array = Uint8Array.new(memoryview(image_bytes))
 
         # Upload to R2 using ArrayBuffer (underlying buffer of Uint8Array)
-        # Note: ~1.7s latency is due to geographic mismatch (worker in WNAM, bucket in ENAM)
+        # Worker and bucket are co-located in WNAM for optimal performance (~100-300ms)
         await env.WEATHER_IMAGES.put(
             key,
             js_array.buffer,

@@ -12,6 +12,11 @@ workers_dev = false
 # Disable preview URLs - requires custom domain with zero trust
 preview_urls = false
 
+# Smart Placement - optimize execution location based on R2/KV access patterns
+# Web worker serves HTTP requests from various locations, so this helps
+[placement]
+mode = "smart"
+
 # Workers Logs - enables log collection for visibility during runs
 [observability.logs]
 enabled = true
@@ -43,9 +48,11 @@ globs = ["**/*.css"]
 fallthrough = true
 
 # R2 Bucket Binding - stores generated weather landscape images
+# Using WNAM bucket to match landscape-generator worker location
 [[r2_buckets]]
 binding = "WEATHER_IMAGES"
-bucket_name = "weather-landscapes"
+bucket_name = "weather-landscapes-wnam"
+jurisdiction = "wnam"
 
 # KV Namespace Binding - stores configuration and metadata
 # Note: YOUR_KV_NAMESPACE_ID is a placeholder kept in git

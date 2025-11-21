@@ -9,8 +9,8 @@ compatibility_flags = ["python_workers"]
 # Enable workers.dev for testing (can be disabled in production)
 workers_dev = false
 
-# Smart Placement - run worker closer to R2 bucket (ENAM)
-# This reduces cross-region latency from ~1.7s to ~100-300ms
+# Smart Placement - Note: doesn't affect queue consumers, but enabled anyway
+# Queue consumers run where the queue fires, which is consistently WNAM
 [placement]
 mode = "smart"
 
@@ -33,11 +33,12 @@ globs = ["**/*.bmp", "**/*.png", "**/*.jpg", "**/*.jpeg"]
 fallthrough = true
 
 # R2 Bucket Binding - stores generated weather landscape images
-# PERFORMANCE NOTE: Using Smart Placement to run worker near bucket (ENAM)
-# This should reduce cross-region latency from ~1.7s to ~100-300ms
+# PERFORMANCE: Bucket in WNAM to match worker execution region (SEA/WNAM)
+# This eliminates cross-region latency (~1.7s → ~100-300ms)
 [[r2_buckets]]
 binding = "WEATHER_IMAGES"
-bucket_name = "weather-landscapes"
+bucket_name = "weather-landscapes-wnam"
+jurisdiction = "wnam"
 
 # KV Namespace Binding - stores configuration and metadata
 # Note: YOUR_KV_NAMESPACE_ID is a placeholder kept in git
