@@ -155,15 +155,19 @@ async def upload_to_r2(env, image_bytes, metadata, zip_code, format_name=None):
 
         start_conversion = time.time()
         from js import Uint8Array
-        js_array = Uint8Array.new(memoryview(image_bytes))
-        conversion_ms = (time.time() - start_conversion) * 1000
-        print(f"  Uint8Array conversion took: {conversion_ms:.2f}ms")
 
-        # Now time the actual R2 network call
+        # Try using .buffer property to pass the underlying ArrayBuffer instead of Uint8Array
+        # This might avoid a copy in the Workers→R2 path
+        js_array = Uint8Array.new(memoryview(image_bytes))
+        array_buffer = js_array.buffer
+        conversion_ms = (time.time() - start_conversion) * 1000
+        print(f"  Uint8Array→ArrayBuffer conversion took: {conversion_ms:.2f}ms")
+
+        # Now time the actual R2 network call with ArrayBuffer
         start_upload = time.time()
         await env.WEATHER_IMAGES.put(
             key,
-            js_array,
+            array_buffer,
             {
                 'httpMetadata': {
                     'contentType': format_info['mime_type'],
