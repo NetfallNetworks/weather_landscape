@@ -13,7 +13,7 @@ import json
 from datetime import datetime
 from workers import WorkerEntrypoint
 
-from shared import get_active_zips, to_js
+from scheduler_utils import get_active_zips, to_js
 
 
 class Default(WorkerEntrypoint):

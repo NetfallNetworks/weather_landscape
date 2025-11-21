@@ -21,23 +21,8 @@ enabled = true
 head_sampling_rate = 1
 persist = true
 
-# Bundle image files as Data modules (needed for shared imports)
-[[rules]]
-type = "Data"
-globs = ["**/*.bmp", "**/*.png", "**/*.jpg", "**/*.jpeg"]
-fallthrough = true
-
-# Bundle HTML templates as Text modules
-[[rules]]
-type = "Text"
-globs = ["src/templates/*.html"]
-fallthrough = true
-
-# Bundle CSS files as Text modules
-[[rules]]
-type = "Text"
-globs = ["**/*.css"]
-fallthrough = true
+# No bundle rules needed - scheduler only needs Python code
+# (Images, templates, CSS are bundled in other workers that need them)
 
 # Cron Trigger - runs every 5 minutes to schedule ZIP processing
 [triggers]
