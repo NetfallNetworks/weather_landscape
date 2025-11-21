@@ -132,14 +132,20 @@ class OpenWeatherMap():
         assert cfg!=None
         assert cfg.OWM_LAT!=None
         assert cfg.OWM_LON!=None
-        assert cfg.OWM_KEY!=None
-        
+
         self.cfg = cfg
-        reqstr = "lat=%.4f&lon=%.4f&mode=json&APPID=%s" % (self.LAT,self.LON,self.cfg.OWM_KEY)
-        self.URL_FOREAST = self.OWMURL+"forecast?"+reqstr
-        self.URL_CURR =  self.OWMURL+"weather?"+reqstr
         self.f = []
-        
+
+        # Only build API URLs if we have a valid API key
+        # Workers that use cached data (FromJSON) don't need the URLs
+        if cfg.OWM_KEY and cfg.OWM_KEY != "000000000000000000":
+            reqstr = "lat=%.4f&lon=%.4f&mode=json&APPID=%s" % (self.LAT,self.LON,self.cfg.OWM_KEY)
+            self.URL_FOREAST = self.OWMURL+"forecast?"+reqstr
+            self.URL_CURR =  self.OWMURL+"weather?"+reqstr
+        else:
+            self.URL_FOREAST = None
+            self.URL_CURR = None
+
         if not os.path.exists(self.cfg.WORK_DIR):
             os.makedirs(self.cfg.WORK_DIR)
 
@@ -169,6 +175,10 @@ class OpenWeatherMap():
 
     async def FromWWW(self):
         """Fetch weather data from OpenWeatherMap API (async for Cloudflare Workers)"""
+
+        # Ensure we have API credentials before making calls
+        if not self.URL_FOREAST or not self.URL_CURR:
+            raise RuntimeError("Cannot call FromWWW without API key - use FromJSON with cached data instead")
 
         if CLOUDFLARE_WORKER:
             # Use JavaScript fetch API for Cloudflare Workers

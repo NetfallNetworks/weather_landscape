@@ -123,7 +123,7 @@ class Default(WorkerEntrypoint):
         print(f"  Template: {weather_config.TEMPLATE_FILENAME}")
 
         # Generate image using pre-fetched weather data (no API key required)
-        wl = WeatherLandscape(weather_config, require_api_key=False)
+        wl = WeatherLandscape(weather_config)
         img = await wl.MakeImageFromData(weather_data)
 
         # Convert PIL Image to bytes

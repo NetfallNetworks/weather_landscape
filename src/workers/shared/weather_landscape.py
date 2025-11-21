@@ -10,10 +10,8 @@ import secrets
 class WeatherLandscape:
 
 
-    def __init__(self,configuration:WLBaseSettings, require_api_key=True):
+    def __init__(self,configuration:WLBaseSettings):
         self.cfg = WLBaseSettings.Fill( configuration, secrets )
-        if require_api_key:
-            assert self.cfg.OWM_KEY != "000000000000000000",  "Set OWM_KEY variable to your OpenWeather API key in secrets.py"
 
 
     async def MakeImage(self):
@@ -66,6 +64,8 @@ class WeatherLandscape:
         import io
         from .asset_loader import get_global_loader
 
+        # Create OpenWeatherMap instance
+        # Note: No API key needed since we're using pre-fetched data
         owm = OpenWeatherMap(self.cfg)
 
         # Load from pre-fetched data instead of making API calls
