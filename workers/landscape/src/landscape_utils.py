@@ -149,25 +149,16 @@ async def upload_to_r2(env, image_bytes, metadata, zip_code, format_name=None):
             'variant': format_name
         }
 
-        # Convert Python bytes to JavaScript Uint8Array for R2
-        # Time each step separately to identify the bottleneck
-        import time
-
-        start_conversion = time.time()
+        # Convert Python bytes to JavaScript ArrayBuffer for R2
+        # Use memoryview for efficient buffer protocol conversion
         from js import Uint8Array
-
-        # Try using .buffer property to pass the underlying ArrayBuffer instead of Uint8Array
-        # This might avoid a copy in the Workers→R2 path
         js_array = Uint8Array.new(memoryview(image_bytes))
-        array_buffer = js_array.buffer
-        conversion_ms = (time.time() - start_conversion) * 1000
-        print(f"  Uint8Array→ArrayBuffer conversion took: {conversion_ms:.2f}ms")
 
-        # Now time the actual R2 network call with ArrayBuffer
-        start_upload = time.time()
+        # Upload to R2 using ArrayBuffer (underlying buffer of Uint8Array)
+        # Note: ~1.7s latency is due to geographic mismatch (worker in WNAM, bucket in ENAM)
         await env.WEATHER_IMAGES.put(
             key,
-            array_buffer,
+            js_array.buffer,
             {
                 'httpMetadata': {
                     'contentType': format_info['mime_type'],
@@ -175,11 +166,8 @@ async def upload_to_r2(env, image_bytes, metadata, zip_code, format_name=None):
                 'customMetadata': custom_metadata
             }
         )
-        upload_ms = (time.time() - start_upload) * 1000
-        print(f"  R2.put network call took: {upload_ms:.2f}ms")
 
-        total_ms = conversion_ms + upload_ms
-        print(f"Uploaded {key} to R2 ({len(image_bytes)} bytes) - conversion: {conversion_ms:.2f}ms, network: {upload_ms:.2f}ms, total: {total_ms:.2f}ms)")
+        print(f"Uploaded {key} to R2 ({len(image_bytes)} bytes)")
 
         # Save metadata to KV (per-ZIP-format)
         await env.CONFIG.put(
