@@ -26,6 +26,10 @@ class ParsedWeatherData:
         self.cfg = cfg
         self.f = []
 
+        # Store location coordinates from config
+        self.LAT = cfg.OWM_LAT
+        self.LON = cfg.OWM_LON
+
         # Capture timezone offset from API (in seconds from UTC)
         self.timezone_offset = current_data.get('timezone', 0)
         print(f"🌍 Location timezone offset: {self.timezone_offset}s ({self.timezone_offset/3600}h from UTC)")
