@@ -18,9 +18,7 @@ from shared import (
     WorkerConfig,
     FORMAT_CONFIGS,
     get_weather_data,
-    upload_to_r2,
-    extract_trace_context,
-    log_with_trace
+    upload_to_r2
 )
 
 

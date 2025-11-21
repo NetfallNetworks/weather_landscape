@@ -27,11 +27,7 @@ from shared import (
     remove_format_from_zip,
     add_zip_to_active,
     get_all_zips_from_r2,
-    get_formats_per_zip,
-    generate_trace_id,
-    add_trace_context,
-    log_with_trace,
-    debug_trace_propagation
+    get_formats_per_zip
 )
 
 
