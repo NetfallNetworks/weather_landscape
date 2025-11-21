@@ -10,10 +10,8 @@ import secrets
 class WeatherLandscape:
 
 
-    def __init__(self,configuration:WLBaseSettings, require_api_key=True):
+    def __init__(self,configuration:WLBaseSettings):
         self.cfg = WLBaseSettings.Fill( configuration, secrets )
-        if require_api_key:
-            assert self.cfg.OWM_KEY != "000000000000000000",  "Set OWM_KEY variable to your OpenWeather API key in secrets.py"
 
 
     async def MakeImage(self):
@@ -65,11 +63,10 @@ class WeatherLandscape:
         from PIL import Image
         import io
         from .asset_loader import get_global_loader
+        from .p_weather.weather_data import ParsedWeatherData
 
-        owm = OpenWeatherMap(self.cfg)
-
-        # Load from pre-fetched data instead of making API calls
-        owm.FromJSON(weather_data['current'], weather_data['forecast'])
+        # Parse the weather data (no API calls, no OpenWeatherMap class needed)
+        weather = ParsedWeatherData(self.cfg, weather_data['current'], weather_data['forecast'])
 
         # Load the template image using the asset loader
         try:
@@ -90,7 +87,7 @@ class WeatherLandscape:
             img = Image.open(self.cfg.TEMPLATE_FILENAME)
 
         art = DrawWeather(img, self.cfg)
-        img = art.Draw(owm)
+        img = art.Draw(weather)
 
         return img
 

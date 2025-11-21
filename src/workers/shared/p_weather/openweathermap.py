@@ -133,13 +133,15 @@ class OpenWeatherMap():
         assert cfg.OWM_LAT!=None
         assert cfg.OWM_LON!=None
         assert cfg.OWM_KEY!=None
-        
+
         self.cfg = cfg
+        self.f = []
+
+        # Build API URLs (this class is only used when making API calls)
         reqstr = "lat=%.4f&lon=%.4f&mode=json&APPID=%s" % (self.LAT,self.LON,self.cfg.OWM_KEY)
         self.URL_FOREAST = self.OWMURL+"forecast?"+reqstr
         self.URL_CURR =  self.OWMURL+"weather?"+reqstr
-        self.f = []
-        
+
         if not os.path.exists(self.cfg.WORK_DIR):
             os.makedirs(self.cfg.WORK_DIR)
 
