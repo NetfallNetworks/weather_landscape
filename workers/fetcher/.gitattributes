@@ -1,0 +1,14 @@
+# Ensure shell scripts always use LF line endings
+*.sh text eol=lf
+
+# Python files should use LF
+*.py text eol=lf
+
+# Markdown files
+*.md text eol=lf
+
+# Config files
+*.toml text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
