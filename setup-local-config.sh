@@ -31,12 +31,11 @@ echo "🔧 Generating local wrangler config files..."
 
 # Array of wrangler config files (path:destination format for different directories)
 CONFIGS=(
-    "wrangler.toml"
+    "workers/web/wrangler.toml"
     "workers/landscape/wrangler.toml"
     "workers/scheduler/wrangler.toml"
     "workers/fetcher/wrangler.toml"
     "workers/dispatcher/wrangler.toml"
-    "workers/web/wrangler.toml"
 )
 
 # Function to replace KV namespace IDs based on binding names
