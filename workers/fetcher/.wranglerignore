@@ -1,0 +1,14 @@
+# Ignore virtual environments
+.venv/
+.venv-workers/
+venv/
+env/
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore local configs
+wrangler.local.toml
+.dev.vars

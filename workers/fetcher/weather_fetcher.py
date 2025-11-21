@@ -15,8 +15,8 @@ from datetime import datetime
 from workers import WorkerEntrypoint
 from js import JSON
 
-from .config import WorkerConfig, to_js
-from .kv_utils import geocode_zip, store_weather_data, fetch_weather_from_owm
+from config import WorkerConfig, to_js
+from kv_utils import geocode_zip, store_weather_data, fetch_weather_from_owm
 
 
 class Default(WorkerEntrypoint):

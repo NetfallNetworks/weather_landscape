@@ -7,7 +7,7 @@ import json
 from datetime import datetime
 from js import fetch
 
-from .config import FORMAT_CONFIGS, DEFAULT_FORMAT
+from config import FORMAT_CONFIGS, DEFAULT_FORMAT
 
 
 async def geocode_zip(env, zip_code, api_key):
