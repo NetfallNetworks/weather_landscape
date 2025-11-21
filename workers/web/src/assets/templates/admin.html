@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Weather Landscape Admin</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body class="admin-page">
+    <div class="hamburger-menu">
+        <button class="hamburger-btn" onclick="toggleMenu()">☰</button>
+        <div class="menu-dropdown" id="menu">
+            <a href="/">🏠 Home</a>
+            <a href="/forecasts">📍 Forecasts</a>
+            <a href="/guide">📖 Reading Guide</a>
+            <a href="/admin" class="active">⚙️ Admin</a>
+        </div>
+    </div>
+    <script>
+        function toggleMenu() {
+            document.getElementById('menu').classList.toggle('show');
+        }
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.hamburger-menu')) {
+                document.getElementById('menu').classList.remove('show');
+            }
+        });
+    </script>
+
+    <div class="container">
+        <header>
+            <h1>🌤️ Weather Landscape Admin</h1>
+            <p class="subtitle">Manage ZIP codes, formats, and trigger generation</p>
+        </header>
+
+        <div class="add-zip-section">
+        <h2>Add New ZIP Code</h2>
+        <div class="add-zip-form">
+            <input type="text" id="new-zip-input" class="add-zip-input"
+                placeholder="12345" maxlength="5" pattern="[0-9]{5}">
+            <button class="btn btn-add" onclick="addNewZip()" id="add-zip-btn">Add ZIP</button>
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>ZIP Code</th>
+                    <th>Active</th>
+                    <th>Configured Formats</th>
+                    <th>Available in R2</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                $zip_table_rows
+            </tbody>
+        </table>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type + ' show';
+            setTimeout(() => { toast.className = 'toast'; }, 3000);
+        }
+
+        async function toggleActive(zip, isActive) {
+            const endpoint = isActive ? '/admin/activate' : '/admin/deactivate';
+            try {
+                const resp = await fetch(endpoint + '?zip=' + zip, { method: 'POST' });
+                const data = await resp.json();
+                if (data.success) {
+                    showToast('ZIP ' + zip + (isActive ? ' activated' : ' deactivated'), 'success');
+                } else {
+                    showToast('Error: ' + (data.error || 'Unknown error'), 'error');
+                }
+            } catch (e) {
+                showToast('Network error: ' + e.message, 'error');
+            }
+        }
+
+        async function toggleFormat(zip, format, isEnabled) {
+            const endpoint = isEnabled ? '/admin/formats/add' : '/admin/formats/remove';
+            try {
+                const resp = await fetch(endpoint + '?zip=' + zip + '&format=' + format, { method: 'POST' });
+                const data = await resp.json();
+                if (data.success) {
+                    showToast(format + (isEnabled ? ' enabled' : ' disabled') + ' for ' + zip, 'success');
+                } else {
+                    showToast('Error: ' + (data.error || 'Unknown error'), 'error');
+                    // Revert checkbox on error
+                    const checkbox = document.querySelector('input[data-zip="' + zip + '"][data-format="' + format + '"]');
+                    if (checkbox) checkbox.checked = !isEnabled;
+                }
+            } catch (e) {
+                showToast('Network error: ' + e.message, 'error');
+                // Revert checkbox on error
+                const checkbox = document.querySelector('input[data-zip="' + zip + '"][data-format="' + format + '"]');
+                if (checkbox) checkbox.checked = !isEnabled;
+            }
+        }
+
+        async function generateZip(zip) {
+            const btn = document.getElementById('gen-' + zip);
+            const originalText = btn.textContent;
+
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+            btn.className = 'btn btn-generate loading';
+
+            try {
+                const resp = await fetch('/admin/generate?zip=' + zip, { method: 'POST' });
+                const data = await resp.json();
+                if (data.success) {
+                    btn.textContent = 'Queued!';
+                    btn.className = 'btn btn-generate success';
+                    showToast(data.message, 'success');
+                    // Reload after short delay to update R2 available column
+                    setTimeout(() => location.reload(), 3000);
+                } else {
+                    btn.textContent = 'Error';
+                    btn.className = 'btn btn-generate error';
+                    showToast('Error: ' + (data.error || 'Unknown error'), 'error');
+                }
+            } catch (e) {
+                btn.textContent = 'Error';
+                btn.className = 'btn btn-generate error';
+                showToast('Network error: ' + e.message, 'error');
+            }
+
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.textContent = originalText;
+                btn.className = 'btn btn-generate';
+            }, 2000);
+        }
+
+        async function addNewZip() {
+            const input = document.getElementById('new-zip-input');
+            const btn = document.getElementById('add-zip-btn');
+            const zip = input.value.trim();
+
+            // Validate ZIP code
+            if (!/^\d{5}$$/.test(zip)) {
+                showToast('Please enter a valid 5-digit ZIP code', 'error');
+                input.focus();
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Adding...';
+
+            try {
+                // First activate the ZIP
+                showToast('Activating ZIP ' + zip + '...', 'info');
+                const activateResp = await fetch('/admin/activate?zip=' + zip, { method: 'POST' });
+                const activateData = await activateResp.json();
+
+                if (!activateData.success) {
+                    throw new Error(activateData.error || 'Failed to activate ZIP');
+                }
+
+                // Then generate initial images
+                showToast('Generating images for ' + zip + '...', 'info');
+                const generateResp = await fetch('/admin/generate?zip=' + zip, { method: 'POST' });
+                const generateData = await generateResp.json();
+
+                if (generateData.success) {
+                    showToast('Added ZIP ' + zip + ' with ' + generateData.formats.length + ' format(s)', 'success');
+                    input.value = '';
+                    // Reload to show new ZIP
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    throw new Error(generateData.error || 'Failed to generate images');
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Add ZIP';
+        }
+
+        // Allow Enter key to add ZIP
+        document.getElementById('new-zip-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') addNewZip();
+        });
+    </script>
+
+    <footer>
+        <p>Made with ❤️ for weather lovers who prefer pictures over spreadsheets</p>
+        <p style="margin-top: 0.5rem; font-size: 0.9rem;">
+            Based on the original <a href="https://github.com/lds133/weather_landscape" target="_blank">Weather Landscape</a> project by lds133
+        </p>
+    </footer>
+    </div>
+</body>
+</html>

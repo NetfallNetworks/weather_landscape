@@ -1,0 +1,12 @@
+[project]
+name = "weather-landscape-web"
+version = "0.1.0"
+description = "Web worker for Weather Landscape - minimal dependencies"
+requires-python = ">=3.12"
+# NO dependencies needed - web worker only serves HTML/CSS and reads from R2/KV
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "workers-py>=1.7.0",  # Required for Cloudflare Workers runtime
+]

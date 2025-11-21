@@ -36,6 +36,7 @@ CONFIGS=(
     "workers/scheduler/wrangler.toml"
     "workers/fetcher/wrangler.toml"
     "workers/dispatcher/wrangler.toml"
+    "workers/web/wrangler.toml"
 )
 
 # Function to replace KV namespace IDs based on binding names

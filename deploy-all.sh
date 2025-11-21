@@ -15,8 +15,8 @@ echo ""
 # Deploy all workers with delays to avoid rate limiting
 echo "📦 Deploying workers..."
 
-echo "Deploying web worker..."
-uv run pywrangler deploy -c wrangler.local.toml
+echo "Deploying web worker (isolated environment)..."
+(cd workers/web && uv run pywrangler deploy -c wrangler.local.toml)
 sleep 3
 
 echo "Deploying landscape generator (isolated environment)..."
