@@ -1,29 +1,31 @@
 # R2 Bucket Migration: ENAM → WNAM
 
 ## Context
-Worker runs consistently in SEA/WNAM region, but R2 bucket is in ENAM.
-This causes ~1.7s cross-region latency for 3KB uploads.
+Worker runs consistently in SEA/WNAM region, but R2 bucket was in ENAM.
+This caused ~1.7s cross-region latency for 3KB uploads.
 
 ## Migration Steps
 
-### 1. Create New WNAM Bucket
+### 1. Create New WNAM Bucket ✅
 ```bash
-wrangler r2 bucket create weather-landscapes-wnam --jurisdiction wnam
+uv run pywrangler r2 bucket create weather-landscapes-wnam --jurisdiction wnam
 ```
+**Status:** ✅ Complete
 
-### 2. Update Worker Configuration
-Update `workers/landscape/wrangler.toml`:
-```toml
-[[r2_buckets]]
-binding = "WEATHER_IMAGES"
-bucket_name = "weather-landscapes-wnam"
-jurisdiction = "wnam"
-```
+### 2. Configuration Already Updated ✅
+Both workers are configured to use the new bucket:
+- `workers/landscape/wrangler.toml`: Uses `weather-landscapes-wnam`
+- `workers/web/wrangler.toml`: Uses `weather-landscapes-wnam`
 
-### 3. Deploy Updated Worker
+**Status:** ✅ Complete
+
+### 3. Deploy Updated Workers
 ```bash
 cd workers/landscape
-wrangler deploy
+uv run pywrangler deploy
+
+cd ../web
+uv run pywrangler deploy
 ```
 
 ### 4. Verify Performance
@@ -32,23 +34,23 @@ Check observability traces for `r2_put` span duration:
 - **Expected after:** ~100-300ms
 
 ### 5. Migrate Existing Data (Optional)
-If you need to preserve existing images:
+If you need to preserve existing images from the old ENAM bucket:
 
 ```bash
 # List all objects in old bucket
-wrangler r2 object list weather-landscapes
+uv run pywrangler r2 object list weather-landscapes
 
 # Copy each object (example for one file)
-wrangler r2 object get weather-landscapes 78729/rgb_light.png | \
-  wrangler r2 object put weather-landscapes-wnam 78729/rgb_light.png
+uv run pywrangler r2 object get weather-landscapes 78729/rgb_light.png | \
+  uv run pywrangler r2 object put weather-landscapes-wnam 78729/rgb_light.png
 ```
 
 For bulk migration, consider using rclone or S3-compatible tools.
 
 ### 6. Cleanup Old Bucket (After Verification)
-Once verified that new bucket works and data is migrated:
+Once verified that new bucket works and data is migrated (if needed):
 ```bash
-wrangler r2 bucket delete weather-landscapes
+uv run pywrangler r2 bucket delete weather-landscapes
 ```
 
 ## Expected Improvement
