@@ -51,7 +51,7 @@ fallthrough = true
 # Bucket created with location=wnam hint to match landscape-generator worker location
 [[r2_buckets]]
 binding = "WEATHER_IMAGES"
-bucket_name = "weather-landscapes"
+bucket_name = "weather-landscape-images"
 
 # KV Namespace Binding - stores configuration and metadata
 # Note: YOUR_KV_NAMESPACE_ID is a placeholder kept in git
