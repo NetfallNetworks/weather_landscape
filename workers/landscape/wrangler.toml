@@ -33,11 +33,11 @@ globs = ["**/*.bmp", "**/*.png", "**/*.jpg", "**/*.jpeg"]
 fallthrough = true
 
 # R2 Bucket Binding - stores generated weather landscape images
-# PERFORMANCE: Bucket has location=wnam to match worker execution region (SEA/WNAM)
+# PERFORMANCE: Bucket created with location=wnam hint for optimal performance
 # This eliminates cross-region latency (~1.7s → ~100-300ms)
 [[r2_buckets]]
 binding = "WEATHER_IMAGES"
-bucket_name = "weather-landscapes-wnam"
+bucket_name = "weather-landscapes"
 
 # KV Namespace Binding - stores configuration and metadata
 # Note: YOUR_KV_NAMESPACE_ID is a placeholder kept in git
