@@ -23,7 +23,7 @@ Created new bucket with location hint matching worker execution region:
 
 ```bash
 # Create new WNAM bucket with location hint
-uv run pywrangler r2 bucket create weather-landscapes-wnam --location-hint wnam
+uv run pywrangler r2 bucket create weather-landscapes-wnam --location wnam
 ```
 
 **Configuration updates:**

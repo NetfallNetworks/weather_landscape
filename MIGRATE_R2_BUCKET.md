@@ -8,7 +8,7 @@ This caused ~1.7s cross-region latency for 3KB uploads.
 
 ### 1. Create New WNAM Bucket ✅
 ```bash
-uv run pywrangler r2 bucket create weather-landscapes-wnam --location-hint wnam
+uv run pywrangler r2 bucket create weather-landscapes-wnam --location wnam
 ```
 **Status:** ✅ Complete
 

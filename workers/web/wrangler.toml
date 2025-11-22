@@ -48,7 +48,7 @@ globs = ["**/*.css"]
 fallthrough = true
 
 # R2 Bucket Binding - stores generated weather landscape images
-# Using WNAM bucket (location-hint=wnam) to match landscape-generator worker location
+# Using WNAM bucket (location=wnam) to match landscape-generator worker location
 [[r2_buckets]]
 binding = "WEATHER_IMAGES"
 bucket_name = "weather-landscapes-wnam"
