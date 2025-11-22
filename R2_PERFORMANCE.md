@@ -19,11 +19,11 @@ R2 uploads taking ~1.5-1.7 seconds for 3KB PNG files from landscape-generator wo
 
 ### Move R2 Bucket to WNAM ✅
 
-Created new bucket matching worker execution region:
+Created new bucket with location hint matching worker execution region:
 
 ```bash
-# Create new WNAM bucket
-wrangler r2 bucket create weather-landscapes-wnam --jurisdiction wnam
+# Create new WNAM bucket with location hint
+uv run pywrangler r2 bucket create weather-landscapes-wnam --location-hint wnam
 ```
 
 **Configuration updates:**
