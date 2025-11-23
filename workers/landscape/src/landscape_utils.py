@@ -149,16 +149,16 @@ async def upload_to_r2(env, image_bytes, metadata, zip_code, format_name=None):
             'variant': format_name
         }
 
-        # Convert Python bytes to JavaScript Uint8Array for R2
+        # Convert Python bytes to JavaScript ArrayBuffer for R2
+        # Use memoryview for efficient buffer protocol conversion
         from js import Uint8Array
-        js_array = Uint8Array.new(len(image_bytes))
-        for i, byte in enumerate(image_bytes):
-            js_array[i] = byte
+        js_array = Uint8Array.new(memoryview(image_bytes))
 
-        # Upload to R2
+        # Upload to R2 using ArrayBuffer (underlying buffer of Uint8Array)
+        # Worker and bucket are co-located in WNAM for optimal performance (~100-300ms)
         await env.WEATHER_IMAGES.put(
             key,
-            js_array,
+            js_array.buffer,
             {
                 'httpMetadata': {
                     'contentType': format_info['mime_type'],
