@@ -47,6 +47,12 @@ type = "Text"
 globs = ["**/*.css"]
 fallthrough = true
 
+# Bundle TXT files as Text modules (robots.txt, security.txt)
+[[rules]]
+type = "Text"
+globs = ["**/*.txt"]
+fallthrough = true
+
 # R2 Bucket Binding - stores generated weather landscape images
 # Bucket created with location=wnam hint to match landscape-generator worker location
 [[r2_buckets]]

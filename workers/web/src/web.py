@@ -87,6 +87,18 @@ class Default(WorkerEntrypoint):
         if path == 'favicon.ico' or path == 'favicon.png':
             return await self._serve_favicon(env)
 
+        # Route: Serve robots.txt
+        if path == 'robots.txt':
+            return await self._serve_robots()
+
+        # Route: Serve sitemap.xml
+        if path == 'sitemap.xml':
+            return await self._serve_sitemap(env)
+
+        # Route: Serve security.txt (both root and .well-known paths)
+        if path == 'security.txt' or ('.well-known' in path_parts and 'security.txt' in path_parts):
+            return await self._serve_security()
+
         # Route: Admin page
         if path == 'admin':
             return await self._serve_admin(env)
@@ -170,6 +182,89 @@ class Default(WorkerEntrypoint):
 
             return Response.new(js_array, headers=to_js({
                 "content-type": "image/png",
+                "cache-control": "public, max-age=86400"
+            }))
+        except Exception as e:
+            return Response.new('', {'status': 404})
+
+    async def _serve_robots(self):
+        """Serve robots.txt"""
+        try:
+            workers_dir = os.path.dirname(__file__)
+            robots_path = os.path.join(workers_dir, 'assets', 'robots.txt')
+            with open(robots_path, 'r') as f:
+                robots_content = f.read()
+
+            return Response.new(robots_content, headers=to_js({
+                "content-type": "text/plain; charset=UTF-8",
+                "cache-control": "public, max-age=86400"
+            }))
+        except Exception as e:
+            return Response.new('', {'status': 404})
+
+    async def _serve_sitemap(self, env):
+        """Serve dynamically generated sitemap.xml"""
+        try:
+            all_zips = await get_all_zips_from_r2(env)
+
+            # Build sitemap XML
+            sitemap_entries = []
+            sitemap_entries.append('<?xml version="1.0" encoding="UTF-8"?>')
+            sitemap_entries.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
+
+            # Add homepage
+            sitemap_entries.append('  <url>')
+            sitemap_entries.append('    <loc>https://weatherlandscape.com/</loc>')
+            sitemap_entries.append('    <changefreq>daily</changefreq>')
+            sitemap_entries.append('    <priority>1.0</priority>')
+            sitemap_entries.append('  </url>')
+
+            # Add guide page
+            sitemap_entries.append('  <url>')
+            sitemap_entries.append('    <loc>https://weatherlandscape.com/guide</loc>')
+            sitemap_entries.append('    <changefreq>weekly</changefreq>')
+            sitemap_entries.append('    <priority>0.8</priority>')
+            sitemap_entries.append('  </url>')
+
+            # Add forecasts page
+            sitemap_entries.append('  <url>')
+            sitemap_entries.append('    <loc>https://weatherlandscape.com/forecasts</loc>')
+            sitemap_entries.append('    <changefreq>hourly</changefreq>')
+            sitemap_entries.append('    <priority>0.9</priority>')
+            sitemap_entries.append('  </url>')
+
+            # Add all ZIP code pages
+            for zip_code in all_zips:
+                sitemap_entries.append('  <url>')
+                sitemap_entries.append(f'    <loc>https://weatherlandscape.com/{zip_code}</loc>')
+                sitemap_entries.append('    <changefreq>hourly</changefreq>')
+                sitemap_entries.append('    <priority>0.7</priority>')
+                sitemap_entries.append('  </url>')
+
+            sitemap_entries.append('</urlset>')
+
+            sitemap_xml = '\n'.join(sitemap_entries)
+
+            return Response.new(sitemap_xml, headers=to_js({
+                "content-type": "application/xml; charset=UTF-8",
+                "cache-control": "public, max-age=3600"
+            }))
+        except Exception as e:
+            return Response.new(
+                json.dumps({'error': f'Failed to generate sitemap: {str(e)}'}),
+                {'status': 500, 'headers': {'Content-Type': 'application/json'}}
+            )
+
+    async def _serve_security(self):
+        """Serve security.txt"""
+        try:
+            workers_dir = os.path.dirname(__file__)
+            security_path = os.path.join(workers_dir, 'assets', 'security.txt')
+            with open(security_path, 'r') as f:
+                security_content = f.read()
+
+            return Response.new(security_content, headers=to_js({
+                "content-type": "text/plain; charset=UTF-8",
                 "cache-control": "public, max-age=86400"
             }))
         except Exception as e:
