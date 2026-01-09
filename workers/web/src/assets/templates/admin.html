@@ -170,7 +170,7 @@
                 const generateData = await generateResp.json();
 
                 if (generateData.success) {
-                    showToast('Added ZIP ' + zip + ' with ' + generateData.formats.length + ' format(s)', 'success');
+                    showToast(generateData.message || 'Added ZIP ' + zip + ' successfully', 'success');
                     input.value = '';
                     // Reload to show new ZIP
                     setTimeout(() => location.reload(), 1500);
