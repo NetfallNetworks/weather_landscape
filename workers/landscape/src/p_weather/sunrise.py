@@ -1,6 +1,6 @@
 from math import cos,sin,acos,asin,tan  
 from math import degrees as deg, radians as rad  
-from datetime import date,datetime,time  
+from datetime import date,datetime,time,timedelta  
 
   
 
@@ -25,39 +25,44 @@ class sun:
   self.tzoffset = 0
   print(f"🕐 Sunrise calc: lat={lat}, lon={long}, tzoffset={self.tzoffset}h (UTC)")
     
- def sunrise(self,when=None):  
-  """ 
-  return the time of sunrise as a datetime.time object 
-  when is a datetime.datetime object. If none is given 
-  a local time zone is assumed (including daylight saving 
-  if present) 
-  """  
-  if when is None : when = datetime.now()  
-  self.__preptime(when)  
-  self.__calc()  
-  return sun.__timefromdecimalday(self.sunrise_t,when)  
-    
- def sunset(self,when=None):  
-  if when is None : when = datetime.now()  
-  self.__preptime(when)  
-  self.__calc()  
-  return sun.__timefromdecimalday(self.sunset_t,when)  
-    
- def solarnoon(self,when=None):  
-  if when is None : when = datetime.now()  
-  self.__preptime(when)  
-  self.__calc()  
-  return sun.__timefromdecimalday(self.solarnoon_t,when)  
+ def sunrise(self,when=None):
+  """
+  return the time of sunrise as a datetime.time object
+  when is a datetime.datetime object. If none is given
+  a local time zone is assumed (including daylight saving
+  if present)
+  """
+  if when is None : when = datetime.now()
+  self.__preptime(when)
+  self.__calc()
+  result = sun.__timefromdecimalday(self.sunrise_t,when)
+  print(f"🌅 sunrise calc: when={when}, sunrise_t={self.sunrise_t:.6f} ({self.sunrise_t*24:.2f}h) -> {result}")
+  return result
+
+ def sunset(self,when=None):
+  if when is None : when = datetime.now()
+  self.__preptime(when)
+  self.__calc()
+  result = sun.__timefromdecimalday(self.sunset_t,when)
+  print(f"🌇 sunset calc: when={when}, sunset_t={self.sunset_t:.6f} ({self.sunset_t*24:.2f}h) -> {result}")
+  return result
+
+ def solarnoon(self,when=None):
+  if when is None : when = datetime.now()
+  self.__preptime(when)
+  self.__calc()
+  result = sun.__timefromdecimalday(self.solarnoon_t,when)
+  print(f"☀️ solarnoon calc: when={when}, solarnoon_t={self.solarnoon_t:.6f} ({self.solarnoon_t*24:.2f}h) -> {result}")
+  return result  
    
- @staticmethod  
- def __timefromdecimalday(day,when):  
-  hours  = 24.0*day  
-  h      = int(hours)  
-  minutes= (hours-h)*60  
-  m      = int(minutes)  
-  seconds= (minutes-m)*60  
-  s      = int(seconds)  
-  return datetime(when.year, when.month, when.day, h, m, s)
+ @staticmethod
+ def __timefromdecimalday(day,when):
+  # Use timedelta to handle day boundary crossings
+  # (sunset past midnight UTC for western longitudes,
+  #  or sunrise before midnight UTC for far-east longitudes)
+  total_seconds = int(24.0 * 3600 * day)
+  base = datetime(when.year, when.month, when.day)
+  return base + timedelta(seconds=total_seconds)
   
  def __preptime(self,when):  
   """ 
