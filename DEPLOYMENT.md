@@ -7,7 +7,8 @@ This guide walks through deploying the Weather Landscape project as a Cloudflare
 1. **Cloudflare Account** with Workers enabled (free tier works!)
 2. **Wrangler CLI** installed and authenticated
 3. **OpenWeather API Key** (free tier at https://openweathermap.org/api)
-4. **Node.js/npm** (for Wrangler)
+4. **Node.js >= 20** and **npm** (for Wrangler)
+5. **uv** (Python package manager) - https://docs.astral.sh/uv/
 
 ## 🚀 Quick Start
 
@@ -39,32 +40,36 @@ wrangler kv namespace create CONFIG
 # Replace YOUR_KV_NAMESPACE_ID with your actual ID
 ```
 
-### Step 4: Deploy the Worker
+### Step 4: Set Up Local Config
 
 ```bash
-# Deploy to Cloudflare
-wrangler deploy
+# Copy the example env file and fill in your KV namespace ID from Step 3
+cp .wrangler.local.env.example .wrangler.local.env
 
-# You'll see output like:
-# Published weather-landscape-worker (X.XX sec)
-#   https://weather-landscape-worker.YOUR-SUBDOMAIN.workers.dev
+# Generate local wrangler config files for each worker
+./setup-local-config.sh
 ```
 
-### Step 5: Set Secrets
+### Step 5: Deploy Workers
+
+Each worker is deployed individually from its directory:
+
+```bash
+# Deploy all workers at once
+./deploy-all.sh
+
+# Or deploy a single worker (e.g., landscape generator)
+cd workers/landscape && uv run pywrangler deploy -c wrangler.local.toml
+```
+
+### Step 6: Set Secrets
 
 **IMPORTANT:** Secrets must be set AFTER the worker is deployed:
 
 ```bash
-# Set your OpenWeather API key as a secret
-wrangler secret put OWM_API_KEY --name weather-landscape-worker
+# Set your OpenWeather API key for the fetcher worker
+wrangler secret put OWM_API_KEY -c workers/fetcher/wrangler.toml
 # When prompted, paste your API key
-
-# Optionally, set custom coordinates (or use defaults in wrangler.toml)
-wrangler secret put DEFAULT_LAT --name weather-landscape-worker
-# Enter your latitude (e.g., 30.2672)
-
-wrangler secret put DEFAULT_LON --name weather-landscape-worker
-# Enter your longitude (e.g., -97.7431)
 ```
 
 ## 🔧 Configuration
@@ -304,22 +309,26 @@ See `CLOUDFLARE-STORAGE-GUIDE.md` for the hybrid approach implementation.
 
 ### Issue: "Module not found" errors
 
-**Solution:** Make sure all Python files are in the correct structure:
+**Solution:** Make sure you are deploying from the correct worker directory. Each worker has its own `src/` directory:
 ```
 weather_landscape/
-├── src/
-│   ├── index.py          # Worker entry point
-│   └── requirements.txt  # Python dependencies
-├── p_weather/            # Weather module (must be accessible)
-├── configs.py            # Configuration classes
-└── weather_landscape.py  # Main class
+├── workers/
+│   ├── landscape/           # Landscape generator worker
+│   │   ├── src/
+│   │   │   ├── landscape_generator.py  # Worker entry point
+│   │   │   ├── weather_landscape.py    # Main class
+│   │   │   ├── configs.py             # Configuration classes
+│   │   │   └── p_weather/             # Weather module
+│   │   ├── wrangler.toml
+│   │   └── pyproject.toml
+│   ├── web/                 # Web serving worker
+│   ├── fetcher/             # Weather data fetcher
+│   ├── scheduler/           # Job scheduler
+│   └── dispatcher/          # Job dispatcher
+├── deploy-all.sh
+├── setup-local-config.sh
+└── test_local_generation.py
 ```
-
-### Issue: Import errors with existing modules
-
-**Solution:** The worker needs access to the parent directory modules. You may need to:
-1. Copy necessary modules into `src/` directory, or
-2. Ensure proper Python path configuration in the worker
 
 ## 📊 Monitoring
 

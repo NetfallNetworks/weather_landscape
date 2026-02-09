@@ -2,8 +2,8 @@ import os
 import sys
 import asyncio
 
-# Import from src/ directory
-sys.path.insert(0, 'src')
+# Import from landscape worker src/ directory
+sys.path.insert(0, 'workers/landscape/src')
 from weather_landscape import WeatherLandscape
 from configs import *
 
