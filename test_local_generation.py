@@ -9,7 +9,7 @@ import asyncio
 import aiohttp
 
 # Import from src/ directory
-sys.path.insert(0, 'src')
+sys.path.insert(0, 'workers/landscape/src')
 from weather_landscape import WeatherLandscape
 from configs import WLConfig_RGB_White
 

@@ -194,8 +194,13 @@ class DrawWeather():
 
         for i in range(nforecasrt+1):
             # Calculate time markers (don't depend on forecast data)
-            t_sunrise = s.sunrise(tf)
-            t_sunset = s.sunset(tf)
+            # Check both current and previous day's sunrise/sunset to handle
+            # UTC day-boundary crossings (western longitudes where sunset
+            # falls past midnight UTC). Without this, crossing midnight causes
+            # s.sunset(tf) to jump to the NEXT day's sunset, creating a gap.
+            prev_day = tf - datetime.timedelta(days=1)
+            t_sunrise_candidates = [s.sunrise(tf), s.sunrise(prev_day)]
+            t_sunset_candidates = [s.sunset(tf), s.sunset(prev_day)]
 
             # Flowers use local clock time (12:00 and 00:00 in the location's timezone)
             # Convert current UTC time to local time
@@ -219,23 +224,28 @@ class DrawWeather():
             # Debug first few iterations and when we detect events
             if i < 5:
                 print(f"   [{i}] Range: {tf.strftime('%m/%d %H:%M')} to {(tf+dt).strftime('%m/%d %H:%M')}")
-                print(f"       Sunrise: {t_sunrise.strftime('%m/%d %H:%M')}, Sunset: {t_sunset.strftime('%m/%d %H:%M')}")
+                print(f"       Sunrise candidates: {[x.strftime('%m/%d %H:%M') for x in t_sunrise_candidates]}")
+                print(f"       Sunset candidates: {[x.strftime('%m/%d %H:%M') for x in t_sunset_candidates]}")
                 print(f"       Noon: {t_noon.strftime('%m/%d %H:%M')}, Midnight: {t_midn.strftime('%m/%d %H:%M')}")
 
             ymoon = ypos-ystep*5/8
 
             # Draw sun/moon/flowers regardless of forecast data availability
-            if (tf<=t_sunrise) and (tf+dt>t_sunrise) and (objcounter<2):
-                dx = self.TimeDiffToPixels(t_sunrise-tf)  - xstep/2
-                print(f"   ☀️ Drawing SUN at xpos={xpos}, dx={dx}, final={xpos+dx}")
-                self.sprite.Draw("sun",0,xpos+dx,ymoon)
-                objcounter+=1
+            for t_sunrise in t_sunrise_candidates:
+                if (tf<=t_sunrise) and (tf+dt>t_sunrise) and (objcounter<2):
+                    dx = self.TimeDiffToPixels(t_sunrise-tf)  - xstep/2
+                    print(f"   ☀️ Drawing SUN at xpos={xpos}, dx={dx}, final={xpos+dx}")
+                    self.sprite.Draw("sun",0,xpos+dx,ymoon)
+                    objcounter+=1
+                    break
 
-            if (tf<=t_sunset) and (tf+dt>t_sunset) and (objcounter<2):
-                dx = self.TimeDiffToPixels(t_sunset-tf)  - xstep/2
-                print(f"   🌙 Drawing MOON at xpos={xpos}, dx={dx}, final={xpos+dx}")
-                self.sprite.Draw("moon",0,xpos+dx,ymoon)
-                objcounter+=1
+            for t_sunset in t_sunset_candidates:
+                if (tf<=t_sunset) and (tf+dt>t_sunset) and (objcounter<2):
+                    dx = self.TimeDiffToPixels(t_sunset-tf)  - xstep/2
+                    print(f"   🌙 Drawing MOON at xpos={xpos}, dx={dx}, final={xpos+dx}")
+                    self.sprite.Draw("moon",0,xpos+dx,ymoon)
+                    objcounter+=1
+                    break
 
             if (tf<=t_noon) and (tf+dt>t_noon):
                 dx = self.TimeDiffToPixels(t_noon-tf)  - xstep/2
