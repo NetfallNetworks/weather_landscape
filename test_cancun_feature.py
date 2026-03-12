@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Tests for international location support (Cancun weather feature).
+Tests for international location support.
 Validates location validation, geocoding URL construction, and temperature unit selection.
 """
 
