@@ -115,6 +115,10 @@ class Default(WorkerEntrypoint):
         if path == 'forecasts' and not zip_from_path:
             return await self._serve_forecasts(env)
 
+        # Route: Weather API - JSON metadata for integrations (bots, notifications)
+        if zip_from_path and path == 'api':
+            return await self._serve_weather_api(env, zip_from_path, query_params)
+
         # Route: Serve image for ZIP
         if zip_from_path and path != 'status':
             return await self._serve_image(env, zip_from_path, query_params, path_parts)
@@ -458,6 +462,7 @@ class Default(WorkerEntrypoint):
             return Response.new(image_data, headers=to_js({
                 "content-type": mime_type,
                 "cache-control": "public, max-age=900",
+                "access-control-allow-origin": "*",
                 "x-generated-at": generated_at,
                 "x-zip-code": zip_code,
                 "x-format": requested_format,
@@ -468,6 +473,66 @@ class Default(WorkerEntrypoint):
             return Response.new(
                 json.dumps({'error': f'Failed to fetch image: {str(e)}'}),
                 {'status': 500, 'headers': {'Content-Type': 'application/json'}}
+            )
+
+    async def _serve_weather_api(self, env, zip_code, query_params):
+        """
+        Serve weather metadata as JSON for bot/notification integrations.
+
+        GET /{zip}/api - Returns JSON with image URLs and generation metadata.
+        Useful for Telegram bots, scheduled notifications, and external consumers.
+        """
+        try:
+            formats_available = {}
+
+            for fmt, fmt_info in FORMAT_CONFIGS.items():
+                extension = fmt_info['extension']
+                key = f"{zip_code}/{fmt}{extension}"
+                r2_object = await env.WEATHER_IMAGES.get(key)
+
+                if r2_object is not None:
+                    try:
+                        generated_at = r2_object.customMetadata['generated-at'] if r2_object.customMetadata else None
+                    except:
+                        generated_at = None
+
+                    formats_available[fmt] = {
+                        'title': fmt_info['title'],
+                        'mime_type': fmt_info['mime_type'],
+                        'generated_at': generated_at,
+                    }
+
+            if not formats_available:
+                return Response.new(
+                    json.dumps({'error': 'No weather images found for this ZIP code.', 'zip': zip_code}),
+                    {'status': 404, 'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    }}
+                )
+
+            response_data = {
+                'zip': zip_code,
+                'formats': formats_available,
+                'default_format': DEFAULT_FORMAT,
+                'timestamp': datetime.utcnow().isoformat() + 'Z'
+            }
+
+            return Response.new(
+                json.dumps(response_data, indent=2),
+                headers=to_js({
+                    "content-type": "application/json",
+                    "access-control-allow-origin": "*",
+                    "cache-control": "public, max-age=300"
+                })
+            )
+        except Exception as e:
+            return Response.new(
+                json.dumps({'error': f'Failed to fetch weather metadata: {str(e)}'}),
+                {'status': 500, 'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                }}
             )
 
     async def _serve_status(self, env):
