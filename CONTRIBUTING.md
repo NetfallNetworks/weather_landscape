@@ -168,12 +168,6 @@ git push origin feature/your-feature-name
   - README updated if needed
   - API changes documented
 
-- [ ] **Security**
-  - No secrets in code
-  - Input validation present
-  - Error handling implemented
-  - Security implications considered
-
 ### Testing Level DoD
 
 **Required for every code change:**
@@ -238,6 +232,64 @@ git push origin feature/your-feature-name
 - [ ] **Rollback Plan**
   - Previous worker versions identified
   - Rollback procedure tested if applicable
+
+### Security Level DoD
+
+**Required for every change. Security is by design, not by accident.**
+
+This is not a checklist you skim — it is a gate you must pass. If you cannot
+affirmatively check every applicable item, the change is not done.
+
+- [ ] **Threat Modeling**
+  - Attack surface identified for the change (What can an attacker reach? What can they influence?)
+  - Trust boundaries documented — where does untrusted input enter? (API responses, queue messages, KV reads, URL parameters)
+  - Failure modes enumerated — what happens when external dependencies return malicious data?
+  - If the change introduces a new endpoint, binding, or data flow: threat model written before implementation
+
+- [ ] **Input Validation & Data Integrity**
+  - All external input validated at the boundary — OpenWeatherMap responses, admin API parameters, queue message payloads, KV data
+  - Validation is allowlist-based (reject by default), not blocklist-based (allow by default)
+  - Data types enforced — no trusting that a JSON field is the right type, no implicit coercion
+  - Bounds checking on numeric inputs (ZIP codes, coordinates, temperature ranges, image dimensions)
+  - Path traversal prevention on any file or key construction from user input
+  - No deserialization of untrusted data without schema validation
+
+- [ ] **Secrets & Credential Management**
+  - Zero secrets in source code — no API keys, tokens, or passwords in any file, including test fixtures
+  - Secrets only accessed via Cloudflare Worker secrets (wrangler secret) or environment bindings
+  - No secrets logged, included in error messages, or returned in HTTP responses
+  - `.wrangler.local.env` and all secret-containing files in `.gitignore`
+  - Secret rotation plan exists for all credentials in use
+
+- [ ] **Authentication & Authorization**
+  - Admin endpoints require authentication — no security through obscurity (hidden URLs are not access control)
+  - Authorization checks cannot be bypassed by crafting requests (direct object reference, parameter tampering)
+  - Rate limiting considered for public-facing endpoints
+  - CORS policy explicitly configured — no wildcard origins in production
+
+- [ ] **Secure Communication**
+  - All external API calls use HTTPS — no HTTP fallbacks
+  - TLS certificate validation not disabled
+  - Webhook URLs validated before use
+  - No sensitive data in URL query parameters (use headers or body)
+
+- [ ] **Error Handling & Information Disclosure**
+  - Error responses do not leak internal state, stack traces, file paths, or infrastructure details
+  - Failed operations return generic messages to external callers, detailed logs internally
+  - No catch-and-ignore — all errors are logged with enough context to investigate
+  - Errors from one worker do not cascade to poison the queue pipeline
+
+- [ ] **Dependency & Supply Chain Security**
+  - Dependencies pinned to specific versions (in `pyproject.toml` and `uv.lock`)
+  - No unnecessary dependencies — each worker keeps minimal `pyproject.toml`
+  - New dependencies reviewed for maintenance status, known vulnerabilities, and permission scope
+  - No dynamic code execution from external sources (no `eval()`, no fetching code to execute)
+
+- [ ] **Defense in Depth**
+  - Security does not depend on a single control — if one layer fails, another catches it
+  - Worker isolation maintained — no cross-worker imports, each worker is its own trust boundary
+  - R2 bucket permissions are least-privilege — workers only get the access they need
+  - KV namespace access scoped per worker — no shared-everything bindings
 
 ---
 
