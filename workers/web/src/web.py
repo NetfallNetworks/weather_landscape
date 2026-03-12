@@ -21,6 +21,7 @@ from web_utils import (
     load_template,
     render_template,
     to_js,
+    is_valid_location,
     get_active_zips,
     get_formats_for_zip,
     add_format_to_zip,
@@ -79,7 +80,7 @@ class Default(WorkerEntrypoint):
         # Extract ZIP from path - matches /{zip} pattern
         zip_from_path = None
         for part in path_parts:
-            if part and part.isdigit() and len(part) == 5:
+            if part and is_valid_location(part):
                 zip_from_path = part
                 break
 
@@ -512,9 +513,9 @@ class Default(WorkerEntrypoint):
         """Handle POST /admin/activate"""
         try:
             zip_code = query_params.get('zip')
-            if not zip_code or not (zip_code.isdigit() and len(zip_code) == 5):
+            if not zip_code or not is_valid_location(zip_code):
                 return Response.new(
-                    json.dumps({'error': 'Invalid ZIP code. Must be 5 digits.'}),
+                    json.dumps({'error': 'Invalid location. Use US ZIP (78729) or international code (MX77400).'}),
                     {'status': 400, 'headers': {'Content-Type': 'application/json'}}
                 )
 
@@ -539,9 +540,9 @@ class Default(WorkerEntrypoint):
         """Handle POST /admin/deactivate"""
         try:
             zip_code = query_params.get('zip')
-            if not zip_code:
+            if not zip_code or not is_valid_location(zip_code):
                 return Response.new(
-                    json.dumps({'error': 'Missing ZIP code parameter'}),
+                    json.dumps({'error': 'Invalid location. Use US ZIP (78729) or international code (MX77400).'}),
                     {'status': 400, 'headers': {'Content-Type': 'application/json'}}
                 )
 
@@ -571,9 +572,9 @@ class Default(WorkerEntrypoint):
             zip_code = query_params.get('zip')
             format_name = query_params.get('format', '').lower().replace('-', '_')
 
-            if not zip_code or not (zip_code.isdigit() and len(zip_code) == 5):
+            if not zip_code or not is_valid_location(zip_code):
                 return Response.new(
-                    json.dumps({'error': 'Invalid ZIP code. Must be 5 digits.'}),
+                    json.dumps({'error': 'Invalid location. Use US ZIP (78729) or international code (MX77400).'}),
                     {'status': 400, 'headers': {'Content-Type': 'application/json'}}
                 )
 
@@ -607,9 +608,9 @@ class Default(WorkerEntrypoint):
             zip_code = query_params.get('zip')
             format_name = query_params.get('format', '').lower().replace('-', '_')
 
-            if not zip_code or not (zip_code.isdigit() and len(zip_code) == 5):
+            if not zip_code or not is_valid_location(zip_code):
                 return Response.new(
-                    json.dumps({'error': 'Invalid ZIP code. Must be 5 digits.'}),
+                    json.dumps({'error': 'Invalid location. Use US ZIP (78729) or international code (MX77400).'}),
                     {'status': 400, 'headers': {'Content-Type': 'application/json'}}
                 )
 
@@ -641,9 +642,9 @@ class Default(WorkerEntrypoint):
         """Handle GET /admin/formats"""
         try:
             zip_code = query_params.get('zip')
-            if not zip_code or not (zip_code.isdigit() and len(zip_code) == 5):
+            if not zip_code or not is_valid_location(zip_code):
                 return Response.new(
-                    json.dumps({'error': 'Invalid ZIP code. Must be 5 digits.'}),
+                    json.dumps({'error': 'Invalid location. Use US ZIP (78729) or international code (MX77400).'}),
                     {'status': 400, 'headers': {'Content-Type': 'application/json'}}
                 )
 
@@ -670,9 +671,9 @@ class Default(WorkerEntrypoint):
         """
         try:
             zip_code = query_params.get('zip')
-            if not zip_code or not (zip_code.isdigit() and len(zip_code) == 5):
+            if not zip_code or not is_valid_location(zip_code):
                 return Response.new(
-                    json.dumps({'error': 'Invalid ZIP code. Must be 5 digits.'}),
+                    json.dumps({'error': 'Invalid location. Use US ZIP (78729) or international code (MX77400).'}),
                     {'status': 400, 'headers': {'Content-Type': 'application/json'}}
                 )
 

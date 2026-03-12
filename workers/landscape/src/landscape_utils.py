@@ -54,7 +54,7 @@ class WorkerConfig:
 
         self.WORK_DIR = "/tmp"
 
-    def to_weather_config(self, lat, lon, format_name=None):
+    def to_weather_config(self, lat, lon, format_name=None, location_id=None):
         """
         Convert to WeatherLandscape config format
 
@@ -62,6 +62,8 @@ class WorkerConfig:
             lat: Latitude (required)
             lon: Longitude (required)
             format_name: Format name (e.g., 'rgb_light', 'bw', 'eink')
+            location_id: Location identifier (e.g. '78729', 'MX77400').
+                         International locations (CC prefix) use Celsius.
         """
         # Import at runtime to allow Pillow to load first
         import configs
@@ -78,6 +80,11 @@ class WorkerConfig:
         # Get the config class dynamically
         config_class = getattr(configs, format_info['class_name'])
         config = config_class()
+
+        # International locations use Celsius
+        if location_id and len(location_id) > 2 and location_id[:2].isalpha():
+            from p_weather.configuration import WLBaseSettings
+            config.TEMPUNITS_MODE = WLBaseSettings.TEMP_UNITS_CELSIUS
 
         config.OWM_KEY = self.OWM_KEY
         config.OWM_LAT = lat
