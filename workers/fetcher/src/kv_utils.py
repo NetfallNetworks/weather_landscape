@@ -16,7 +16,7 @@ async def geocode_zip(env, zip_code, api_key):
 
     Args:
         env: Worker environment (for KV access)
-        zip_code: US ZIP code as string
+        zip_code: Location identifier (US ZIP or CC+postal format)
         api_key: OpenWeatherMap API key
 
     Returns:
@@ -38,9 +38,19 @@ async def geocode_zip(env, zip_code, api_key):
         print(f"Warning: Failed to read geocoding cache for {zip_code}: {e}")
 
     # Not in cache, call OWM Geocoding API
-    print(f"Geocoding ZIP {zip_code} via OWM API...")
+    print(f"Geocoding location {zip_code} via OWM API...")
     try:
-        url = f"http://api.openweathermap.org/geo/1.0/zip?zip={zip_code},US&appid={api_key}"
+        # Parse location identifier for geocoding
+        if len(zip_code) > 2 and zip_code[:2].isalpha():
+            # International: CC prefix + postal (e.g. MX77400 -> 77400,MX)
+            country = zip_code[:2].upper()
+            postal = zip_code[2:]
+            geo_param = f"{postal},{country}"
+        else:
+            # US ZIP (e.g. 78729 -> 78729,US)
+            geo_param = f"{zip_code},US"
+
+        url = f"http://api.openweathermap.org/geo/1.0/zip?zip={geo_param}&appid={api_key}"
         response = await fetch(url)
 
         if response.status != 200:

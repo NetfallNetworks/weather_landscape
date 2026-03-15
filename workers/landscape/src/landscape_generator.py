@@ -115,7 +115,9 @@ class Default(WorkerEntrypoint):
             raise ValueError(f"Unknown format: {format_name}")
 
         # Create weather config for this format
-        weather_config = config.to_weather_config(lat=lat, lon=lon, format_name=format_name)
+        weather_config = config.to_weather_config(
+            lat=lat, lon=lon, format_name=format_name, location_id=zip_code
+        )
 
         # Debug logging
         print(f"  Config: {weather_config.__class__.__name__}")

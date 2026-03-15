@@ -4,9 +4,32 @@ Minimal utilities for the web worker - serving HTML/CSS and managing KV/R2
 
 import json
 import os
+import re
 from js import Object
 from pyodide.ffi import to_js as _to_js
 from string import Template
+
+
+def is_valid_location(loc_id):
+    """Validate location identifier.
+
+    Accepts:
+        - US ZIP code: exactly 5 digits (e.g. '78729')
+        - International: 2 uppercase letters + 4-10 digits (e.g. 'MX77400')
+
+    Args:
+        loc_id: Location identifier string.
+
+    Returns:
+        bool: True if valid.
+    """
+    if not loc_id or not isinstance(loc_id, str):
+        return False
+    if re.match(r'^\d{5}$', loc_id):
+        return True
+    if re.match(r'^[A-Z]{2}\d{4,10}$', loc_id):
+        return True
+    return False
 
 
 def to_js(obj):
@@ -220,7 +243,7 @@ async def get_all_zips_from_r2(env):
                 if '/' in key:
                     zip_code = key.split('/')[0]
                     # Validate it looks like a ZIP code (5 digits)
-                    if zip_code.isdigit() and len(zip_code) == 5:
+                    if is_valid_location(zip_code):
                         zip_codes.add(zip_code)
 
         return sorted(list(zip_codes))
@@ -250,7 +273,7 @@ async def get_formats_per_zip(env):
                 if '/' in key:
                     parts = key.split('/')
                     zip_code = parts[0]
-                    if zip_code.isdigit() and len(zip_code) == 5 and len(parts) > 1:
+                    if is_valid_location(zip_code) and len(parts) > 1:
                         # Extract format from filename (remove extension)
                         filename = parts[1]
                         format_name = filename.rsplit('.', 1)[0] if '.' in filename else filename

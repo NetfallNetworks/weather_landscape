@@ -33,11 +33,11 @@
         </header>
 
         <div class="add-zip-section">
-        <h2>Add New ZIP Code</h2>
+        <h2>Add New Location</h2>
         <div class="add-zip-form">
             <input type="text" id="new-zip-input" class="add-zip-input"
-                placeholder="12345" maxlength="5" pattern="[0-9]{5}">
-            <button class="btn btn-add" onclick="addNewZip()" id="add-zip-btn">Add ZIP</button>
+                placeholder="78729 or MX77400" maxlength="12" pattern="(\d{5}|[A-Z]{2}\d{4,10})">
+            <button class="btn btn-add" onclick="addNewZip()" id="add-zip-btn">Add</button>
         </div>
     </div>
 
@@ -45,7 +45,7 @@
         <table>
             <thead>
                 <tr>
-                    <th>ZIP Code</th>
+                    <th>Location</th>
                     <th>Active</th>
                     <th>Configured Formats</th>
                     <th>Available in R2</th>
@@ -144,33 +144,35 @@
             const btn = document.getElementById('add-zip-btn');
             const zip = input.value.trim();
 
-            // Validate ZIP code
-            if (!/^\d{5}$$/.test(zip)) {
-                showToast('Please enter a valid 5-digit ZIP code', 'error');
+            // Validate location code
+            if (!/^(\d{5}|[A-Z]{2}\d{4,10})$/.test(zip.toUpperCase())) {
+                showToast('Enter a US ZIP (78729) or international code (MX77400)', 'error');
                 input.focus();
                 return;
             }
+
+            const normalizedZip = zip.toUpperCase();
 
             btn.disabled = true;
             btn.textContent = 'Adding...';
 
             try {
-                // First activate the ZIP
-                showToast('Activating ZIP ' + zip + '...', 'info');
-                const activateResp = await fetch('/admin/activate?zip=' + zip, { method: 'POST' });
+                // First activate the location
+                showToast('Activating ' + normalizedZip + '...', 'info');
+                const activateResp = await fetch('/admin/activate?zip=' + normalizedZip, { method: 'POST' });
                 const activateData = await activateResp.json();
 
                 if (!activateData.success) {
-                    throw new Error(activateData.error || 'Failed to activate ZIP');
+                    throw new Error(activateData.error || 'Failed to activate location');
                 }
 
                 // Then generate initial images
-                showToast('Generating images for ' + zip + '...', 'info');
-                const generateResp = await fetch('/admin/generate?zip=' + zip, { method: 'POST' });
+                showToast('Generating images for ' + normalizedZip + '...', 'info');
+                const generateResp = await fetch('/admin/generate?zip=' + normalizedZip, { method: 'POST' });
                 const generateData = await generateResp.json();
 
                 if (generateData.success) {
-                    showToast('Added ZIP ' + zip + ' with ' + generateData.formats.length + ' format(s)', 'success');
+                    showToast('Added ' + normalizedZip + ' with ' + generateData.formats.length + ' format(s)', 'success');
                     input.value = '';
                     // Reload to show new ZIP
                     setTimeout(() => location.reload(), 1500);
@@ -182,7 +184,7 @@
             }
 
             btn.disabled = false;
-            btn.textContent = 'Add ZIP';
+            btn.textContent = 'Add';
         }
 
         // Allow Enter key to add ZIP

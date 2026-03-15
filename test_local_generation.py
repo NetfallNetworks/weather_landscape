@@ -16,16 +16,25 @@ from configs import WLConfig_RGB_White
 
 async def geocode_zip(zip_code, api_key):
     """
-    Geocode a US ZIP code to lat/lon using OpenWeatherMap API
+    Geocode a location identifier to lat/lon using OpenWeatherMap API
 
     Args:
-        zip_code: US ZIP code as string
+        zip_code: Location identifier (US ZIP or CC+postal format)
         api_key: OpenWeatherMap API key
 
     Returns:
         tuple: (lat, lon)
     """
-    url = f"http://api.openweathermap.org/geo/1.0/zip?zip={zip_code},US&appid={api_key}"
+    # Parse location identifier for geocoding
+    if len(zip_code) > 2 and zip_code[:2].isalpha():
+        # International: CC prefix + postal (e.g. MX77400 -> 77400,MX)
+        country = zip_code[:2].upper()
+        postal = zip_code[2:]
+        geo_param = f"{postal},{country}"
+    else:
+        # US ZIP (e.g. 78729 -> 78729,US)
+        geo_param = f"{zip_code},US"
+    url = f"http://api.openweathermap.org/geo/1.0/zip?zip={geo_param}&appid={api_key}"
 
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
@@ -59,8 +68,8 @@ async def main():
         if not api_key or api_key == "000000000000000000":
             raise AssertionError("API key not set")
 
-        # Geocode ZIP code to lat/lon (like the deployed worker)
-        print(f"Geocoding ZIP {zip_code}...")
+        # Geocode location to lat/lon (like the deployed worker)
+        print(f"Geocoding {zip_code}...")
         lat, lon = await geocode_zip(zip_code, api_key)
         print(f"  Coordinates: {lat}, {lon}")
         print()
@@ -70,6 +79,11 @@ async def main():
         config.OWM_KEY = api_key
         config.OWM_LAT = lat
         config.OWM_LON = lon
+
+        # International locations use Celsius
+        if len(zip_code) > 2 and zip_code[:2].isalpha():
+            from p_weather.configuration import WLBaseSettings
+            config.TEMPUNITS_MODE = WLBaseSettings.TEMP_UNITS_CELSIUS
 
         # Try to generate image
         print("Creating WeatherLandscape instance...")
@@ -83,9 +97,10 @@ async def main():
         filepath = await wl.SaveImage()
 
         print()
+        unit = "Celsius" if len(zip_code) > 2 and zip_code[:2].isalpha() else "Fahrenheit"
         print(f"✅ Success! Image generated at: {filepath}")
-        print(f"   ZIP Code: {zip_code}")
-        print(f"   Location: {lat}, {lon}")
+        print(f"   Location: {zip_code} ({lat}, {lon})")
+        print(f"   Temperature: {unit}")
         print(f"   Image size: {img.size}")
         print()
         print("You can now proceed with Cloudflare deployment!")
