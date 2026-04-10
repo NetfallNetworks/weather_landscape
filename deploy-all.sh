@@ -13,6 +13,14 @@ echo "📝 Regenerating local config files..."
 echo ""
 
 # Deploy all workers with delays to avoid rate limiting
+# Clean stale venvs first — on WSL + Windows/OneDrive, cached venvs can have
+# baked-in shebangs that point to a different path than the current working
+# directory (e.g. OneDrive/Documents vs Documents), causing "python: not found".
+echo "🧹 Cleaning stale virtual environments..."
+for dir in workers/web workers/landscape workers/scheduler workers/fetcher workers/dispatcher; do
+    rm -rf "$dir/.venv"
+done
+
 echo "📦 Deploying workers..."
 
 echo "Deploying web worker (isolated environment)..."
