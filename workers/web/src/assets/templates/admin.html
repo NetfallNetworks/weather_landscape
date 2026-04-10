@@ -145,7 +145,7 @@
             const zip = input.value.trim();
 
             // Validate location code
-            if (!/^(\d{5}|[A-Z]{2}\d{4,10})$/.test(zip.toUpperCase())) {
+            if (!/^(\d{5}|[A-Z]{2}\d{4,10})$$/.test(zip.toUpperCase())) {
                 showToast('Enter a US ZIP (78729) or international code (MX77400)', 'error');
                 input.focus();
                 return;
