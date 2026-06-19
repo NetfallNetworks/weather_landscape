@@ -74,6 +74,10 @@ cd workers/web && npx wrangler deploy -c wrangler.local.toml
 ```
 If uv left a locked venv behind first: `rm -rf workers/web/.venv`.
 
+### Sprite assets
+
+`src/assets/sprites/` holds copies of the landscape generator's sprites (`workers/landscape/src/p_weather/sprite_rgb/`), reused as the site's decoder/scene art (workers bundle their own assets, so the copy is intentional). Re-copy if that art changes.
+
 ## Dependencies
 
 **Production:** None! Zero dependencies.

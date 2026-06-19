@@ -40,6 +40,9 @@
       <div class="scene">
         <div class="scene-frame">
           <svg viewBox="0 0 296 128" role="img" aria-label="A weather landscape assembled from its sprite pieces">
+            <!-- Coordinate convention (mirrors DrawWeather on the 296x128 canvas):
+                 x = time, left(now) -> right(+24h); x/y are each sprite's TOP-LEFT.
+                 The soil path is a hand-drawn illustration, not the real temp curve. -->
             <!-- ground: the temperature curve, filled as soil (like DrawSoil) -->
             <path class="soil" d="M0,100 Q40,86 80,92 Q118,97 150,101 Q188,106 228,90 Q262,82 296,95 L296,128 L0,128 Z"/>
             <path class="soil-edge" d="M0,100 Q40,86 80,92 Q118,97 150,101 Q188,106 228,90 Q262,82 296,95"/>
@@ -95,9 +98,9 @@
             <div class="decoder-desc">Taller trees mean stronger wind. The species tells you which way it blows from:</div>
             <ul>
               <li>Pine &mdash; wind from the North</li>
+              <li>Wind-bent tree &mdash; wind from the East</li>
               <li>Palm &mdash; wind from the South</li>
-              <li>Round / bushy &mdash; wind from the East</li>
-              <li>Thin / bare &mdash; wind from the West</li>
+              <li>Round, leafy tree &mdash; wind from the West</li>
             </ul>
           </div>
         </div>

@@ -45,12 +45,6 @@ type = "Text"
 globs = ["**/*.css"]
 fallthrough = true
 
-# Bundle SVG files as Text modules (e.g. the glyph sprite) so Python can open() them
-[[rules]]
-type = "Text"
-globs = ["**/*.svg"]
-fallthrough = true
-
 # R2 Bucket Binding - stores generated weather landscape images
 # Bucket created with location=wnam hint to match landscape-generator worker location
 [[r2_buckets]]

@@ -324,7 +324,7 @@ class Default(WorkerEntrypoint):
         segment; reject anything that isn't a bare *.png name (no traversal).
         """
         try:
-            if '/' in filename or '\\' in filename or '..' in filename or not filename.endswith('.png'):
+            if '/' in filename or '\\' in filename or '..' in filename or '%' in filename or not filename.endswith('.png'):
                 return Response.new('', {'status': 404})
             workers_dir = os.path.dirname(__file__)
             sprite_path = os.path.join(workers_dir, 'assets', 'sprites', filename)
@@ -337,7 +337,8 @@ class Default(WorkerEntrypoint):
                 "content-type": "image/png",
                 "cache-control": "public, max-age=86400"
             }))
-        except Exception:
+        except Exception as e:
+            print(f"_serve_sprite error for {filename!r}: {e}")
             return Response.new('', {'status': 404})
 
     async def _serve_example(self, env, query_params=None):
