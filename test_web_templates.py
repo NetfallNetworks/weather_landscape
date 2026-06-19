@@ -17,6 +17,7 @@ Or via pytest:   pytest test_web_templates.py
 """
 
 import os
+import re
 from string import Template
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -86,9 +87,30 @@ def test_glyphs_are_referenced_only_via_sprite():
         assert "<rect" not in text, f"{name} should not inline <rect> glyph data"
 
 
-def test_landing_has_no_inline_style_block():
-    text = _read(os.path.join(TEMPLATES, "landing.html"))
-    assert "<style" not in text, "landing.html must use external styles.css only"
+def test_no_inline_style_blocks():
+    """No page may carry a <style> block; styling lives in styles.css only.
+
+    (Inline style="..." attributes on the styleguide swatches are fine -- the
+    check is for a <style> element, not the attribute.)
+    """
+    for name in ALL_TEMPLATES:
+        text = _read(os.path.join(TEMPLATES, name))
+        assert "<style" not in text, f"{name} must use external styles.css only"
+
+
+def test_all_use_hrefs_resolve_in_sprite():
+    """Every <use href="#glyph-X"> across all pages must resolve to a sprite id.
+
+    A broken <use> renders as nothing (silent), so this guards the redesign's
+    core glyph dependency directly, not just the hardcoded GLYPH_IDS list.
+    """
+    sprite_ids = set(re.findall(r'id="(glyph-[^"]+)"', _read(SPRITE)))
+    for name in ALL_TEMPLATES:
+        text = _read(os.path.join(TEMPLATES, name))
+        for ref in re.findall(r'href="#(glyph-[^"]+)"', text):
+            assert ref in sprite_ids, (
+                f'{name} references #{ref} but glyphs.svg defines no id="{ref}"'
+            )
 
 
 def test_sprite_defines_all_symbols_and_has_no_dollar():

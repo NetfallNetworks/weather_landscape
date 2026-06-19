@@ -187,7 +187,7 @@
             const generateData = await generateResp.json();
 
             if (generateData.success) {
-                showToast('Added ' + normalizedZip + ' with ' + generateData.formats.length + ' format(s)', 'success');
+                showToast('Added ' + normalizedZip + ' — generation queued', 'success');
                 input.value = '';
                 // Reload to show new ZIP
                 setTimeout(() => location.reload(), 1500);

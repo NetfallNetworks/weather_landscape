@@ -37,7 +37,8 @@ def to_js(obj):
     return _to_js(obj, dict_converter=Object.fromEntries)
 
 
-_GLYPH_SPRITE_CACHE = None
+_SPRITE_UNLOADED = object()
+_GLYPH_SPRITE_CACHE = _SPRITE_UNLOADED
 
 
 def _load_glyph_sprite():
@@ -47,9 +48,12 @@ def _load_glyph_sprite():
     via <use href="#glyph-..."/>. Defined once per page so the heavy <rect>
     data is not duplicated per glyph. Contains no '$', so it is safe to inject
     before string.Template substitution.
+
+    On a read failure the cache is left UNLOADED so the next request retries,
+    rather than caching an empty string and permanently dropping glyphs.
     """
     global _GLYPH_SPRITE_CACHE
-    if _GLYPH_SPRITE_CACHE is None:
+    if _GLYPH_SPRITE_CACHE is _SPRITE_UNLOADED:
         workers_dir = os.path.dirname(__file__)
         sprite_path = os.path.join(workers_dir, 'assets', 'glyphs.svg')
         try:
@@ -57,7 +61,7 @@ def _load_glyph_sprite():
                 _GLYPH_SPRITE_CACHE = f.read()
         except Exception as e:
             print(f"Warning: failed to load glyph sprite: {e}")
-            _GLYPH_SPRITE_CACHE = ''
+            return ''  # leave cache UNLOADED -> retry next call
     return _GLYPH_SPRITE_CACHE
 
 
