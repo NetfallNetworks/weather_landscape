@@ -3,14 +3,15 @@ Template integrity tests for the web worker (pixel-zine redesign).
 
 Runtime-independent: the web worker imports the workerd/pyodide runtime
 (`from js import ...`), so it can't be imported in plain CPython. These tests
-instead exercise the two things that actually break in production without it:
+instead exercise the things that actually break in production without it:
 
   1. The string.Template substitution path for the rendered templates
      (forecasts.html, admin.html) -- any LONE '$' that isn't a real placeholder
      raises at render time. This is the bug class from PR #27 (admin JS regex).
-  2. Structural invariants every redesigned page must keep: the glyph-sprite
-     sentinel, the shared stylesheet + font links, sprite-only glyph use, and
-     -- for the landing page -- no inline <style> (design system is external).
+  2. Structural invariants every page must keep: the shared stylesheet + font
+     links, no inline <style> blocks, every referenced sprite PNG existing, and
+     every asset extension having a wrangler bundle rule (works-local/breaks-prod
+     guard, e.g. the glyphs.svg/.svg-rule case).
 
 Run standalone:  python test_web_templates.py
 Or via pytest:   pytest test_web_templates.py
@@ -23,6 +24,7 @@ from string import Template
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSETS = os.path.join(HERE, "workers", "web", "src", "assets")
 TEMPLATES = os.path.join(ASSETS, "templates")
+SPRITES = os.path.join(ASSETS, "sprites")
 
 # Rendered templates -> the exact context render_template() supplies in web.py.
 RENDERED = {
@@ -34,11 +36,6 @@ STATIC = ["landing.html", "guide.html", "styleguide.html"]
 ALL_TEMPLATES = list(RENDERED.keys()) + STATIC
 
 FONTS_HREF = "fonts.googleapis.com/css2?family=Press+Start+2P"
-SPRITE = os.path.join(ASSETS, "glyphs.svg")
-GLYPH_IDS = [
-    "glyph-brand", "glyph-house", "glyph-hill",
-    "glyph-tree", "glyph-cloud", "glyph-sun", "glyph-flower",
-]
 
 
 def _read(path):
@@ -50,7 +47,6 @@ def test_rendered_templates_substitute_without_error():
     """forecasts/admin must render via string.Template with no stray '$'."""
     for name, ctx in RENDERED.items():
         text = _read(os.path.join(TEMPLATES, name))
-        # Raises ValueError on a lone '$' / KeyError on an unknown placeholder.
         Template(text).substitute(**ctx)
 
 
@@ -61,16 +57,6 @@ def test_rendered_templates_have_their_placeholders():
             assert "$" + key in text, f"{name} lost placeholder ${key}"
 
 
-def test_every_page_has_glyph_sentinel_first_in_body():
-    for name in ALL_TEMPLATES:
-        text = _read(os.path.join(TEMPLATES, name))
-        assert "<!--GLYPHS-->" in text, f"{name} missing <!--GLYPHS--> sentinel"
-        body_idx = text.index("<body")
-        body_open_end = text.index(">", body_idx)
-        between = text[body_open_end + 1:text.index("<!--GLYPHS-->")]
-        assert between.strip() == "", f"{name}: <!--GLYPHS--> not first in <body>"
-
-
 def test_every_page_links_fonts_and_stylesheet():
     for name in ALL_TEMPLATES:
         text = _read(os.path.join(TEMPLATES, name))
@@ -78,55 +64,37 @@ def test_every_page_links_fonts_and_stylesheet():
         assert "/assets/styles.css" in text, f"{name} missing shared stylesheet"
 
 
-def test_glyphs_are_referenced_only_via_sprite():
-    """Templates use <use href="#glyph-..."> and never paste raw <rect> data."""
-    for name in ALL_TEMPLATES:
-        text = _read(os.path.join(TEMPLATES, name))
-        if 'class="pglyph"' in text or "brand-mark" in text:
-            assert 'href="#glyph-' in text, f"{name} should reference glyph sprite"
-        assert "<rect" not in text, f"{name} should not inline <rect> glyph data"
-
-
 def test_no_inline_style_blocks():
     """No page may carry a <style> block; styling lives in styles.css only.
 
-    (Inline style="..." attributes on the styleguide swatches are fine -- the
-    check is for a <style> element, not the attribute.)
+    (Inline style="..." attributes are fine -- the check is for a <style>
+    element, not the attribute.)
     """
     for name in ALL_TEMPLATES:
         text = _read(os.path.join(TEMPLATES, name))
         assert "<style" not in text, f"{name} must use external styles.css only"
 
 
-def test_all_use_hrefs_resolve_in_sprite():
-    """Every <use href="#glyph-X"> across all pages must resolve to a sprite id.
+def test_all_sprite_refs_exist():
+    """Every /assets/sprites/<name>.png referenced in a template must exist.
 
-    A broken <use> renders as nothing (silent), so this guards the redesign's
-    core glyph dependency directly, not just the hardcoded GLYPH_IDS list.
+    Decoder/scene art points at the real landscape sprites via <img src> and
+    SVG <image href>. A missing file renders as nothing (silent), so guard it.
     """
-    sprite_ids = set(re.findall(r'id="(glyph-[^"]+)"', _read(SPRITE)))
+    available = {f for f in os.listdir(SPRITES) if f.endswith(".png")}
+    ref_re = re.compile(r'(?:src|href)="/assets/sprites/([^"]+\.png)"')
     for name in ALL_TEMPLATES:
         text = _read(os.path.join(TEMPLATES, name))
-        for ref in re.findall(r'href="#(glyph-[^"]+)"', text):
-            assert ref in sprite_ids, (
-                f'{name} references #{ref} but glyphs.svg defines no id="{ref}"'
-            )
-
-
-def test_sprite_defines_all_symbols_and_has_no_dollar():
-    text = _read(SPRITE)
-    for gid in GLYPH_IDS:
-        assert f'id="{gid}"' in text, f"glyphs.svg missing {gid}"
-    assert "$" not in text, "sprite must contain no '$' (injected before substitution)"
-    assert "<rect" in text, "sprite should contain rect data"
+        for ref in ref_re.findall(text):
+            assert ref in available, f"{name} references missing sprite {ref}"
 
 
 def test_all_asset_extensions_are_bundled_by_wrangler():
     """Every file type under assets/ must have a wrangler.toml [[rules]] glob.
 
     Python Workers can only open() files bundled as Text/Data modules. A new
-    asset extension with no matching rule (e.g. glyphs.svg before the SVG rule)
-    uploads nothing and fails at runtime in prod while passing every local test.
+    asset extension with no matching rule uploads nothing and fails at runtime
+    in prod while passing every local test (cf. the glyphs.svg/.svg-rule case).
     """
     wrangler = os.path.join(HERE, "workers", "web", "wrangler.toml")
     globs = set(re.findall(r'\*\*/\*\.(\w+)', _read(wrangler)))

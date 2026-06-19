@@ -104,6 +104,10 @@ class Default(WorkerEntrypoint):
         if 'assets' in path_parts and path == 'diagram.png':
             return await self._serve_diagram()
 
+        # Route: Serve landscape sprite (e.g. /assets/sprites/house_00.png)
+        if 'assets' in path_parts and 'sprites' in path_parts and path.endswith('.png'):
+            return await self._serve_sprite(path)
+
         # Route: Serve example image (optionally ?{format})
         if path == 'example' and not zip_from_path:
             return await self._serve_example(env, query_params)
@@ -311,6 +315,30 @@ class Default(WorkerEntrypoint):
                 json.dumps({'error': f'Failed to load diagram: {str(e)}'}),
                 {'status': 500, 'headers': {'Content-Type': 'application/json'}}
             )
+
+    async def _serve_sprite(self, filename):
+        """Serve a bundled landscape sprite PNG (e.g. /assets/sprites/house_00.png).
+
+        These are the real sprite pieces the landscape generator stamps onto the
+        canvas, reused as the site's decoder/scene art. filename is the last URL
+        segment; reject anything that isn't a bare *.png name (no traversal).
+        """
+        try:
+            if '/' in filename or '\\' in filename or '..' in filename or not filename.endswith('.png'):
+                return Response.new('', {'status': 404})
+            workers_dir = os.path.dirname(__file__)
+            sprite_path = os.path.join(workers_dir, 'assets', 'sprites', filename)
+            with open(sprite_path, 'rb') as f:
+                image_bytes = f.read()
+
+            from js import Uint8Array
+            js_array = Uint8Array.new(memoryview(image_bytes))
+            return Response.new(js_array, headers=to_js({
+                "content-type": "image/png",
+                "cache-control": "public, max-age=86400"
+            }))
+        except Exception:
+            return Response.new('', {'status': 404})
 
     async def _serve_example(self, env, query_params=None):
         """Serve example weather image, optionally in a specific format.

@@ -31,16 +31,6 @@ a{color:inherit;}
 .app{min-height:100vh;display:flex;flex-direction:column;}
 .shell{width:100%;max-width:1240px;margin:0 auto;padding:0 var(--gutter);}
 
-/* glyph sprite host (injected once per page) is hidden */
-.glyph-sprite{position:absolute;width:0;height:0;overflow:hidden;}
-.pglyph{image-rendering:pixelated;}
-/* glyph fills recolor from tokens so glyphs follow the palette */
-.roof,.chimney,.door{fill:var(--accent);}
-.wall{fill:#e6c98a;}
-.window{fill:var(--sky);}
-.smoke{fill:var(--ink-dim);}
-.grass{fill:var(--accent-2);}
-.ink{fill:var(--ink);}
 
 /* --- nav ------------------------------------------------------------------ */
 nav.top{
@@ -116,7 +106,6 @@ section.row{padding:var(--section-pad) 0;border-top:3px solid var(--rule);scroll
 }
 .decoder-glyph{width:100%;height:96px;display:flex;align-items:flex-end;justify-content:flex-start;}
 .decoder-glyph[data-glyph="hill"]{height:120px;}
-.decoder-glyph .pglyph{height:100%;width:auto;}
 .decoder-meta{font-family:var(--font-tag);font-size:9px;letter-spacing:.02em;text-transform:uppercase;color:var(--ink-dim);}
 .decoder-name{font-family:var(--font-display);font-weight:400;font-size:13px;line-height:1.4;}
 .decoder-desc{font-family:var(--font-mono);font-size:19px;line-height:1.3;color:var(--ink);}
@@ -127,7 +116,6 @@ section.row{padding:var(--section-pad) 0;border-top:3px solid var(--rule);scroll
 .decode-row:nth-child(even){background:var(--surface-alt);}
 .decode-row:last-child{border-bottom:0;}
 .decode-row .glyph-box{height:120px;display:flex;align-items:flex-end;justify-content:center;}
-.decode-row .glyph-box .pglyph{height:100%;width:auto;}
 .decode-row .decoder-name{margin-bottom:8px;}
 .decode-row .decoder-desc{font-size:21px;line-height:1.4;}
 .decode-row ul{margin:10px 0 0;padding-left:1.1em;font-family:var(--font-mono);font-size:20px;line-height:1.5;}
@@ -214,6 +202,29 @@ input:checked + .slider:before{transform:translateX(22px);}
 .toast.success{background:var(--accent-2);color:#fff;}
 .toast.error{background:var(--accent);color:#fff;}
 .toast.info{background:var(--tile);color:var(--ink);}
+
+/* --- real sprite art + composed landscape scene -------------------------- */
+/* The decoder/scene art reuses the exact sprite PNGs the generator stamps onto
+   the 296x128 canvas, so the chrome speaks the product's own visual language. */
+.sprite-img{image-rendering:pixelated;display:block;}
+.decoder-glyph .sprite-img{height:76px;width:auto;}
+.decode-row .glyph-box .sprite-img{height:88px;width:auto;}
+/* terrain has no sprite — the ground IS the drawn temp curve, so its glyph is a
+   little soil hill matching the composed scene */
+.hill-glyph{height:52px;width:auto;align-self:flex-end;}
+.decode-row .glyph-box .hill-glyph{height:64px;}
+.brand-mark{image-rendering:pixelated;}
+
+/* Composed scene — built from the real sprites in the generator's 296x128 space.
+   It is one <svg viewBox="0 0 296 128"> with a soil hill path + <image> sprites
+   placed at canvas-like coordinates, exactly how DrawWeather assembles them. */
+.scene{position:relative;width:100%;max-width:760px;margin:0 auto;border:4px solid var(--ink);box-shadow:10px 10px 0 0 var(--ink);background:linear-gradient(#fcf6e2 0%,#f7eecd 60%,#efe1bd 100%);overflow:hidden;}
+.scene svg{display:block;width:100%;height:auto;}
+.scene image{image-rendering:pixelated;}
+.scene .soil{fill:#945201;}
+.scene .soil-edge{fill:none;stroke:var(--ink);stroke-width:1;opacity:.45;}
+.scene-frame{padding:clamp(20px,3vw,40px);}
+.scene-caption{margin-top:20px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-family:var(--font-tag);font-size:10px;letter-spacing:.02em;text-transform:uppercase;color:var(--ink-dim);}
 
 /* --- footer --------------------------------------------------------------- */
 footer.btm{padding:var(--section-pad) 0 32px;border-top:3px solid var(--rule);margin-top:auto;}

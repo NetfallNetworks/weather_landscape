@@ -21,13 +21,11 @@ mode = "smart"
 [observability.logs]
 enabled = true
 head_sampling_rate = 1
-persist = true
 invocation_logs = true
 
 [observability.traces]
 enabled = true
 head_sampling_rate = 1
-persist = true
 
 # Bundle image files as Data modules so Python can access them
 [[rules]]
