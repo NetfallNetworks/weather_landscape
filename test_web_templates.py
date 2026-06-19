@@ -121,6 +121,25 @@ def test_sprite_defines_all_symbols_and_has_no_dollar():
     assert "<rect" in text, "sprite should contain rect data"
 
 
+def test_all_asset_extensions_are_bundled_by_wrangler():
+    """Every file type under assets/ must have a wrangler.toml [[rules]] glob.
+
+    Python Workers can only open() files bundled as Text/Data modules. A new
+    asset extension with no matching rule (e.g. glyphs.svg before the SVG rule)
+    uploads nothing and fails at runtime in prod while passing every local test.
+    """
+    wrangler = os.path.join(HERE, "workers", "web", "wrangler.toml")
+    globs = set(re.findall(r'\*\*/\*\.(\w+)', _read(wrangler)))
+    exts = set()
+    for root, _dirs, files in os.walk(ASSETS):
+        for fn in files:
+            ext = os.path.splitext(fn)[1].lstrip(".").lower()
+            if ext:
+                exts.add(ext)
+    missing = exts - globs
+    assert not missing, f"assets/ has extensions with no wrangler bundle rule: {sorted(missing)}"
+
+
 def test_admin_preserves_doubled_dollar_regex():
     """The location-code regex must keep '$$' so it survives substitution -> '$'."""
     text = _read(os.path.join(TEMPLATES, "admin.html"))
