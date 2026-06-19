@@ -84,10 +84,18 @@ and JS hook/ID on the templated pages.
 ### 🏠 Landing (`landing.html`)
 The mockup, wired to live data. Sections: hero (framed `/example` art + live
 caption), "dashboard numbers vs. landscape" before/after, 6-cell decoder ring,
-three format cards, design-system showcase, fat footer. The hardcoded
-"Austin · 78729" caption becomes a real default ZIP or neutral copy.
-**Keep the design-system showcase section** — on-brand for "calm tech, show your
-work," intentionally authored.
+three format cards, fat footer. The hardcoded "Austin · 78729" caption becomes a
+real default ZIP or neutral copy.
+**The design-system showcase section is removed from the public landing** — it is
+a portfolio flourish, not visitor-facing value. The design system is still owned
+and documented, but as an internal styleguide (below), never on the public site.
+
+### 🎨 Internal styleguide (new, non-public)
+We own and dogfood the design system, but it never appears on the public website.
+The showcase markup (type ramp, swatches, component gallery) becomes its own page
+rendered from the **real shared `styles.css`**, so it is a *living* reference that
+cannot drift from production. It is **kept out of the public nav and gated like
+admin** (internal-only). This replaces the landing's showcase section.
 
 ### 📍 Forecasts (`forecasts.html`)
 Live ZIP list restyled as brutalist `.box` cards: pixel `--font-display` ZIP code,
@@ -122,19 +130,41 @@ preserved; `$` literals in JS doubled** so behavior and tests don't move.
 
 ## Format previews (landing + forecasts)
 
-The mockup fakes B&W and Dark format cards via CSS filters
-(`grayscale/contrast`, `invert/hue-rotate`) over the single `/example` color image.
-Real per-format images do exist (`GET /{zip}?{format}`), but for the **landing
-preview** the filter approach is retained — it's a marketing preview, not a live
-render, and avoids coupling the homepage to per-format endpoints. Forecasts page
-links to the real format endpoints as today.
+**Use the real renders, not CSS fakery.** The mockup faked B&W and Dark format
+cards with CSS filters (`grayscale/contrast`, `invert/hue-rotate`) over the single
+color `/example` image. Those filters *lie* in the ways that matter — real e-ink
+B&W dithering ≠ `grayscale()`, and a real dark render ≠ a hue-rotated color image.
+The app genuinely generates each format (`GET /{zip}?{format}`), so the three cards
+point at **real per-format example renders** (e.g. `/example`, `/example?format=bw`,
+`/example?format=dark`, each produced the same way today's `/example` is). No CSS
+filters. Forecasts page links to the real format endpoints as today.
 
-## Out of scope
+**Now vs. future on the example *location*:** the example stays a **single static
+location today** (whatever `/example` serves now), rendered honestly in all three
+formats. Making `/example` a *near-the-user* approximation (edge-geo → nearest
+pre-generated DMA) is a deliberate **follow-up**, not part of this redesign — see
+Future Work.
 
-- No change to `web.py` routing, the queue/worker pipeline, or image generation.
-- No new image formats or rendering changes.
+## Out of scope (this redesign) — captured as Future Work
+
+- No change to `web.py` routing, the queue/worker pipeline, or image generation,
+  **except** staging the real per-format example renders the format cards point at.
+- Geo-aware `/example` (edge-geo → nearest DMA) and adding DMAs to the pipeline.
+- The Cloudflare/OpenWeather usage + spend audit that gates the DMA expansion.
+- Client-side observability (Cloudflare Web Analytics / RUM beacon).
 - No partials system unless the nav/footer duplication proves painful (option C).
-- No content changes beyond the four pages' own copy/markup.
+
+These follow-ups are captured in
+[`2026-06-19-redesign-followups.md`](./2026-06-19-redesign-followups.md).
+
+## Future Work
+
+See the companion follow-ups doc for fully-specced next steps:
+1. **Geo-aware example** — pre-generate major DMAs, pick the nearest via Cloudflare
+   edge geo; less-doxxable than the user's literal location.
+2. **Usage & spend research** — confirm DMA expansion stays within the current
+   Cloudflare + OpenWeatherMap pricing tier *before* widening the pipeline.
+3. **Frontend observability** — add the Cloudflare Web Analytics / RUM beacon.
 
 ## Testing
 
