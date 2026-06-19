@@ -1,104 +1,171 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Weather Landscape - Your Weather as a Peaceful Picture</title>
-    <link rel="icon" type="image/png" href="/favicon.png">
-    <link rel="stylesheet" href="/assets/styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Weather Landscape &mdash; your weather as a peaceful picture</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/styles.css">
 </head>
 <body>
-    <div class="hamburger-menu">
-        <button class="hamburger-btn" onclick="toggleMenu()">☰</button>
-        <div class="menu-dropdown" id="menu">
-            <a href="/" class="active">🏠 Home</a>
-            <a href="/forecasts">📍 Forecasts</a>
-            <a href="/guide">📖 Reading Guide</a>
-            <a href="/admin">⚙️ Admin</a>
-        </div>
+<!--GLYPHS-->
+<div class="app">
+  <nav class="top">
+    <div class="shell" style="display:flex;align-items:center;justify-content:space-between;">
+      <a class="brand" href="/">
+        <svg class="brand-mark" viewBox="0 0 16 16" width="32" height="32"><use href="#glyph-brand"/></svg>
+        <span class="brand-name">Weather Landscape</span>
+      </a>
+      <div class="nav-links">
+        <a href="#read">Read</a>
+        <a href="/forecasts">Forecasts</a>
+        <a href="/guide">Guide</a>
+        <a class="cta" href="/forecasts">Get yours &rarr;</a>
+      </div>
     </div>
-    <script>
-        function toggleMenu() {
-            document.getElementById('menu').classList.toggle('show');
-        }
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.hamburger-menu')) {
-                document.getElementById('menu').classList.remove('show');
-            }
-        });
-    </script>
+  </nav>
 
-    <div class="container">
-        <header>
-            <h1>🌤️ Weather Landscape</h1>
-            <p class="subtitle">Your 24-hour weather forecast as a peaceful little picture</p>
-        </header>
-
-        <div class="card text-center">
-            <h2>See Your Weather at a Glance</h2>
-            <p>No more confusing numbers or cluttered dashboards. Just a calm landscape that tells you everything you need to know.</p>
-            <img src="/example" class="img-rounded img-shadow" alt="Example Weather Landscape" style="margin: 1rem 0;">
-            <p class="caption">A cozy house in the woods, where every detail has meaning ✨</p>
+  <div class="shell">
+    <header class="hero" id="top">
+      <div class="hero-tag">weather, but cozy</div>
+      <h1 class="hero-title">A <em>tiny world</em><br>for tomorrow's weather</h1>
+      <p class="hero-sub">A 296-by-128 pixel landscape that tells you what the next 24 hours hold. The house is now. Time rolls right. Read the trees, the hills, the clouds.</p>
+      <div class="hero-art">
+        <img src="/example" alt="The weather landscape">
+        <div class="hero-art-caption">
+          <span>a live forecast</span>
+          <span>next 24h</span>
         </div>
+      </div>
+    </header>
 
-        <div class="card intro-text">
-            <h2>🏠 What Am I Looking At?</h2>
-            <p>Imagine looking out your window at a peaceful forest scene. That little house on the left? <strong>That's right now.</strong> As your eyes move to the right, you're peeking into the future &mdash; all the way to tomorrow!</p>
-            <p>The trees, clouds, flowers, and hills all have secret meanings. Once you know the code, you'll read weather like a pro &mdash; no numbers needed!</p>
+    <section class="row" id="why">
+      <div class="two-col">
+        <div>
+          <div class="section-tag">calm tech, est. 2020s</div>
+          <h2 class="philosophy-quote">Stop reading dashboards.<br>Start reading the <em>weather</em>.</h2>
+          <p class="section-lede">Twelve numbers in a grid is not how humans read the sky. A horizon is. So we put your forecast inside a tiny landscape and let your eyes do what they were built for.</p>
         </div>
-
-        <div class="card text-center">
-            <h2>🔍 The Big Picture</h2>
-            <p>Here's how all the pieces fit together:</p>
-            <img src="/assets/diagram.png" class="img-rounded" alt="Weather Landscape Diagram" style="margin: 1rem 0;">
-            <p>Time flows left to right. Events appear where they'll happen in your day!</p>
-        </div>
-
-        <div class="quick-guide">
-            <h2>🎨 Quick Decoder Ring</h2>
-            <div class="grid-3">
-                <div class="guide-item">
-                    <div class="guide-emoji">🏠➡️</div>
-                    <strong>Left to Right</strong>
-                    Now → 24 hours from now
-                </div>
-                <div class="guide-item">
-                    <div class="guide-emoji">⛰️</div>
-                    <strong>Hill Height</strong>
-                    Higher = Warmer temps
-                </div>
-                <div class="guide-item">
-                    <div class="guide-emoji">🌳</div>
-                    <strong>Tree Height</strong>
-                    Taller = Stronger wind
-                </div>
-                <div class="guide-item">
-                    <div class="guide-emoji">☁️</div>
-                    <strong>Clouds</strong>
-                    More clouds = Cloudier day
-                </div>
-                <div class="guide-item">
-                    <div class="guide-emoji">🌅🌙</div>
-                    <strong>Sun & Moon</strong>
-                    Sunrise & Sunset times
-                </div>
-                <div class="guide-item">
-                    <div class="guide-emoji">🌸</div>
-                    <strong>Flowers</strong>
-                    Blue=Midnight, Yellow=Noon
-                </div>
+        <div>
+          <div class="philosophy-cmp">
+            <div class="before">
+              <div class="label">The usual &middot; sample numbers</div>
+              <div class="before-row"><span>temp</span><span>78&deg;</span></div><div class="before-row"><span>feels like</span><span>82&deg;</span></div><div class="before-row"><span>humidity</span><span>54%</span></div><div class="before-row"><span>wind</span><span>9mph E</span></div><div class="before-row"><span>gusts</span><span>14mph</span></div><div class="before-row"><span>pressure</span><span>29.94 in</span></div><div class="before-row"><span>dew pt</span><span>61&deg;</span></div><div class="before-row"><span>uv index</span><span>6</span></div><div class="before-row"><span>visibility</span><span>10mi</span></div><div class="before-row"><span>cloud cov.</span><span>32%</span></div><div class="before-row"><span>precip</span><span>14% pm</span></div><div class="before-row"><span>sunrise</span><span>6:42am</span></div><div class="before-row"><span>sunset</span><span>8:11pm</span></div>
             </div>
+            <div class="after"><img src="/example" alt="Same forecast, as a landscape"></div>
+          </div>
         </div>
+      </div>
+    </section>
 
-        <div class="text-center" style="margin: 2rem 0;">
-            <a href="/forecasts" class="btn btn-primary" style="font-size: 1.2rem; padding: 1rem 2rem; margin: 0.5rem;">📍 View Available Forecasts</a>
-            <a href="/guide" class="btn btn-secondary" style="font-size: 1.2rem; padding: 1rem 2rem; margin: 0.5rem;">📖 Full Reading Guide</a>
+    <section class="row" id="read">
+      <div class="section-tag">the decoder ring</div>
+      <h2 class="section-title">Every pixel earns its place</h2>
+      <p class="section-lede">There are no labels in the landscape, only shapes. Here is what they mean &mdash; and the <a href="/guide">reading guide</a> goes deeper.</p>
+      <div class="decoder">
+        <div class="decoder-cell">
+          <div class="decoder-glyph" data-glyph="house"><svg class="pglyph" viewBox="0 0 16 16"><use href="#glyph-house"/></svg></div>
+          <div class="decoder-meta">Left edge &mdash; "you are here"</div>
+          <div class="decoder-name">The house</div>
+          <div class="decoder-desc">Marks the present moment, at the leftmost pixel of the canvas. Smoke from the chimney tells you the atmospheric pressure.</div>
         </div>
+        <div class="decoder-cell">
+          <div class="decoder-glyph" data-glyph="hill"><svg class="pglyph" viewBox="0 0 16 16"><use href="#glyph-hill"/></svg></div>
+          <div class="decoder-meta">Vertical axis &mdash; temperature</div>
+          <div class="decoder-name">The terrain</div>
+          <div class="decoder-desc">Higher ground, warmer air. The lower brown line is the actual temperature curve, drawn over the next 24 hours.</div>
+        </div>
+        <div class="decoder-cell">
+          <div class="decoder-glyph" data-glyph="tree"><svg class="pglyph" viewBox="0 0 16 16"><use href="#glyph-tree"/></svg></div>
+          <div class="decoder-meta">Forest &mdash; wind</div>
+          <div class="decoder-name">The trees</div>
+          <div class="decoder-desc">Taller trees mean stronger wind. Their species &mdash; pine, palm, round, thin &mdash; encodes the direction it's blowing from.</div>
+        </div>
+        <div class="decoder-cell">
+          <div class="decoder-glyph" data-glyph="cloud"><svg class="pglyph" viewBox="0 0 16 16"><use href="#glyph-cloud"/></svg></div>
+          <div class="decoder-meta">Sky cover</div>
+          <div class="decoder-name">The clouds</div>
+          <div class="decoder-desc">More clouds, more cover. They appear above the part of the day they'll show up in.</div>
+        </div>
+        <div class="decoder-cell">
+          <div class="decoder-glyph" data-glyph="sun"><svg class="pglyph" viewBox="0 0 16 16"><use href="#glyph-sun"/></svg></div>
+          <div class="decoder-meta">Day markers</div>
+          <div class="decoder-name">Sun &amp; moon</div>
+          <div class="decoder-desc">The sun rises from where the day starts, the moon falls where it ends. The hours of daylight are visible at a glance.</div>
+        </div>
+        <div class="decoder-cell">
+          <div class="decoder-glyph" data-glyph="flower"><svg class="pglyph" viewBox="0 0 16 16"><use href="#glyph-flower"/></svg></div>
+          <div class="decoder-meta">Time stamps</div>
+          <div class="decoder-name">The flowers</div>
+          <div class="decoder-desc">A blue bloom for midnight. A yellow one for noon. Anchors so you can locate any hour in the day timeline.</div>
+        </div>
+      </div>
+    </section>
 
-        <footer>
-            <p>Made with ❤️ for weather lovers who prefer pictures over spreadsheets</p>
-            <div class="attribution">
-                <p>Based on the original <a href="https://github.com/lds133/weather_landscape" target="_blank">Weather Landscape</a> project by lds133</p>
-            </div>
-        </footer>
+    <section class="row" id="get">
+      <div class="section-tag">now serving</div>
+      <h2 class="section-title">Three flavors of forecast</h2>
+      <p class="section-lede">Drop one into your e-ink frame, your phone home screen, or your widget pocket. Every preview below is a real render &mdash; no filters.</p>
+      <div class="formats">
+          <div class="format-card">
+            <div class="format-frame"><img src="/example" alt="Color forecast"></div>
+            <div class="format-meta">PNG &middot; 296&times;128 &middot; light</div>
+            <div class="format-name">Color</div>
+            <div class="format-desc">The default. Looks good on phone widgets and as a desktop sliver.</div>
+            <a href="/forecasts" class="format-link">View live</a>
+          </div>
+          <div class="format-card">
+            <div class="format-frame bw"><img src="/example?bw" alt="Black and White forecast"></div>
+            <div class="format-meta">BMP &middot; 296&times;128 &middot; e-ink</div>
+            <div class="format-name">Black &amp; White</div>
+            <div class="format-desc">Built for a 2.9-inch E-Ink frame. Updates every 15 minutes, sips electrons.</div>
+            <a href="/forecasts" class="format-link">View live</a>
+          </div>
+          <div class="format-card">
+            <div class="format-frame dark"><img src="/example?rgb_dark" alt="Dark forecast"></div>
+            <div class="format-meta">PNG &middot; 296&times;128 &middot; dark</div>
+            <div class="format-name">Dark</div>
+            <div class="format-desc">For dark home screens, AMOLED phones, and 2am moments at a desk.</div>
+            <a href="/forecasts" class="format-link">View live</a>
+          </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="btm">
+    <div class="shell">
+      <div class="footer-grid">
+        <div>
+          <h3 class="footer-cap">A <em>small picture</em><br>of the next 24 hours.</h3>
+          <a class="btn primary" href="/forecasts">Get yours &rarr;</a>
+        </div>
+        <div class="footer-col">
+          <h4>Read</h4>
+          <a href="#read">The decoder</a>
+          <a href="#why">Why a landscape</a>
+          <a href="/guide">Reading guide</a>
+        </div>
+        <div class="footer-col">
+          <h4>Forecasts</h4>
+          <a href="/forecasts">Color</a>
+          <a href="/forecasts">B&amp;W (e-ink)</a>
+          <a href="/forecasts">Dark mode</a>
+        </div>
+        <div class="footer-col">
+          <h4>Make</h4>
+          <a href="https://github.com/NetfallNetworks/weather_landscape" target="_blank" rel="noreferrer">On GitHub</a>
+          <a href="/guide">Reading guide</a>
+        </div>
+      </div>
+      <div class="footer-base">
+        <span>WEATHER LANDSCAPE &middot; A fork of lds133/weather_landscape</span>
+        <span>Powered by OpenWeather &middot; Made with Cloudflare Workers</span>
+      </div>
     </div>
+  </footer>
+</div>
 </body>
 </html>

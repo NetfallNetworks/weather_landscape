@@ -37,12 +37,48 @@ def to_js(obj):
     return _to_js(obj, dict_converter=Object.fromEntries)
 
 
+_SPRITE_UNLOADED = object()
+_GLYPH_SPRITE_CACHE = _SPRITE_UNLOADED
+
+
+def _load_glyph_sprite():
+    """Load the shared pixel-glyph SVG sprite once and cache it.
+
+    The sprite is a hidden <svg> of <symbol> elements referenced by templates
+    via <use href="#glyph-..."/>. Defined once per page so the heavy <rect>
+    data is not duplicated per glyph. Contains no '$', so it is safe to inject
+    before string.Template substitution.
+
+    On a read failure the cache is left UNLOADED so the next request retries,
+    rather than caching an empty string and permanently dropping glyphs.
+    """
+    global _GLYPH_SPRITE_CACHE
+    if _GLYPH_SPRITE_CACHE is _SPRITE_UNLOADED:
+        workers_dir = os.path.dirname(__file__)
+        sprite_path = os.path.join(workers_dir, 'assets', 'glyphs.svg')
+        try:
+            with open(sprite_path, 'r') as f:
+                _GLYPH_SPRITE_CACHE = f.read()
+        except Exception as e:
+            print(f"Warning: failed to load glyph sprite: {e}")
+            return ''  # leave cache UNLOADED -> retry next call
+    return _GLYPH_SPRITE_CACHE
+
+
 def load_template(template_name):
-    """Load an HTML template file"""
+    """Load an HTML template file, injecting the shared glyph sprite.
+
+    Any template containing the '<!--GLYPHS-->' sentinel (placed as the first
+    child of <body>) gets the sprite inlined there. Injection happens before
+    any string.Template substitution; the sprite has no '$' so it is inert to it.
+    """
     workers_dir = os.path.dirname(__file__)
     template_path = os.path.join(workers_dir, 'assets', 'templates', template_name)
     with open(template_path, 'r') as f:
-        return f.read()
+        content = f.read()
+    if '<!--GLYPHS-->' in content:
+        content = content.replace('<!--GLYPHS-->', _load_glyph_sprite())
+    return content
 
 
 def render_template(template_name, **context):

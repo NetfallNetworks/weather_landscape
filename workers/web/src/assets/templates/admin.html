@@ -1,204 +1,211 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Weather Landscape Admin</title>
-    <link rel="icon" type="image/png" href="/favicon.png">
-    <link rel="stylesheet" href="/assets/styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin &mdash; Weather Landscape (internal)</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/styles.css">
 </head>
 <body class="admin-page">
-    <div class="hamburger-menu">
-        <button class="hamburger-btn" onclick="toggleMenu()">☰</button>
-        <div class="menu-dropdown" id="menu">
-            <a href="/">🏠 Home</a>
-            <a href="/forecasts">📍 Forecasts</a>
-            <a href="/guide">📖 Reading Guide</a>
-            <a href="/admin" class="active">⚙️ Admin</a>
-        </div>
+<!--GLYPHS-->
+<div class="app">
+  <nav class="top">
+    <div class="shell" style="display:flex;align-items:center;justify-content:space-between;">
+      <a class="brand" href="/">
+        <svg class="brand-mark" viewBox="0 0 16 16" width="32" height="32"><use href="#glyph-brand"/></svg>
+        <span class="brand-name">Weather Landscape <em>admin</em></span>
+      </a>
+      <div class="nav-links">
+        <a href="/forecasts">Forecasts</a>
+        <span class="tag">internal</span>
+      </div>
     </div>
-    <script>
-        function toggleMenu() {
-            document.getElementById('menu').classList.toggle('show');
-        }
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.hamburger-menu')) {
-                document.getElementById('menu').classList.remove('show');
-            }
-        });
-    </script>
+  </nav>
 
-    <div class="container">
-        <header>
-            <h1>🌤️ Weather Landscape Admin</h1>
-            <p class="subtitle">Manage ZIP codes, formats, and trigger generation</p>
-        </header>
+  <div class="shell">
+    <header class="hero">
+      <div class="hero-tag">control room</div>
+      <h1 class="hero-title">Manage <em>locations</em></h1>
+      <p class="hero-sub">Add locations, toggle formats, and trigger generation. Internal tool &mdash; not linked from the public site.</p>
+    </header>
 
-        <div class="add-zip-section">
-        <h2>Add New Location</h2>
+    <section class="row">
+      <div class="add-zip-section">
+        <h2>Add new location</h2>
         <div class="add-zip-form">
-            <input type="text" id="new-zip-input" class="add-zip-input"
-                placeholder="78729 or MX77400" maxlength="12" pattern="(\d{5}|[A-Z]{2}\d{4,10})">
-            <button class="btn btn-add" onclick="addNewZip()" id="add-zip-btn">Add</button>
+          <input type="text" id="new-zip-input" class="add-zip-input"
+            placeholder="78729 or MX77400" maxlength="12" pattern="(\d{5}|[A-Z]{2}\d{4,10})">
+          <button class="btn primary" onclick="addNewZip()" id="add-zip-btn">Add</button>
         </div>
-    </div>
+      </div>
 
-    <div class="table-wrapper">
+      <div class="table-wrapper">
         <table>
-            <thead>
-                <tr>
-                    <th>Location</th>
-                    <th>Active</th>
-                    <th>Configured Formats</th>
-                    <th>Available in R2</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                $zip_table_rows
-            </tbody>
+          <thead>
+            <tr>
+              <th>Location</th>
+              <th>Active</th>
+              <th>Configured formats</th>
+              <th>Available in R2</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            $zip_table_rows
+          </tbody>
         </table>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <footer class="btm">
+    <div class="shell">
+      <div class="footer-base">
+        <span>WEATHER LANDSCAPE &middot; admin (internal)</span>
+        <span>Powered by OpenWeather &middot; Made with Cloudflare Workers</span>
+      </div>
     </div>
+  </footer>
+</div>
 
-    <div id="toast" class="toast"></div>
+<script>
+    function showToast(message, type = 'info') {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.className = 'toast ' + type + ' show';
+        setTimeout(() => { toast.className = 'toast'; }, 3000);
+    }
 
-    <script>
-        function showToast(message, type = 'info') {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.className = 'toast ' + type + ' show';
-            setTimeout(() => { toast.className = 'toast'; }, 3000);
-        }
-
-        async function toggleActive(zip, isActive) {
-            const endpoint = isActive ? '/admin/activate' : '/admin/deactivate';
-            try {
-                const resp = await fetch(endpoint + '?zip=' + zip, { method: 'POST' });
-                const data = await resp.json();
-                if (data.success) {
-                    showToast('ZIP ' + zip + (isActive ? ' activated' : ' deactivated'), 'success');
-                } else {
-                    showToast('Error: ' + (data.error || 'Unknown error'), 'error');
-                }
-            } catch (e) {
-                showToast('Network error: ' + e.message, 'error');
+    async function toggleActive(zip, isActive) {
+        const endpoint = isActive ? '/admin/activate' : '/admin/deactivate';
+        try {
+            const resp = await fetch(endpoint + '?zip=' + zip, { method: 'POST' });
+            const data = await resp.json();
+            if (data.success) {
+                showToast('ZIP ' + zip + (isActive ? ' activated' : ' deactivated'), 'success');
+            } else {
+                showToast('Error: ' + (data.error || 'Unknown error'), 'error');
             }
+        } catch (e) {
+            showToast('Network error: ' + e.message, 'error');
         }
+    }
 
-        async function toggleFormat(zip, format, isEnabled) {
-            const endpoint = isEnabled ? '/admin/formats/add' : '/admin/formats/remove';
-            try {
-                const resp = await fetch(endpoint + '?zip=' + zip + '&format=' + format, { method: 'POST' });
-                const data = await resp.json();
-                if (data.success) {
-                    showToast(format + (isEnabled ? ' enabled' : ' disabled') + ' for ' + zip, 'success');
-                } else {
-                    showToast('Error: ' + (data.error || 'Unknown error'), 'error');
-                    // Revert checkbox on error
-                    const checkbox = document.querySelector('input[data-zip="' + zip + '"][data-format="' + format + '"]');
-                    if (checkbox) checkbox.checked = !isEnabled;
-                }
-            } catch (e) {
-                showToast('Network error: ' + e.message, 'error');
+    async function toggleFormat(zip, format, isEnabled) {
+        const endpoint = isEnabled ? '/admin/formats/add' : '/admin/formats/remove';
+        try {
+            const resp = await fetch(endpoint + '?zip=' + zip + '&format=' + format, { method: 'POST' });
+            const data = await resp.json();
+            if (data.success) {
+                showToast(format + (isEnabled ? ' enabled' : ' disabled') + ' for ' + zip, 'success');
+            } else {
+                showToast('Error: ' + (data.error || 'Unknown error'), 'error');
                 // Revert checkbox on error
                 const checkbox = document.querySelector('input[data-zip="' + zip + '"][data-format="' + format + '"]');
                 if (checkbox) checkbox.checked = !isEnabled;
             }
+        } catch (e) {
+            showToast('Network error: ' + e.message, 'error');
+            // Revert checkbox on error
+            const checkbox = document.querySelector('input[data-zip="' + zip + '"][data-format="' + format + '"]');
+            if (checkbox) checkbox.checked = !isEnabled;
         }
+    }
 
-        async function generateZip(zip) {
-            const btn = document.getElementById('gen-' + zip);
-            const originalText = btn.textContent;
+    async function generateZip(zip) {
+        const btn = document.getElementById('gen-' + zip);
+        const originalText = btn.textContent;
 
-            btn.disabled = true;
-            btn.textContent = 'Generating...';
-            btn.className = 'btn btn-generate loading';
+        btn.disabled = true;
+        btn.textContent = 'Generating...';
+        btn.className = 'btn btn-generate loading';
 
-            try {
-                const resp = await fetch('/admin/generate?zip=' + zip, { method: 'POST' });
-                const data = await resp.json();
-                if (data.success) {
-                    btn.textContent = 'Queued!';
-                    btn.className = 'btn btn-generate success';
-                    showToast(data.message, 'success');
-                    // Reload after short delay to update R2 available column
-                    setTimeout(() => location.reload(), 3000);
-                } else {
-                    btn.textContent = 'Error';
-                    btn.className = 'btn btn-generate error';
-                    showToast('Error: ' + (data.error || 'Unknown error'), 'error');
-                }
-            } catch (e) {
+        try {
+            const resp = await fetch('/admin/generate?zip=' + zip, { method: 'POST' });
+            const data = await resp.json();
+            if (data.success) {
+                btn.textContent = 'Queued!';
+                btn.className = 'btn btn-generate success';
+                showToast(data.message, 'success');
+                // Reload after short delay to update R2 available column
+                setTimeout(() => location.reload(), 3000);
+            } else {
                 btn.textContent = 'Error';
                 btn.className = 'btn btn-generate error';
-                showToast('Network error: ' + e.message, 'error');
+                showToast('Error: ' + (data.error || 'Unknown error'), 'error');
             }
-
-            setTimeout(() => {
-                btn.disabled = false;
-                btn.textContent = originalText;
-                btn.className = 'btn btn-generate';
-            }, 2000);
+        } catch (e) {
+            btn.textContent = 'Error';
+            btn.className = 'btn btn-generate error';
+            showToast('Network error: ' + e.message, 'error');
         }
 
-        async function addNewZip() {
-            const input = document.getElementById('new-zip-input');
-            const btn = document.getElementById('add-zip-btn');
-            const zip = input.value.trim();
-
-            // Validate location code
-            if (!/^(\d{5}|[A-Z]{2}\d{4,10})$$/.test(zip.toUpperCase())) {
-                showToast('Enter a US ZIP (78729) or international code (MX77400)', 'error');
-                input.focus();
-                return;
-            }
-
-            const normalizedZip = zip.toUpperCase();
-
-            btn.disabled = true;
-            btn.textContent = 'Adding...';
-
-            try {
-                // First activate the location
-                showToast('Activating ' + normalizedZip + '...', 'info');
-                const activateResp = await fetch('/admin/activate?zip=' + normalizedZip, { method: 'POST' });
-                const activateData = await activateResp.json();
-
-                if (!activateData.success) {
-                    throw new Error(activateData.error || 'Failed to activate location');
-                }
-
-                // Then generate initial images
-                showToast('Generating images for ' + normalizedZip + '...', 'info');
-                const generateResp = await fetch('/admin/generate?zip=' + normalizedZip, { method: 'POST' });
-                const generateData = await generateResp.json();
-
-                if (generateData.success) {
-                    showToast('Added ' + normalizedZip + ' with ' + generateData.formats.length + ' format(s)', 'success');
-                    input.value = '';
-                    // Reload to show new ZIP
-                    setTimeout(() => location.reload(), 1500);
-                } else {
-                    throw new Error(generateData.error || 'Failed to generate images');
-                }
-            } catch (e) {
-                showToast('Error: ' + e.message, 'error');
-            }
-
+        setTimeout(() => {
             btn.disabled = false;
-            btn.textContent = 'Add';
+            btn.textContent = originalText;
+            btn.className = 'btn btn-generate';
+        }, 2000);
+    }
+
+    async function addNewZip() {
+        const input = document.getElementById('new-zip-input');
+        const btn = document.getElementById('add-zip-btn');
+        const zip = input.value.trim();
+
+        // Validate location code
+        if (!/^(\d{5}|[A-Z]{2}\d{4,10})$$/.test(zip.toUpperCase())) {
+            showToast('Enter a US ZIP (78729) or international code (MX77400)', 'error');
+            input.focus();
+            return;
         }
 
-        // Allow Enter key to add ZIP
-        document.getElementById('new-zip-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') addNewZip();
-        });
-    </script>
+        const normalizedZip = zip.toUpperCase();
 
-    <footer>
-        <p>Made with ❤️ for weather lovers who prefer pictures over spreadsheets</p>
-        <p style="margin-top: 0.5rem; font-size: 0.9rem;">
-            Based on the original <a href="https://github.com/lds133/weather_landscape" target="_blank">Weather Landscape</a> project by lds133
-        </p>
-    </footer>
-    </div>
+        btn.disabled = true;
+        btn.textContent = 'Adding...';
+
+        try {
+            // First activate the location
+            showToast('Activating ' + normalizedZip + '...', 'info');
+            const activateResp = await fetch('/admin/activate?zip=' + normalizedZip, { method: 'POST' });
+            const activateData = await activateResp.json();
+
+            if (!activateData.success) {
+                throw new Error(activateData.error || 'Failed to activate location');
+            }
+
+            // Then generate initial images
+            showToast('Generating images for ' + normalizedZip + '...', 'info');
+            const generateResp = await fetch('/admin/generate?zip=' + normalizedZip, { method: 'POST' });
+            const generateData = await generateResp.json();
+
+            if (generateData.success) {
+                showToast('Added ' + normalizedZip + ' — generation queued', 'success');
+                input.value = '';
+                // Reload to show new ZIP
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                throw new Error(generateData.error || 'Failed to generate images');
+            }
+        } catch (e) {
+            showToast('Error: ' + e.message, 'error');
+        }
+
+        btn.disabled = false;
+        btn.textContent = 'Add';
+    }
+
+    // Allow Enter key to add ZIP
+    document.getElementById('new-zip-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') addNewZip();
+    });
+</script>
 </body>
 </html>
