@@ -30,8 +30,16 @@ approximation*, not your address. Still openly an open-source fork of the real
 `weather_landscape`, so the "show-off" framing is intact; this just makes the demo
 land better.
 
+**Generate all formats per DMA.** Each seeded DMA should render the full set of
+configured formats (rgb_light / rgb_dark / bw), not just the default. This makes
+the geo-picked `/example?{format}` previews real per-format renders at every
+warm location — and obviates a separate per-format *static* fallback: once the
+DMA swath exists, the landing's format cards are format-true even on a cold visit
+(no dark-card-shows-color edge case). Folds in the deferred per-format-fallback
+concern from the redesign.
+
 **Depends on:** Task 2 (confirm the added DMA generation fits the pricing tier
-before widening the pipeline).
+before widening the pipeline). Note the format multiplier: N DMAs x 3 formats.
 
 **Touches:** `workers/web/src/web.py` (`/example` route + geo read), the
 scheduler/dispatcher pipeline (DMA seed list), template hero caption (generic, not
