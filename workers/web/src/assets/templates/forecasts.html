@@ -1,53 +1,55 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Weather Landscape - Forecasts</title>
-    <link rel="icon" type="image/png" href="/favicon.png">
-    <link rel="stylesheet" href="/assets/styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Forecasts &mdash; Weather Landscape</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/styles.css">
 </head>
-<body class="forecasts-page">
-    <div class="hamburger-menu">
-        <button class="hamburger-btn" onclick="toggleMenu()">☰</button>
-        <div class="menu-dropdown" id="menu">
-            <a href="/">🏠 Home</a>
-            <a href="/forecasts" class="active">📍 Forecasts</a>
-            <a href="/guide">📖 Reading Guide</a>
-            <a href="/admin">⚙️ Admin</a>
-        </div>
+<body>
+<!--GLYPHS-->
+<div class="app">
+  <nav class="top">
+    <div class="shell" style="display:flex;align-items:center;justify-content:space-between;">
+      <a class="brand" href="/">
+        <svg class="brand-mark" viewBox="0 0 16 16" width="32" height="32"><use href="#glyph-brand"/></svg>
+        <span class="brand-name">Weather Landscape</span>
+      </a>
+      <div class="nav-links">
+        <a href="/forecasts" class="active">Forecasts</a>
+        <a href="/guide">Guide</a>
+        <a class="cta" href="/forecasts">Get yours &rarr;</a>
+      </div>
     </div>
-    <script>
-        function toggleMenu() {
-            document.getElementById('menu').classList.toggle('show');
-        }
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.hamburger-menu')) {
-                document.getElementById('menu').classList.remove('show');
-            }
-        });
-    </script>
+  </nav>
 
-    <div class="container">
-        <header>
-            <h1>🌤️ Weather Landscape</h1>
-            <p class="subtitle">Your 24-hour weather forecast as a peaceful little picture</p>
-        </header>
+  <div class="shell">
+    <header class="hero">
+      <div class="hero-tag">now serving</div>
+      <h1 class="hero-title">Available <em>forecasts</em></h1>
+      <p class="hero-sub">$zip_count live location(s). Pick a format &mdash; new to the shapes? Start with the <a href="/guide">reading guide</a>.</p>
+    </header>
 
-        <div class="text-center" style="margin-bottom: 1.5rem;">
-            <a href="/guide" class="btn btn-link">🎨 How do I read these cute pictures?</a>
-        </div>
+    <section class="row">
+      <div class="section-tag">pick a location</div>
+      <div class="zip-grid">
+        $zip_links
+      </div>
+    </section>
+  </div>
 
-        <h2>Available Forecasts ($zip_count)</h2>
-
-        <div class="zip-grid">
-            $zip_links
-        </div>
-
-        <footer>
-            <p>Made with ❤️ for weather lovers who prefer pictures over spreadsheets</p>
-            <p style="margin-top: 0.5rem; font-size: 0.9rem;">
-                Based on the original <a href="https://github.com/lds133/weather_landscape" target="_blank">Weather Landscape</a> project by lds133
-            </p>
-        </footer>
+  <footer class="btm">
+    <div class="shell">
+      <div class="footer-base">
+        <span>WEATHER LANDSCAPE &middot; A fork of lds133/weather_landscape</span>
+        <span>Powered by OpenWeather &middot; Made with Cloudflare Workers</span>
+      </div>
     </div>
+  </footer>
+</div>
 </body>
 </html>

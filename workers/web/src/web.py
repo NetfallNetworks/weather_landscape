@@ -104,9 +104,13 @@ class Default(WorkerEntrypoint):
         if 'assets' in path_parts and path == 'diagram.png':
             return await self._serve_diagram()
 
-        # Route: Serve example image
+        # Route: Serve example image (optionally ?{format})
         if path == 'example' and not zip_from_path:
-            return await self._serve_example(env)
+            return await self._serve_example(env, query_params)
+
+        # Route: Internal styleguide (non-public, not linked from public nav)
+        if path == 'styleguide' and not zip_from_path:
+            return await self._serve_styleguide()
 
         # Route: Landing page (root)
         if path == '' and not zip_from_path:
@@ -257,6 +261,17 @@ class Default(WorkerEntrypoint):
                 {'status': 500, 'headers': {'Content-Type': 'application/json'}}
             )
 
+    async def _serve_styleguide(self):
+        """Serve the internal design-system styleguide (non-public)."""
+        try:
+            html = load_template('styleguide.html')
+            return Response.new(html, headers=to_js({"content-type": "text/html;charset=UTF-8"}))
+        except Exception as e:
+            return Response.new(
+                json.dumps({'error': f'Failed to load styleguide page: {str(e)}'}),
+                {'status': 500, 'headers': {'Content-Type': 'application/json'}}
+            )
+
     async def _serve_css(self):
         """Serve CSS file"""
         try:
@@ -297,24 +312,43 @@ class Default(WorkerEntrypoint):
                 {'status': 500, 'headers': {'Content-Type': 'application/json'}}
             )
 
-    async def _serve_example(self, env):
-        """Serve example weather image"""
+    async def _serve_example(self, env, query_params=None):
+        """Serve example weather image, optionally in a specific format.
+
+        The landing page's three format cards point at real per-format renders
+        (/example, /example?bw, /example?rgb_dark) rather than CSS-filtered fakes.
+        Falls back to the default format, then a bundled static image.
+        """
         try:
+            query_params = query_params or {}
+
+            # Resolve requested format from query params (e.g. ?bw, ?rgb_dark)
+            requested_format = DEFAULT_FORMAT
+            for param in query_params.keys():
+                normalized = param.lower().replace('-', '_')
+                if normalized in FORMAT_CONFIGS:
+                    requested_format = normalized
+                    break
+
             all_zips = await get_all_zips_from_r2(env)
             if all_zips:
                 example_zip = all_zips[0]
-                format_info = FORMAT_CONFIGS.get(DEFAULT_FORMAT)
-                extension = format_info['extension']
-                mime_type = format_info['mime_type']
-                key = f"{example_zip}/{DEFAULT_FORMAT}{extension}"
-                r2_object = await env.WEATHER_IMAGES.get(key)
-
-                if r2_object:
-                    image_data = await r2_object.arrayBuffer()
-                    return Response.new(image_data, headers=to_js({
-                        "content-type": mime_type,
-                        "cache-control": "public, max-age=900"
-                    }))
+                # Try the requested format, then fall back to the default format.
+                tried = [requested_format]
+                if DEFAULT_FORMAT not in tried:
+                    tried.append(DEFAULT_FORMAT)
+                for fmt in tried:
+                    format_info = FORMAT_CONFIGS.get(fmt)
+                    extension = format_info['extension']
+                    mime_type = format_info['mime_type']
+                    key = f"{example_zip}/{fmt}{extension}"
+                    r2_object = await env.WEATHER_IMAGES.get(key)
+                    if r2_object:
+                        image_data = await r2_object.arrayBuffer()
+                        return Response.new(image_data, headers=to_js({
+                            "content-type": mime_type,
+                            "cache-control": "public, max-age=900"
+                        }))
 
             # Serve static fallback example
             workers_dir = os.path.dirname(__file__)
@@ -357,7 +391,7 @@ class Default(WorkerEntrypoint):
             zip_items_html = []
             for zip_code in all_zips:
                 is_active = zip_code in active_zips
-                status_badge = '<span class="status-badge active">Up to date</span>' if is_active else '<span class="status-badge inactive">Not updating</span>'
+                status_badge = '<span class="tag active">Live</span>' if is_active else '<span class="tag inactive">Paused</span>'
                 formats = zip_formats.get(zip_code, [])
 
                 if formats:
