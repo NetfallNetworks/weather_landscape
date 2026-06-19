@@ -44,22 +44,22 @@
                  x = time, left(now) -> right(+24h); x/y are each sprite's TOP-LEFT.
                  The soil path is a hand-drawn illustration, not the real temp curve. -->
             <!-- ground: the temperature curve, filled as soil (like DrawSoil) -->
-            <path class="soil" d="M0,100 Q40,86 80,92 Q118,97 150,101 Q188,106 228,90 Q262,82 296,95 L296,128 L0,128 Z"/>
-            <path class="soil-edge" d="M0,100 Q40,86 80,92 Q118,97 150,101 Q188,106 228,90 Q262,82 296,95"/>
+            <path class="soil" d="M0,94 Q40,108 90,106 Q140,104 180,92 Q215,82 240,80 Q270,80 296,94 L296,128 L0,128 Z"/>
+            <path class="soil-edge" d="M0,94 Q40,108 90,106 Q140,104 180,92 Q215,82 240,80 Q270,80 296,94"/>
             <!-- sky pieces -->
             <image href="/assets/sprites/sun_00.png" x="32" y="4" width="30" height="30"/>
             <image href="/assets/sprites/cloud_30.png" x="80" y="6" width="34" height="34"/>
             <image href="/assets/sprites/cloud_05.png" x="172" y="12" width="30" height="30"/>
             <image href="/assets/sprites/moon_00.png" x="252" y="8" width="26" height="26"/>
             <!-- the house: present moment, far left -->
-            <image href="/assets/sprites/house_00.png" x="2" y="70" width="34" height="34"/>
+            <image href="/assets/sprites/house_00.png" x="2" y="62" width="34" height="34"/>
             <!-- trees stand on the ground; height = wind, species = direction -->
-            <image href="/assets/sprites/tree_03.png" x="84" y="66" width="34" height="34"/>
-            <image href="/assets/sprites/pine_03.png" x="148" y="66" width="34" height="34"/>
-            <image href="/assets/sprites/palm_03.png" x="218" y="62" width="34" height="34"/>
+            <image href="/assets/sprites/tree_03.png" x="84" y="72" width="34" height="34"/>
+            <image href="/assets/sprites/pine_03.png" x="148" y="68" width="34" height="34"/>
+            <image href="/assets/sprites/palm_03.png" x="218" y="50" width="34" height="34"/>
             <!-- flowers mark noon (yellow) and midnight (blue) -->
-            <image href="/assets/sprites/flower_01.png" x="120" y="72" width="28" height="28"/>
-            <image href="/assets/sprites/flower_02.png" x="196" y="72" width="28" height="28"/>
+            <image href="/assets/sprites/flower_01.png" x="120" y="78" width="28" height="28"/>
+            <image href="/assets/sprites/flower_02.png" x="196" y="62" width="28" height="28"/>
           </svg>
         </div>
         <div class="scene-frame" style="padding-top:0">
@@ -160,5 +160,7 @@
     </div>
   </footer>
 </div>
+  <!-- Cloudflare Web Analytics (public pages only) -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='"'"'{"token": "05da5620ecb348cdb252211a50ea6fd6"}'"'"'></script>
 </body>
 </html>
