@@ -11,12 +11,11 @@
 <link rel="stylesheet" href="/assets/styles.css">
 </head>
 <body>
-<!--GLYPHS-->
 <div class="app">
   <nav class="top">
     <div class="shell" style="display:flex;align-items:center;justify-content:space-between;">
       <a class="brand" href="/">
-        <svg class="brand-mark" viewBox="0 0 16 16" width="32" height="32"><use href="#glyph-brand"/></svg>
+        <img class="brand-mark sprite-img" src="/assets/sprites/house_00.png" width="32" height="32" alt="">
         <span class="brand-name">Weather Landscape</span>
       </a>
       <div class="nav-links">
@@ -67,37 +66,37 @@
       <p class="section-lede">There are no labels in the landscape, only shapes. Here is what they mean &mdash; and the <a href="/guide">reading guide</a> goes deeper.</p>
       <div class="decoder">
         <div class="decoder-cell">
-          <div class="decoder-glyph" data-glyph="house"><svg class="pglyph" viewBox="0 0 16 16"><use href="#glyph-house"/></svg></div>
+          <div class="decoder-glyph" data-glyph="house"><img class="sprite-img" src="/assets/sprites/house_00.png" alt=""></div>
           <div class="decoder-meta">Left edge &mdash; "you are here"</div>
           <div class="decoder-name">The house</div>
           <div class="decoder-desc">Marks the present moment, at the leftmost pixel of the canvas. Smoke from the chimney tells you the atmospheric pressure.</div>
         </div>
         <div class="decoder-cell">
-          <div class="decoder-glyph" data-glyph="hill"><svg class="pglyph" viewBox="0 0 16 16"><use href="#glyph-hill"/></svg></div>
-          <div class="decoder-meta">Vertical axis &mdash; temperature</div>
+          <div class="decoder-glyph" data-glyph="hill"><svg class="hill-glyph" viewBox="0 0 40 22"><path d="M0,11 C7,16 13,16 20,11 C27,6 33,6 40,11 L40,22 L0,22 Z" fill="#945201"/></svg></div>
+          <div class="decoder-meta">Higher ground, warmer</div>
           <div class="decoder-name">The terrain</div>
           <div class="decoder-desc">Higher ground, warmer air. The lower brown line is the actual temperature curve, drawn over the next 24 hours.</div>
         </div>
         <div class="decoder-cell">
-          <div class="decoder-glyph" data-glyph="tree"><svg class="pglyph" viewBox="0 0 16 16"><use href="#glyph-tree"/></svg></div>
+          <div class="decoder-glyph" data-glyph="tree"><img class="sprite-img" src="/assets/sprites/tree_03.png" alt=""></div>
           <div class="decoder-meta">Forest &mdash; wind</div>
           <div class="decoder-name">The trees</div>
-          <div class="decoder-desc">Taller trees mean stronger wind. Their species &mdash; pine, palm, round, thin &mdash; encodes the direction it's blowing from.</div>
+          <div class="decoder-desc">Taller trees mean stronger wind. Their species &mdash; pine, palm, leafy, wind-bent &mdash; encodes the direction it's blowing from.</div>
         </div>
         <div class="decoder-cell">
-          <div class="decoder-glyph" data-glyph="cloud"><svg class="pglyph" viewBox="0 0 16 16"><use href="#glyph-cloud"/></svg></div>
+          <div class="decoder-glyph" data-glyph="cloud"><img class="sprite-img" src="/assets/sprites/cloud_30.png" alt=""></div>
           <div class="decoder-meta">Sky cover</div>
           <div class="decoder-name">The clouds</div>
           <div class="decoder-desc">More clouds, more cover. They appear above the part of the day they'll show up in.</div>
         </div>
         <div class="decoder-cell">
-          <div class="decoder-glyph" data-glyph="sun"><svg class="pglyph" viewBox="0 0 16 16"><use href="#glyph-sun"/></svg></div>
+          <div class="decoder-glyph" data-glyph="sun"><img class="sprite-img" src="/assets/sprites/sun_00.png" alt=""></div>
           <div class="decoder-meta">Day markers</div>
           <div class="decoder-name">Sun &amp; moon</div>
           <div class="decoder-desc">The sun rises from where the day starts, the moon falls where it ends. The hours of daylight are visible at a glance.</div>
         </div>
         <div class="decoder-cell">
-          <div class="decoder-glyph" data-glyph="flower"><svg class="pglyph" viewBox="0 0 16 16"><use href="#glyph-flower"/></svg></div>
+          <div class="decoder-glyph" data-glyph="flower"><img class="sprite-img" src="/assets/sprites/flower_01.png" alt=""></div>
           <div class="decoder-meta">Time stamps</div>
           <div class="decoder-name">The flowers</div>
           <div class="decoder-desc">A blue bloom for midnight. A yellow one for noon. Anchors so you can locate any hour in the day timeline.</div>
@@ -167,5 +166,7 @@
     </div>
   </footer>
 </div>
+  <!-- Cloudflare Web Analytics (public pages only) -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='"'"'{"token": "05da5620ecb348cdb252211a50ea6fd6"}'"'"'></script>
 </body>
 </html>

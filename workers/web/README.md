@@ -58,6 +58,26 @@ cd workers/web
 uv run pywrangler deploy -c wrangler.local.toml
 ```
 
+### Windows note (native Wrangler)
+
+`pywrangler` builds a local Pyodide **emscripten** venv, which can't run on
+native Windows (the `pyodide-*-emscripten-wasm32-musl` interpreter has no
+runnable `.exe`), and uv may also fail to clear a stale `.venv/lib64` symlink on
+OneDrive. Because this worker has **zero Python dependencies** (`dependencies =
+[]`), deploy it with native Wrangler instead — Cloudflare builds Pyodide
+server-side, so no local venv is needed:
+```bash
+# from project root, regenerate configs (real KV IDs + bundle rules):
+./setup-local-config.sh
+# then, web worker only:
+cd workers/web && npx wrangler deploy -c wrangler.local.toml
+```
+If uv left a locked venv behind first: `rm -rf workers/web/.venv`.
+
+### Sprite assets
+
+`src/assets/sprites/` holds copies of the landscape generator's sprites (`workers/landscape/src/p_weather/sprite_rgb/`), reused as the site's decoder/scene art (workers bundle their own assets, so the copy is intentional). Re-copy if that art changes.
+
 ## Dependencies
 
 **Production:** None! Zero dependencies.

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>How to Read Your Weather Landscape — Weather Landscape</title>
+<title>How to Read Your Weather Landscape &mdash; Weather Landscape</title>
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,90 +11,156 @@
 <link rel="stylesheet" href="/assets/styles.css">
 </head>
 <body>
-<!--GLYPHS-->
 <div class="app">
-  <nav class="top"><div class="shell" style="display:flex;align-items:center;justify-content:space-between;"><a class="brand" href="/"><svg class="brand-mark" viewBox="0 0 16 16" width="32" height="32"><use href="#glyph-brand"/></svg><span class="brand-name">Weather Landscape</span></a><div class="nav-links"><a href="/forecasts">Forecasts</a><a href="/guide" class="active">Guide</a><a class="cta" href="/forecasts">Get yours &rarr;</a></div></div></nav>
+  <nav class="top">
+    <div class="shell" style="display:flex;align-items:center;justify-content:space-between;">
+      <a class="brand" href="/">
+        <img class="brand-mark sprite-img" src="/assets/sprites/house_00.png" width="32" height="32" alt="">
+        <span class="brand-name">Weather Landscape</span>
+      </a>
+      <div class="nav-links">
+        <a href="/forecasts">Forecasts</a>
+        <a href="/guide" class="active">Guide</a>
+        <a class="cta" href="/forecasts">Get yours &rarr;</a>
+      </div>
+    </div>
+  </nav>
 
   <div class="shell">
     <header class="hero">
       <div class="hero-tag">the decoder ring</div>
-      <h1 class="hero-title">Read the <em>landscape</em>, not the&nbsp;numbers</h1>
-      <p class="hero-sub">The house is now, time rolls to the right, and every shape on the canvas is a forecast in disguise. Here is the full key.</p>
+      <h1 class="hero-title">Read the <em>landscape</em>,<br>not the&nbsp;numbers</h1>
+      <p class="hero-sub">The whole forecast is a tiny world, drawn left-to-right from now to 24 hours out. Here is the same world the generator builds &mdash; assembled from the very same pieces &mdash; with every shape decoded.</p>
     </header>
 
     <section class="row">
-      <div class="section-tag">one canvas, no labels</div>
-      <h2 class="section-title">What each shape is telling you</h2>
-      <p class="section-lede">There are no axes, legends, or readouts in the landscape — only a little world that rearranges itself to match the next 24 hours. Walk through it shape by shape and it reads like weather, not like a spreadsheet.</p>
+      <div class="section-tag">the whole scene</div>
+      <h2 class="section-title">One little world, read left to&nbsp;right</h2>
+      <p class="section-lede">The house is now. Time rolls right to tomorrow. The ground is the temperature; everything standing on it is your weather.</p>
+      <div class="scene">
+        <div class="scene-frame">
+          <svg viewBox="0 0 296 128" role="img" aria-label="A weather landscape assembled from its sprite pieces">
+            <!-- Coordinate convention (mirrors DrawWeather on the 296x128 canvas):
+                 x = time, left(now) -> right(+24h); x/y are each sprite's TOP-LEFT.
+                 The soil path is a hand-drawn illustration, not the real temp curve. -->
+            <!-- ground: the temperature curve, filled as soil (like DrawSoil) -->
+            <path class="soil" d="M0,94 Q40,108 90,106 Q140,104 180,92 Q215,82 240,80 Q270,80 296,94 L296,128 L0,128 Z"/>
+            <path class="soil-edge" d="M0,94 Q40,108 90,106 Q140,104 180,92 Q215,82 240,80 Q270,80 296,94"/>
+            <!-- sky pieces -->
+            <image href="/assets/sprites/sun_00.png" x="32" y="4" width="30" height="30"/>
+            <image href="/assets/sprites/cloud_30.png" x="80" y="6" width="34" height="34"/>
+            <image href="/assets/sprites/cloud_05.png" x="172" y="12" width="30" height="30"/>
+            <image href="/assets/sprites/moon_00.png" x="252" y="8" width="26" height="26"/>
+            <!-- the house: present moment, far left -->
+            <image href="/assets/sprites/house_00.png" x="2" y="62" width="34" height="34"/>
+            <!-- trees stand on the ground; height = wind, species = direction -->
+            <image href="/assets/sprites/tree_03.png" x="84" y="72" width="34" height="34"/>
+            <image href="/assets/sprites/pine_03.png" x="148" y="68" width="34" height="34"/>
+            <image href="/assets/sprites/palm_03.png" x="218" y="50" width="34" height="34"/>
+            <!-- flowers mark noon (yellow) and midnight (blue) -->
+            <image href="/assets/sprites/flower_01.png" x="120" y="78" width="28" height="28"/>
+            <image href="/assets/sprites/flower_02.png" x="196" y="62" width="28" height="28"/>
+          </svg>
+        </div>
+        <div class="scene-frame" style="padding-top:0">
+          <div class="scene-caption">
+            <span>&larr; now &middot; the house</span>
+            <span>the ground is temperature</span>
+            <span>24 hours from now &rarr;</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="row">
+      <div class="section-tag">the pieces, decoded</div>
+      <h2 class="section-title">What each shape is telling&nbsp;you</h2>
+      <p class="section-lede">No labels in the landscape, only shapes &mdash; the same sprites you see above. Here is what each one means.</p>
       <div class="decode-rows">
-
         <div class="decode-row">
-          <div class="glyph-box"><svg class="pglyph" viewBox="0 0 16 16"><use href="#glyph-house"/></svg></div>
+          <div class="glyph-box"><img class="sprite-img" src="/assets/sprites/house_00.png" alt=""></div>
           <div>
-            <div class="decoder-name">The house — you are here</div>
-            <div class="decoder-desc">The house sits at the left edge of the canvas and marks the present moment; everything to its right is the future, hour by hour. The smoke rising from its chimney encodes atmospheric pressure — smoke that climbs straight up means high pressure and fair weather ahead, while smoke that sinks and trails low means falling pressure and incoming storms.</div>
+            <div class="decoder-name">The house &mdash; you are here</div>
+            <div class="decoder-desc">Sits at the far-left pixel and marks the present moment. The smoke from its chimney leans with the atmospheric pressure &mdash; rising smoke is high pressure and fair weather, falling smoke is low pressure and storms.</div>
           </div>
         </div>
-
         <div class="decode-row">
-          <div class="glyph-box"><svg class="pglyph" viewBox="0 0 16 16"><use href="#glyph-hill"/></svg></div>
+          <div class="glyph-box"><svg class="hill-glyph" viewBox="0 0 40 22"><path d="M0,11 C7,16 13,16 20,11 C27,6 33,6 40,11 L40,22 L0,22 Z" fill="#945201"/></svg></div>
           <div>
-            <div class="decoder-name">The terrain — temperature</div>
-            <div class="decoder-desc">Height is heat. The higher the ground rises, the warmer the air at that point in the day, so the rolling profile of the land is really the temperature curve drawn as a horizon. The lower line traces that same temperature across the next 24 hours, so a climbing slope is a warming afternoon and a dip is the cool of night.</div>
+            <div class="decoder-name">The terrain &mdash; temperature</div>
+            <div class="decoder-desc">The rolling ground is the temperature curve over the next 24 hours: higher ground is warmer air, valleys are the cold. Everything in the scene stands on this line.</div>
           </div>
         </div>
-
         <div class="decode-row">
-          <div class="glyph-box"><svg class="pglyph" viewBox="0 0 16 16"><use href="#glyph-tree"/></svg></div>
+          <div class="glyph-box"><img class="sprite-img" src="/assets/sprites/pine_03.png" alt=""></div>
           <div>
-            <div class="decoder-name">The trees — wind strength &amp; direction</div>
-            <div class="decoder-desc">A tree's height is the wind's strength: the taller it stands, the harder the wind is blowing. The species of tree tells you which way that wind is coming from.</div>
+            <div class="decoder-name">The trees &mdash; wind strength &amp; direction</div>
+            <div class="decoder-desc">Taller trees mean stronger wind. The species tells you which way it blows from:</div>
             <ul>
               <li>Pine &mdash; wind from the North</li>
+              <li>Wind-bent tree &mdash; wind from the East</li>
               <li>Palm &mdash; wind from the South</li>
-              <li>Round / bushy &mdash; wind from the East</li>
-              <li>Thin / bare &mdash; wind from the West</li>
+              <li>Round, leafy tree &mdash; wind from the West</li>
             </ul>
           </div>
         </div>
-
         <div class="decode-row">
-          <div class="glyph-box"><svg class="pglyph" viewBox="0 0 16 16"><use href="#glyph-cloud"/></svg></div>
+          <div class="glyph-box"><img class="sprite-img" src="/assets/sprites/cloud_30.png" alt=""></div>
           <div>
-            <div class="decoder-name">The clouds — sky cover</div>
-            <div class="decoder-desc">Clouds show how much of the sky is covered: a few wisps mean clear, a thick bank means overcast. Each cloud floats above the slice of the timeline when it arrives, so you can see at a glance whether the morning is bright and the evening grey.</div>
+            <div class="decoder-name">The clouds &mdash; sky cover</div>
+            <div class="decoder-desc">More cloud, more cover. Each one floats above the slice of the day it appears in, so you can watch a thick bank move in across the afternoon.</div>
           </div>
         </div>
-
         <div class="decode-row">
-          <div class="glyph-box"><svg class="pglyph" viewBox="0 0 16 16"><use href="#glyph-sun"/></svg></div>
+          <div class="glyph-box"><img class="sprite-img" src="/assets/sprites/sun_00.png" alt=""></div>
           <div>
-            <div class="decoder-name">Sun &amp; moon — daylight</div>
-            <div class="decoder-desc">The sun marks the position of sunrise and the moon marks sunset. The gap between them is the length of the day — a wide span is a long summer afternoon, a narrow one is a short winter day.</div>
+            <div class="decoder-name">Sun &amp; moon &mdash; daylight</div>
+            <div class="decoder-desc">The sun rises from where the day starts; the moon falls where it ends. The gap between the two is the length of the day &mdash; a long summer afternoon, or a short winter dusk.</div>
           </div>
         </div>
-
         <div class="decode-row">
-          <div class="glyph-box"><svg class="pglyph" viewBox="0 0 16 16"><use href="#glyph-flower"/></svg></div>
+          <div class="glyph-box"><img class="sprite-img" src="/assets/sprites/flower_02.png" alt=""></div>
           <div>
-            <div class="decoder-name">The flowers — time anchors</div>
-            <div class="decoder-desc">Flowers are mile markers along the timeline. A blue bloom marks midnight and a yellow bloom marks noon, so you can pin any other shape to a real hour just by counting from the nearest flower.</div>
+            <div class="decoder-name">The flowers &mdash; time anchors</div>
+            <div class="decoder-desc">A blue bloom marks midnight, a yellow one marks noon. They are anchors along the timeline, so you can pin down any hour just by counting from the nearest flower.</div>
           </div>
         </div>
-
-        <div class="decode-row">
-          <div class="glyph-box"><svg class="pglyph" viewBox="0 0 16 16"><use href="#glyph-cloud"/></svg></div>
-          <div>
-            <div class="decoder-name">Rain &amp; snow — precipitation</div>
-            <div class="decoder-desc">When the forecast calls for wet weather, droplets or flakes fall from the clouds at exactly the spot in the timeline where it is expected — droplets for rain, flakes for snow. No precipitation, no falling pixels, so a dry day simply leaves the air clear.</div>
-          </div>
-        </div>
-
       </div>
     </section>
   </div>
 
-  <footer class="btm"><div class="shell"><div class="footer-grid"><div><h3 class="footer-cap">A <em>small picture</em><br>of the next 24 hours.</h3><a class="btn primary" href="/forecasts">Get yours &rarr;</a></div><div class="footer-col"><h4>Read</h4><a href="/guide">Reading guide</a><a href="/forecasts">Forecasts</a></div><div class="footer-col"><h4>Forecasts</h4><a href="/forecasts">Color</a><a href="/forecasts">B&amp;W (e-ink)</a><a href="/forecasts">Dark mode</a></div><div class="footer-col"><h4>Make</h4><a href="https://github.com/NetfallNetworks/weather_landscape" target="_blank" rel="noreferrer">On GitHub</a><a href="/guide">Reading guide</a></div></div><div class="footer-base"><span>WEATHER LANDSCAPE &middot; A fork of lds133/weather_landscape</span><span>Powered by OpenWeather &middot; Made with Cloudflare Workers</span></div></div></footer>
+  <footer class="btm">
+    <div class="shell">
+      <div class="footer-grid">
+        <div>
+          <h3 class="footer-cap">A <em>small picture</em><br>of the next 24 hours.</h3>
+          <a class="btn primary" href="/forecasts">Get yours &rarr;</a>
+        </div>
+        <div class="footer-col">
+          <h4>Read</h4>
+          <a href="/guide">Reading guide</a>
+          <a href="/forecasts">Forecasts</a>
+        </div>
+        <div class="footer-col">
+          <h4>Forecasts</h4>
+          <a href="/forecasts">Color</a>
+          <a href="/forecasts">B&amp;W (e-ink)</a>
+          <a href="/forecasts">Dark mode</a>
+        </div>
+        <div class="footer-col">
+          <h4>Make</h4>
+          <a href="https://github.com/NetfallNetworks/weather_landscape" target="_blank" rel="noreferrer">On GitHub</a>
+          <a href="/guide">Reading guide</a>
+        </div>
+      </div>
+      <div class="footer-base">
+        <span>WEATHER LANDSCAPE &middot; A fork of lds133/weather_landscape</span>
+        <span>Powered by OpenWeather &middot; Made with Cloudflare Workers</span>
+      </div>
+    </div>
+  </footer>
 </div>
+  <!-- Cloudflare Web Analytics (public pages only) -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='"'"'{"token": "05da5620ecb348cdb252211a50ea6fd6"}'"'"'></script>
 </body>
 </html>
